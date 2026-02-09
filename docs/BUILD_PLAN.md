@@ -30,14 +30,14 @@ This document outlines the phased development plan for Pacific Golf, transformin
 ### 0.2 Development Environment
 - [ ] Update api/README.md with setup instructions
 - [ ] Update web/README.md with setup instructions
-- [ ] Create `.env.example` files with all required vars
+- [x] Create `.env.example` files with all required vars
 - [ ] Verify local development works (api + web)
 - [ ] Set up database locally
 
 ### 0.3 Cleanup GIAA-Specific Code
-- [ ] Remove `employee_numbers` table and model
-- [ ] Remove employee discount logic from registration
-- [ ] Remove GIAA branding/images from frontend
+- [x] Remove `employee_numbers` table and model
+- [x] Remove employee discount logic from registration
+- [x] Remove GIAA branding/images from frontend (index.html done, components pending)
 - [ ] Remove hardcoded GIAA settings
 - [ ] Update email templates to be generic
 - [ ] Clean up unused GIAA-specific components
