@@ -59,6 +59,43 @@ export interface Tournament {
   short_name: string;
   created_at: string;
   updated_at: string;
+  
+  // Tournament configuration (Phase 2)
+  tournament_format?: 'scramble' | 'stroke' | 'stableford' | 'best_ball' | 'match' | 'captain_choice' | 'custom';
+  scoring_type?: 'gross' | 'net' | 'both' | 'stableford';
+  team_size?: number;
+  allow_partial_teams?: boolean;
+  handicap_required?: boolean;
+  handicap_max?: number;
+  
+  // Flights
+  use_flights?: boolean;
+  flights_config?: Record<string, unknown>;
+  
+  // Pricing
+  early_bird_fee?: number;
+  early_bird_fee_dollars?: number;
+  early_bird_deadline?: string;
+  early_bird_active?: boolean;
+  current_fee?: number;
+  current_fee_dollars?: number;
+  
+  // Registration
+  registration_deadline?: string;
+  waitlist_enabled?: boolean;
+  waitlist_max?: number;
+  
+  // Payment
+  payment_instructions?: string;
+  allow_cash?: boolean;
+  allow_check?: boolean;
+  allow_card?: boolean;
+  
+  // Schedule
+  check_in_time?: string;
+  shotgun_start?: boolean;
+  tee_times_enabled?: boolean;
+  tee_time_interval_minutes?: number;
 }
 
 export interface Golfer {
