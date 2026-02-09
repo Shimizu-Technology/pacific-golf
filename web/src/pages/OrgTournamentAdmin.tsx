@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import { useOrganization } from '../components/OrganizationProvider';
 import { 
   Users, 
@@ -60,6 +61,7 @@ interface Stats {
 export const OrgTournamentAdmin: React.FC = () => {
   const { tournamentSlug } = useParams<{ tournamentSlug: string }>();
   const { organization, isLoading: orgLoading } = useOrganization();
+  const { getToken } = useAuth();
   
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [golfers, setGolfers] = useState<Golfer[]>([]);
@@ -85,11 +87,16 @@ export const OrgTournamentAdmin: React.FC = () => {
 
     try {
       setLoading(true);
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+      
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/tournaments/${tournamentSlug}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+            'Authorization': `Bearer ${token}`,
           },
         }
       );
@@ -111,7 +118,7 @@ export const OrgTournamentAdmin: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [organization, tournamentSlug]);
+  }, [organization, tournamentSlug, getToken]);
 
   // Filtered and sorted golfers
   const filteredGolfers = useMemo(() => {
@@ -170,12 +177,15 @@ export const OrgTournamentAdmin: React.FC = () => {
 
   const handleCheckIn = async (golfer: Golfer) => {
     try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/v1/golfers/${golfer.id}/check_in`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }

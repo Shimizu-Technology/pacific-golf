@@ -104,9 +104,16 @@ module Api
             date: t.event_date,
             status: t.status,
             registration_count: t.golfers.where(registration_status: 'confirmed').count,
-            capacity: t.max_golfers,
-            revenue: t.golfers.where(payment_status: 'paid').sum { |g| g.entry_fee_paid || 0 }
+            capacity: t.max_capacity,
+            revenue: t.golfers.where(payment_status: 'paid').count * (t.entry_fee || 0)
           }
+        end
+
+        # Calculate total revenue by summing entry fees of paid golfers
+        total_revenue = 0
+        tournaments.each do |t|
+          paid_count = t.golfers.where(payment_status: 'paid').count
+          total_revenue += paid_count * (t.entry_fee || 0)
         end
 
         stats = {
@@ -114,9 +121,7 @@ module Api
           active_tournaments: tournaments.where(status: %w[open in_progress]).count,
           total_registrations: organization.tournaments.joins(:golfers)
                                           .where(golfers: { registration_status: 'confirmed' }).count,
-          total_revenue: organization.tournaments.joins(:golfers)
-                                    .where(golfers: { payment_status: 'paid' })
-                                    .sum('golfers.entry_fee_paid') || 0
+          total_revenue: total_revenue
         }
 
         render json: { tournaments: tournament_data, stats: stats }
@@ -134,15 +139,16 @@ module Api
         tournament = organization.tournaments.find_by!(slug: params[:tournament_slug])
         golfers = tournament.golfers.order(created_at: :desc)
 
+        paid_count = golfers.where(payment_status: 'paid').count
         stats = {
           total_registrations: golfers.count,
           confirmed: golfers.where(registration_status: 'confirmed').count,
           waitlisted: golfers.where(registration_status: 'waitlist').count,
           cancelled: golfers.where(registration_status: 'cancelled').count,
-          paid: golfers.where(payment_status: 'paid').count,
+          paid: paid_count,
           unpaid: golfers.where(payment_status: 'unpaid').count,
           checked_in: golfers.where.not(checked_in_at: nil).count,
-          revenue: golfers.where(payment_status: 'paid').sum { |g| g.entry_fee_paid || 0 }
+          revenue: paid_count * (tournament.entry_fee || 0)
         }
 
         render json: {

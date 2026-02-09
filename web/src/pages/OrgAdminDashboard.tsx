@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import { useOrganization } from '../components/OrganizationProvider';
 import { 
   Users, 
@@ -33,6 +34,7 @@ interface OrgStats {
 
 export const OrgAdminDashboard: React.FC = () => {
   const { organization, isLoading: orgLoading } = useOrganization();
+  const { getToken } = useAuth();
   const navigate = useNavigate();
   const [tournaments, setTournaments] = useState<TournamentSummary[]>([]);
   const [stats, setStats] = useState<OrgStats | null>(null);
@@ -45,12 +47,18 @@ export const OrgAdminDashboard: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        // Get Clerk token
+        const token = await getToken();
+        if (!token) {
+          throw new Error('Not authenticated');
+        }
+        
         // Fetch tournaments for this organization
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/tournaments`,
           {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+              'Authorization': `Bearer ${token}`,
             },
           }
         );
@@ -70,7 +78,7 @@ export const OrgAdminDashboard: React.FC = () => {
     };
 
     fetchData();
-  }, [organization]);
+  }, [organization, getToken]);
 
   if (orgLoading || loading) {
     return (
