@@ -8,14 +8,16 @@
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
     # Allow requests from localhost during development and production domains
-    origins "localhost:3000", "localhost:5173", "localhost:5174", 
-            "127.0.0.1:3000", "127.0.0.1:5173", "127.0.0.1:5174",
+    origins "localhost:3000", "localhost:3001", "localhost:5173", "localhost:5174", "localhost:5175", "localhost:5176",
+            "127.0.0.1:3000", "127.0.0.1:3001", "127.0.0.1:5173", "127.0.0.1:5174", "127.0.0.1:5175", "127.0.0.1:5176",
             # Production frontend URLs (explicitly listed)
+            "https://pacificgolf.io",
+            "https://www.pacificgolf.io",
+            "https://pacificgolf.co",
+            "https://www.pacificgolf.co",
+            # GIAA legacy (redirect will handle this)
             "https://giaa-tournament.com",
             "https://www.giaa-tournament.com",
-            # Legacy misspelled domain (redirect will handle this)
-            "https://giaa-tournment.com",
-            "https://www.giaa-tournment.com",
             # Also allow from FRONTEND_URL env var if set
             *([ENV["FRONTEND_URL"]].compact)
 
