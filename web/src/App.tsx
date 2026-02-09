@@ -28,7 +28,7 @@ import { OrgAdminDashboard } from './pages/OrgAdminDashboard';
 import { OrgTournamentAdmin } from './pages/OrgTournamentAdmin';
 import { OrgCheckInPage } from './pages/OrgCheckInPage';
 import { CreateTournamentPage } from './pages/CreateTournamentPage';
-import { LeaderboardPage, ScorecardPage, RaffleBoardPage, RaffleManagementPage } from './pages';
+import { LeaderboardPage, ScorecardPage, RaffleBoardPage, RaffleManagementPage, SponsorManagementPage } from './pages';
 
 // Wrapper component for admin routes with tournament context
 function AdminRouteWrapper({ children }: { children: React.ReactNode }) {
@@ -186,6 +186,18 @@ function App() {
             <ProtectedRoute>
               <OrganizationProvider>
                 <RaffleManagementPage />
+              </OrganizationProvider>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Sponsor Management (Admin) */}
+        <Route
+          path="/:orgSlug/admin/tournaments/:tournamentSlug/sponsors"
+          element={
+            <ProtectedRoute>
+              <OrganizationProvider>
+                <SponsorManagementPage />
               </OrganizationProvider>
             </ProtectedRoute>
           }

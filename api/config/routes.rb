@@ -117,6 +117,14 @@ Rails.application.routes.draw do
         post 'raffle/tickets' => 'raffle#create_tickets'
         post 'raffle/tickets/:id/mark_paid' => 'raffle#mark_ticket_paid'
         delete 'raffle/tickets/:id' => 'raffle#destroy_ticket'
+
+        # Sponsors
+        resources :sponsors, only: [:index, :show, :create, :update, :destroy] do
+          collection do
+            get :by_hole
+            post :reorder
+          end
+        end
       end
 
       # Groups

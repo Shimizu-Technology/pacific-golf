@@ -8,6 +8,7 @@ class Tournament < ApplicationRecord
   has_many :scores, dependent: :destroy
   has_many :raffle_prizes, dependent: :destroy
   has_many :raffle_tickets, dependent: :destroy
+  has_many :sponsors, dependent: :destroy
   has_many :activity_logs, dependent: :nullify
   has_many :tournament_assignments, dependent: :destroy
   has_many :assigned_users, through: :tournament_assignments, source: :user

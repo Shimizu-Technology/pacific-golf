@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_10_004033) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_10_004034) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -213,6 +213,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004033) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "sponsors", force: :cascade do |t|
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.integer "hole_number"
+    t.string "logo_url"
+    t.string "name", null: false
+    t.integer "position", default: 0
+    t.string "tier", default: "bronze"
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "website_url"
+    t.index ["tournament_id", "hole_number"], name: "index_sponsors_on_tournament_id_and_hole_number"
+    t.index ["tournament_id", "position"], name: "index_sponsors_on_tournament_id_and_position"
+    t.index ["tournament_id", "tier"], name: "index_sponsors_on_tournament_id_and_tier"
+    t.index ["tournament_id"], name: "index_sponsors_on_tournament_id"
+  end
+
   create_table "tournament_assignments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "tournament_id", null: false
@@ -319,6 +337,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004033) do
   add_foreign_key "scores", "groups"
   add_foreign_key "scores", "tournaments"
   add_foreign_key "scores", "users", column: "entered_by_id"
+  add_foreign_key "sponsors", "tournaments"
   add_foreign_key "tournament_assignments", "tournaments"
   add_foreign_key "tournament_assignments", "users"
   add_foreign_key "tournaments", "organizations"

@@ -21,3 +21,4 @@ export { LeaderboardPage } from './LeaderboardPage';
 export { ScorecardPage } from './ScorecardPage';
 export { RaffleBoardPage } from './RaffleBoardPage';
 export { RaffleManagementPage } from './RaffleManagementPage';
+export { SponsorManagementPage } from './SponsorManagementPage';
