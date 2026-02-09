@@ -1,16 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import {
-  X,
-  User,
-  Mail,
-  Phone,
-  Building2,
-  DollarSign,
-  FileText,
-  Loader2,
-  UserPlus,
-} from 'lucide-react';
+import { X, Loader2, UserPlus, CreditCard, Banknote, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface AddGolferModalProps {
@@ -20,26 +10,24 @@ interface AddGolferModalProps {
   tournamentId: string;
   tournamentSlug: string;
   orgSlug: string;
-  entryFee: number; // in cents
+  entryFee: number;
 }
 
-interface GolferFormData {
+interface FormData {
   name: string;
   email: string;
   phone: string;
   company: string;
-  payment_type: 'pay_on_day' | 'stripe';
   payment_status: 'paid' | 'unpaid';
-  payment_method: string;
+  payment_method: 'cash' | 'check' | 'card' | 'online' | '';
   notes: string;
 }
 
-const defaultFormData: GolferFormData = {
+const defaultFormData: FormData = {
   name: '',
   email: '',
   phone: '',
   company: '',
-  payment_type: 'pay_on_day',
   payment_status: 'unpaid',
   payment_method: '',
   notes: '',
@@ -49,17 +37,14 @@ export const AddGolferModal: React.FC<AddGolferModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  tournamentId,
   tournamentSlug,
   orgSlug,
   entryFee,
 }) => {
   const { getToken } = useAuth();
-  const [formData, setFormData] = useState<GolferFormData>(defaultFormData);
+  const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  if (!isOpen) return null;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -80,10 +65,13 @@ export const AddGolferModal: React.FC<AddGolferModalProps> = ({
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = 'Invalid email address';
     }
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone is required';
+    }
+    if (formData.payment_status === 'paid' && !formData.payment_method) {
+      newErrors.payment_method = 'Payment method is required when marked as paid';
     }
 
     setErrors(newErrors);
@@ -115,8 +103,8 @@ export const AddGolferModal: React.FC<AddGolferModalProps> = ({
           body: JSON.stringify({
             golfer: {
               ...formData,
-              tournament_id: tournamentId,
               registration_status: 'confirmed',
+              payment_type: 'pay_on_day', // Manual registrations are always pay on day
               waiver_accepted_at: new Date().toISOString(),
             },
           }),
@@ -124,8 +112,8 @@ export const AddGolferModal: React.FC<AddGolferModalProps> = ({
       );
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to add golfer');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to add golfer');
       }
 
       toast.success(`${formData.name} added successfully!`);
@@ -139,47 +127,48 @@ export const AddGolferModal: React.FC<AddGolferModalProps> = ({
     }
   };
 
-  const handleClose = () => {
-    setFormData(defaultFormData);
-    setErrors({});
-    onClose();
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(cents / 100);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={handleClose}
-      />
+  if (!isOpen) return null;
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <UserPlus className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Add Golfer</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Add Golfer</h2>
               <p className="text-sm text-gray-500">Manual registration</p>
             </div>
           </div>
           <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition"
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Name */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-              <User className="w-4 h-4" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Full Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -188,118 +177,149 @@ export const AddGolferModal: React.FC<AddGolferModalProps> = ({
               value={formData.name}
               onChange={handleChange}
               placeholder="John Smith"
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors.name ? 'border-red-500' : 'border-gray-300'
               }`}
             />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-500">{errors.name}</p>
-            )}
+            {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
           </div>
 
-          {/* Email */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-              <Mail className="w-4 h-4" />
-              Email <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="john@example.com"
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-500">{errors.email}</p>
-            )}
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-              <Phone className="w-4 h-4" />
-              Phone <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="(671) 555-1234"
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.phone ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.phone && (
-              <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
-            )}
+          {/* Email & Phone */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="john@example.com"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.email ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="(671) 555-1234"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.phone ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
+            </div>
           </div>
 
           {/* Company */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-              <Building2 className="w-4 h-4" />
-              Company/Organization
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Company / Organization
             </label>
-            <input
-              type="text"
-              name="company"
-              value={formData.company}
-              onChange={handleChange}
-              placeholder="Optional"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                name="company"
+                value={formData.company}
+                onChange={handleChange}
+                placeholder="Optional"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
 
           {/* Payment Section */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
-              <DollarSign className="w-4 h-4" />
-              Payment ({(entryFee / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })})
-            </h3>
+          <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-900">Entry Fee</span>
+              <span className="text-lg font-bold text-gray-900">{formatCurrency(entryFee)}</span>
+            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Payment Status */}
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Status</label>
-                <select
-                  name="payment_status"
-                  value={formData.payment_status}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="unpaid">Unpaid</option>
-                  <option value="paid">Paid</option>
-                </select>
-              </div>
-
-              {/* Payment Method */}
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Method</label>
-                <select
-                  name="payment_method"
-                  value={formData.payment_method}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Not specified</option>
-                  <option value="cash">Cash</option>
-                  <option value="check">Check</option>
-                  <option value="card">Credit Card</option>
-                  <option value="comp">Complimentary</option>
-                </select>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Status
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="payment_status"
+                    value="unpaid"
+                    checked={formData.payment_status === 'unpaid'}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-gray-700">Unpaid</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="payment_status"
+                    value="paid"
+                    checked={formData.payment_status === 'paid'}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-gray-700">Paid</span>
+                </label>
               </div>
             </div>
+
+            {formData.payment_status === 'paid' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Method <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'cash', label: 'Cash', icon: Banknote },
+                    { value: 'check', label: 'Check', icon: CreditCard },
+                    { value: 'card', label: 'Card', icon: CreditCard },
+                    { value: 'online', label: 'Online', icon: CreditCard },
+                  ].map(({ value, label, icon: Icon }) => (
+                    <label
+                      key={value}
+                      className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
+                        formData.payment_method === value
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="payment_method"
+                        value={value}
+                        checked={formData.payment_method === value}
+                        onChange={handleChange}
+                        className="sr-only"
+                      />
+                      <Icon className={`w-4 h-4 ${formData.payment_method === value ? 'text-blue-600' : 'text-gray-400'}`} />
+                      <span className={formData.payment_method === value ? 'text-blue-700 font-medium' : 'text-gray-700'}>
+                        {label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {errors.payment_method && (
+                  <p className="mt-1 text-sm text-red-500">{errors.payment_method}</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Notes */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-              <FileText className="w-4 h-4" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Notes
             </label>
             <textarea
@@ -308,7 +328,7 @@ export const AddGolferModal: React.FC<AddGolferModalProps> = ({
               onChange={handleChange}
               rows={2}
               placeholder="Any additional notes..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -316,22 +336,27 @@ export const AddGolferModal: React.FC<AddGolferModalProps> = ({
           <div className="flex gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
-              onClick={handleClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition"
+              onClick={onClose}
+              className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
             >
               {saving ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Adding...
+                </>
               ) : (
-                <UserPlus className="w-5 h-5" />
+                <>
+                  <UserPlus className="w-5 h-5" />
+                  Add Golfer
+                </>
               )}
-              <span>{saving ? 'Adding...' : 'Add Golfer'}</span>
             </button>
           </div>
         </form>
