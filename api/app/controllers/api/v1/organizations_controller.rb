@@ -225,7 +225,97 @@ module Api
         render json: { error: 'Tournament not found' }, status: :not_found
       end
 
+      # PATCH /api/v1/admin/organizations/:slug/tournaments/:tournament_slug/golfers/:golfer_id
+      # Admin endpoint - update a golfer
+      def update_golfer
+        organization = Organization.find_by_slug!(params[:slug])
+        require_org_admin!(organization)
+        return if performed?
+
+        tournament = organization.tournaments.find_by!(slug: params[:tournament_slug])
+        golfer = tournament.golfers.find(params[:golfer_id])
+
+        if golfer.update(golfer_params)
+          render json: {
+            golfer: golfer_response(golfer),
+            message: 'Golfer updated successfully'
+          }
+        else
+          render json: { error: golfer.errors.full_messages.join(', ') }, status: :unprocessable_entity
+        end
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Golfer not found' }, status: :not_found
+      end
+
+      # POST /api/v1/admin/organizations/:slug/tournaments/:tournament_slug/golfers/:golfer_id/cancel
+      # Admin endpoint - cancel a golfer's registration
+      def cancel_golfer
+        organization = Organization.find_by_slug!(params[:slug])
+        require_org_admin!(organization)
+        return if performed?
+
+        tournament = organization.tournaments.find_by!(slug: params[:tournament_slug])
+        golfer = tournament.golfers.find(params[:golfer_id])
+
+        if golfer.registration_status == 'cancelled'
+          render json: { error: 'Registration already cancelled' }, status: :unprocessable_entity
+          return
+        end
+
+        golfer.update!(registration_status: 'cancelled')
+        
+        render json: {
+          golfer: golfer_response(golfer),
+          message: 'Registration cancelled successfully'
+        }
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Golfer not found' }, status: :not_found
+      end
+
+      # POST /api/v1/admin/organizations/:slug/tournaments/:tournament_slug/golfers/:golfer_id/refund
+      # Admin endpoint - mark golfer as refunded (manual refund tracking)
+      def refund_golfer
+        organization = Organization.find_by_slug!(params[:slug])
+        require_org_admin!(organization)
+        return if performed?
+
+        tournament = organization.tournaments.find_by!(slug: params[:tournament_slug])
+        golfer = tournament.golfers.find(params[:golfer_id])
+
+        if golfer.payment_status == 'refunded'
+          render json: { error: 'Already refunded' }, status: :unprocessable_entity
+          return
+        end
+
+        if golfer.payment_status != 'paid'
+          render json: { error: 'Cannot refund unpaid registration' }, status: :unprocessable_entity
+          return
+        end
+
+        # For now, just mark as refunded (manual tracking)
+        # TODO: Integrate Stripe refund for online payments
+        golfer.update!(
+          payment_status: 'refunded',
+          registration_status: 'cancelled'
+        )
+        
+        render json: {
+          golfer: golfer_response(golfer),
+          message: 'Refund recorded successfully'
+        }
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Golfer not found' }, status: :not_found
+      end
+
       private
+
+      def golfer_response(golfer)
+        golfer.as_json(
+          only: [:id, :name, :email, :phone, :company, :registration_status,
+                 :payment_status, :payment_method, :payment_type, :notes, 
+                 :checked_in_at, :created_at, :updated_at]
+        )
+      end
 
       def golfer_params
         params.require(:golfer).permit(

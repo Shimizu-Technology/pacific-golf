@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AddGolferModal } from '../components/AddGolferModal';
+import { EditGolferModal } from '../components/EditGolferModal';
 
 interface Golfer {
   id: number;
@@ -35,6 +36,8 @@ interface Golfer {
   registration_status: 'confirmed' | 'waitlist' | 'cancelled';
   payment_status: 'paid' | 'unpaid' | 'refunded';
   payment_method: string | null;
+  payment_type: string | null;
+  notes: string | null;
   checked_in_at: string | null;
   created_at: string;
 }
@@ -86,6 +89,12 @@ export const OrgTournamentAdmin: React.FC = () => {
   
   // Add golfer modal
   const [showAddGolferModal, setShowAddGolferModal] = useState(false);
+  
+  // Edit golfer modal
+  const [editingGolfer, setEditingGolfer] = useState<Golfer | null>(null);
+  
+  // Action loading states
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!organization || !tournamentSlug) return;
@@ -202,6 +211,78 @@ export const OrgTournamentAdmin: React.FC = () => {
       fetchData(); // Refresh data
     } catch (err) {
       toast.error('Failed to check in golfer');
+    }
+  };
+
+  const handleCancelRegistration = async (golfer: Golfer) => {
+    if (!confirm(`Cancel registration for ${golfer.name}? This cannot be undone.`)) {
+      return;
+    }
+
+    setActionLoading(`cancel-${golfer.id}`);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization?.slug}/tournaments/${tournamentSlug}/golfers/${golfer.id}/cancel`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to cancel registration');
+      }
+
+      toast.success(`${golfer.name}'s registration cancelled`);
+      setSelectedGolfer(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to cancel registration');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRefund = async (golfer: Golfer) => {
+    if (!confirm(`Refund ${golfer.name}? This will mark the payment as refunded and cancel the registration.`)) {
+      return;
+    }
+
+    setActionLoading(`refund-${golfer.id}`);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization?.slug}/tournaments/${tournamentSlug}/golfers/${golfer.id}/refund`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to process refund');
+      }
+
+      toast.success(`Refund recorded for ${golfer.name}`);
+      setSelectedGolfer(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to process refund');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -595,23 +676,57 @@ export const OrgTournamentAdmin: React.FC = () => {
                 )}
               </div>
 
-              <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-                <button
-                  onClick={() => setSelectedGolfer(null)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                >
-                  Close
-                </button>
-                {!selectedGolfer.checked_in_at && selectedGolfer.registration_status === 'confirmed' && (
+              <div className="p-6 border-t border-gray-200 space-y-3">
+                {/* Primary Actions */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setSelectedGolfer(null)}
+                    className="flex-1 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                  >
+                    Close
+                  </button>
                   <button
                     onClick={() => {
-                      handleCheckIn(selectedGolfer);
+                      setEditingGolfer(selectedGolfer);
                       setSelectedGolfer(null);
                     }}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    Check In
+                    Edit
                   </button>
+                  {!selectedGolfer.checked_in_at && selectedGolfer.registration_status === 'confirmed' && (
+                    <button
+                      onClick={() => {
+                        handleCheckIn(selectedGolfer);
+                        setSelectedGolfer(null);
+                      }}
+                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    >
+                      Check In
+                    </button>
+                  )}
+                </div>
+
+                {/* Danger Actions */}
+                {selectedGolfer.registration_status !== 'cancelled' && (
+                  <div className="flex gap-3 pt-3 border-t border-gray-200">
+                    {selectedGolfer.payment_status === 'paid' && (
+                      <button
+                        onClick={() => handleRefund(selectedGolfer)}
+                        disabled={actionLoading === `refund-${selectedGolfer.id}`}
+                        className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50"
+                      >
+                        {actionLoading === `refund-${selectedGolfer.id}` ? 'Processing...' : 'Refund'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleCancelRegistration(selectedGolfer)}
+                      disabled={actionLoading === `cancel-${selectedGolfer.id}`}
+                      className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {actionLoading === `cancel-${selectedGolfer.id}` ? 'Cancelling...' : 'Cancel Registration'}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -626,6 +741,19 @@ export const OrgTournamentAdmin: React.FC = () => {
           onClose={() => setShowAddGolferModal(false)}
           onSuccess={fetchData}
           tournamentId={tournament.id}
+          tournamentSlug={tournamentSlug || ''}
+          orgSlug={organization?.slug || ''}
+          entryFee={tournament.entry_fee || 0}
+        />
+      )}
+
+      {/* Edit Golfer Modal */}
+      {tournament && (
+        <EditGolferModal
+          isOpen={editingGolfer !== null}
+          onClose={() => setEditingGolfer(null)}
+          onSuccess={fetchData}
+          golfer={editingGolfer}
           tournamentSlug={tournamentSlug || ''}
           orgSlug={organization?.slug || ''}
           entryFee={tournament.entry_fee || 0}
