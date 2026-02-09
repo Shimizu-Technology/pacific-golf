@@ -1,7 +1,7 @@
 class Golfer < ApplicationRecord
   belongs_to :tournament
   belongs_to :group, optional: true
-  belongs_to :refunded_by, class_name: "Admin", optional: true
+  belongs_to :refunded_by, class_name: "User", optional: true
 
   # Validations
   validates :name, presence: true

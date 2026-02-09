@@ -9,13 +9,13 @@ class ClerkAuth
 
       # In test environment, allow special test tokens
       if Rails.env.test? && token.start_with?("test_token_")
-        admin_id = token.gsub("test_token_", "")
-        admin = Admin.find_by(id: admin_id)
-        if admin
+        user_id = token.gsub("test_token_", "")
+        user = User.find_by(id: user_id)
+        if user
           return {
-            "sub" => admin.clerk_id || "test_clerk_#{admin.id}",
-            "email" => admin.email,
-            "name" => admin.name
+            "sub" => user.clerk_id || "test_clerk_#{user.id}",
+            "email" => user.email,
+            "name" => user.name
           }
         end
         return nil

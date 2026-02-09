@@ -1,7 +1,7 @@
 module Api
   module V1
     class GolfersController < BaseController
-      skip_before_action :authenticate_admin!, only: [:create, :registration_status]
+      skip_before_action :authenticate_user!, only: [:create, :registration_status]
 
       # GET /api/v1/golfers
       def index

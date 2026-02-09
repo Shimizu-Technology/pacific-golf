@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_10_003743) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_10_004027) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -30,15 +30,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_003743) do
     t.index ["created_at"], name: "index_activity_logs_on_created_at"
     t.index ["target_type", "target_id"], name: "index_activity_logs_on_target_type_and_target_id"
     t.index ["tournament_id"], name: "index_activity_logs_on_tournament_id"
-  end
-
-  create_table "admins", force: :cascade do |t|
-    t.string "clerk_id"
-    t.datetime "created_at", null: false
-    t.string "email"
-    t.string "name"
-    t.string "role"
-    t.datetime "updated_at", null: false
   end
 
   create_table "golfers", force: :cascade do |t|
@@ -93,6 +84,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_003743) do
     t.index ["tournament_id"], name: "index_groups_on_tournament_id"
   end
 
+  create_table "organization_memberships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "organization_id", null: false
+    t.string "role", default: "member"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["organization_id"], name: "index_organization_memberships_on_organization_id"
+    t.index ["user_id", "organization_id"], name: "index_organization_memberships_on_user_id_and_organization_id", unique: true
+    t.index ["user_id"], name: "index_organization_memberships_on_user_id"
+  end
+
+  create_table "organizations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "banner_url"
+    t.string "contact_email"
+    t.string "contact_phone"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "logo_url"
+    t.string "name", null: false
+    t.string "primary_color", default: "#16a34a"
+    t.jsonb "settings", default: {}
+    t.string "slug", null: false
+    t.string "subscription_status", default: "active"
+    t.datetime "updated_at", null: false
+    t.string "website_url"
+    t.index ["slug"], name: "index_organizations_on_slug", unique: true
+  end
+
   create_table "settings", force: :cascade do |t|
     t.string "admin_email"
     t.string "checks_payable_to", default: "GIAAEO"
@@ -120,6 +139,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_003743) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "tournament_assignments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["tournament_id"], name: "index_tournament_assignments_on_tournament_id"
+    t.index ["user_id", "tournament_id"], name: "index_tournament_assignments_on_user_id_and_tournament_id", unique: true
+    t.index ["user_id"], name: "index_tournament_assignments_on_user_id"
+  end
+
   create_table "tournaments", force: :cascade do |t|
     t.string "checks_payable_to"
     t.string "contact_name"
@@ -134,22 +163,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_003743) do
     t.string "location_name"
     t.integer "max_capacity", default: 160
     t.string "name", null: false
+    t.uuid "organization_id"
     t.boolean "registration_open", default: false, null: false
     t.string "registration_time"
     t.integer "reserved_slots", default: 0, null: false
+    t.string "slug"
     t.string "start_time"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.integer "year", null: false
+    t.index ["organization_id", "slug"], name: "index_tournaments_on_organization_id_and_slug", unique: true
+    t.index ["organization_id"], name: "index_tournaments_on_organization_id"
     t.index ["status", "year"], name: "index_tournaments_on_status_and_year"
     t.index ["status"], name: "index_tournaments_on_status"
     t.index ["year"], name: "index_tournaments_on_year"
   end
 
-  add_foreign_key "activity_logs", "admins"
+  create_table "users", force: :cascade do |t|
+    t.string "clerk_id"
+    t.datetime "created_at", null: false
+    t.string "email"
+    t.string "name"
+    t.string "role", default: "org_admin"
+    t.datetime "updated_at", null: false
+  end
+
   add_foreign_key "activity_logs", "tournaments"
-  add_foreign_key "golfers", "admins", column: "refunded_by_id", on_delete: :nullify
+  add_foreign_key "activity_logs", "users", column: "admin_id"
   add_foreign_key "golfers", "groups"
   add_foreign_key "golfers", "tournaments"
+  add_foreign_key "golfers", "users", column: "refunded_by_id", on_delete: :nullify
   add_foreign_key "groups", "tournaments"
+  add_foreign_key "organization_memberships", "organizations"
+  add_foreign_key "organization_memberships", "users"
+  add_foreign_key "tournament_assignments", "tournaments"
+  add_foreign_key "tournament_assignments", "users"
+  add_foreign_key "tournaments", "organizations"
 end

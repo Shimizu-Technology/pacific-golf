@@ -1,7 +1,7 @@
 module Api
   module V1
     class TournamentsController < BaseController
-      skip_before_action :authenticate_admin!, only: [:current]
+      skip_before_action :authenticate_user!, only: [:current]
 
       # GET /api/v1/tournaments
       # List all tournaments (for admin dropdown)

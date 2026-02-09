@@ -1,102 +1,98 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
+# frozen_string_literal: true
 
-puts "Seeding database..."
+# Pacific Golf Seeds
+# Seeds for development and testing
 
-# Create default settings
-setting = Setting.find_or_create_by!(id: 1) do |s|
-  s.max_capacity = 160
-  s.admin_email = "shimizutechnology@gmail.com"
+puts "Seeding Pacific Golf database..."
+
+# Create default organization
+org = Organization.find_or_create_by!(slug: 'rotary-guam') do |o|
+  o.name = 'Rotary Club of Guam'
+  o.description = 'The Rotary Club of Guam is a service organization dedicated to improving lives in the community.'
+  o.primary_color = '#1e40af'  # Rotary blue
+  o.contact_email = 'golf@rotaryguam.org'
+  o.contact_phone = '671-555-0123'
+  o.website_url = 'https://rotaryguam.org'
 end
-puts "Created settings with capacity: #{setting.max_capacity}"
+puts "  Created organization: #{org.name} (#{org.slug})"
 
-# Create initial admin by email (they'll be linked when they first log in via Clerk)
-# IMPORTANT: Change this email to your actual admin email before running in production!
-initial_admin_email = ENV.fetch("INITIAL_ADMIN_EMAIL", "shimizutechnology@gmail.com")
-
-admin = Admin.find_or_create_by!(email: initial_admin_email.downcase) do |a|
-  a.name = "Tournament Admin"
-  a.role = "admin"
-  # clerk_id will be set automatically when admin first logs in
+# Create a second organization for testing
+org2 = Organization.find_or_create_by!(slug: 'chamber-of-commerce') do |o|
+  o.name = 'Guam Chamber of Commerce'
+  o.description = 'The Guam Chamber of Commerce supports local businesses and economic development.'
+  o.primary_color = '#047857'  # Chamber green
+  o.contact_email = 'events@guamchamber.com'
+  o.contact_phone = '671-555-0456'
+  o.website_url = 'https://guamchamber.com'
 end
-puts "Created initial admin: #{admin.email} (will be linked when they log in via Clerk)"
+puts "  Created organization: #{org2.name} (#{org2.slug})"
 
-# Create a default tournament
-tournament = Tournament.find_or_create_by!(name: "Edward A.P. Muna II Memorial Golf Tournament") do |t|
-  t.year = 2026
-  t.edition = "5th"
-  t.event_date = Date.new(2026, 1, 9)
-  t.registration_time = "11:00 am"
-  t.start_time = "12:30 pm"
-  t.max_capacity = 160
-  t.reserved_slots = 0
-  t.entry_fee = 12500 # $125.00 in cents
-  t.employee_entry_fee = 5000 # $50.00 in cents
+# Create default admin user
+admin = User.find_or_create_by!(email: 'jerry.shimizutechnology@gmail.com') do |u|
+  u.name = 'Jerry'
+  u.role = 'super_admin'
+end
+puts "  Created super admin: #{admin.email}"
+
+# Add admin to both organizations
+org.add_admin(admin)
+org2.add_admin(admin)
+puts "  Added #{admin.email} to both organizations"
+
+# Create settings (singleton)
+Setting.find_or_create_by!(id: 1) do |s|
+  s.stripe_public_key = ENV['STRIPE_PUBLISHABLE_KEY']
+  s.stripe_secret_key = ENV['STRIPE_SECRET_KEY']
+  s.payment_mode = 'test'
+  s.admin_email = 'admin@pacificgolf.io'
+end
+puts "  Created settings"
+
+# Create a sample tournament for Rotary
+tournament = Tournament.find_or_create_by!(organization: org, name: 'Rotary Charity Classic', year: 2026) do |t|
+  t.edition = '15th Annual'
+  t.status = 'open'
   t.registration_open = true
-  t.status = "open"
-  t.location_name = "Country Club of the Pacific"
-  t.location_address = "Windward Hills, Guam"
-  t.format_name = "Individual Callaway"
-  t.fee_includes = "Green Fee, Ditty Bag, Drinks & Food"
-  t.checks_payable_to = "GIAAEO"
-  t.contact_name = "Peter Torres"
-  t.contact_phone = "671.689.8677"
+  t.event_date = 'March 15, 2026'
+  t.registration_time = '11:00 AM'
+  t.start_time = '12:30 PM'
+  t.location_name = 'Country Club of the Pacific'
+  t.location_address = 'Yona, Guam'
+  t.max_capacity = 144
+  t.reserved_slots = 12
+  t.entry_fee = 15000  # $150
+  t.format_name = 'Scramble'
+  t.fee_includes = 'Green Fee, Cart, Lunch, Drinks, and Prizes'
+  t.checks_payable_to = 'Rotary Club of Guam Foundation'
+  t.contact_name = 'Tournament Committee'
+  t.contact_phone = '671-555-0123'
 end
-puts "Created tournament: #{tournament.name} (#{tournament.year})"
+puts "  Created tournament: #{tournament.display_name}"
 
-# Only seed sample data in development
-if Rails.env.development?
-  puts "Creating sample golfers for development..."
-
-  # Create some sample golfers
-  sample_golfers = [
-    { name: "John Smith", company: "ABC Corp", email: "john.smith@example.com", phone: "(555) 123-4567", payment_type: "stripe", payment_status: "paid" },
-    { name: "Jane Doe", company: "XYZ Inc", email: "jane.doe@example.com", phone: "(555) 234-5678", payment_type: "pay_on_day", payment_status: "unpaid" },
-    { name: "Bob Johnson", company: "Acme LLC", email: "bob.johnson@example.com", phone: "(555) 345-6789", payment_type: "stripe", payment_status: "paid" },
-    { name: "Alice Williams", company: "Tech Solutions", email: "alice.williams@example.com", phone: "(555) 456-7890", payment_type: "pay_on_day", payment_status: "unpaid" },
-    { name: "Charlie Brown", company: "Golf Pros", email: "charlie.brown@example.com", phone: "(555) 567-8901", payment_type: "stripe", payment_status: "paid" },
-    { name: "Diana Martinez", company: "Airport Services", email: "diana.martinez@example.com", phone: "(555) 678-9012", payment_type: "pay_on_day", payment_status: "unpaid" },
-    { name: "Edward Lee", company: "Pacific Airlines", email: "edward.lee@example.com", phone: "(555) 789-0123", payment_type: "stripe", payment_status: "paid" },
-    { name: "Fiona Garcia", company: "Island Tours", email: "fiona.garcia@example.com", phone: "(555) 890-1234", payment_type: "stripe", payment_status: "unpaid" },
-  ]
-
-  sample_golfers.each do |attrs|
-    golfer = Golfer.find_or_create_by!(email: attrs[:email]) do |g|
-      g.tournament = tournament
-      g.name = attrs[:name]
-      g.company = attrs[:company]
-      g.phone = attrs[:phone]
-      g.payment_type = attrs[:payment_type]
-      g.payment_status = attrs[:payment_status]
-      g.waiver_accepted_at = Time.current
-      g.registration_status = "confirmed"
-      g.address = "123 Main St, City, State 12345"
-    end
-    puts "Created golfer: #{golfer.name}"
-  end
-
-  # Create some groups
-  puts "Creating sample groups..."
-  2.times do |i|
-    group = Group.find_or_create_by!(group_number: i + 1, tournament: tournament) do |g|
-      g.hole_number = i + 1
-    end
-    puts "Created group #{group.group_number} at hole #{group.hole_number}"
-  end
-
-  # Assign some golfers to groups
-  puts "Assigning golfers to groups..."
-  golfers = Golfer.unassigned.limit(8)
-  groups = Group.where(tournament: tournament)
-
-  golfers.each_with_index do |golfer, index|
-    group = groups[index / 4]
-    if group && !group.full?
-      group.add_golfer(golfer)
-      puts "Added #{golfer.name} to Group #{group.group_number}"
-    end
-  end
+# Create a draft tournament for Chamber
+tournament2 = Tournament.find_or_create_by!(organization: org2, name: 'Chamber Amateur Golf Tournament', year: 2026) do |t|
+  t.edition = '10th Annual'
+  t.status = 'draft'
+  t.registration_open = false
+  t.event_date = 'April 20, 2026'
+  t.registration_time = '10:30 AM'
+  t.start_time = '12:00 PM'
+  t.location_name = 'Finest Guam Golf & Resort'
+  t.location_address = 'Dededo, Guam'
+  t.max_capacity = 120
+  t.reserved_slots = 8
+  t.entry_fee = 17500  # $175
+  t.format_name = 'Best Ball'
+  t.fee_includes = 'Green Fee, Cart, Lunch, and Awards Dinner'
+  t.checks_payable_to = 'Guam Chamber of Commerce'
+  t.contact_name = 'Events Team'
+  t.contact_phone = '671-555-0456'
 end
+puts "  Created tournament: #{tournament2.display_name}"
 
-puts "Seeding complete!"
+puts "\nSeeding complete!"
+puts "\nOrganizations:"
+puts "  - #{org.name} (#{org.slug}) - #{org.tournaments.count} tournament(s)"
+puts "  - #{org2.name} (#{org2.slug}) - #{org2.tournaments.count} tournament(s)"
+puts "\nAdmin user: #{admin.email} (#{admin.role})"
+puts "\nOpen tournament: #{tournament.name} - #{tournament.full_url}"

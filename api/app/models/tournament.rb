@@ -1,15 +1,24 @@
+# frozen_string_literal: true
+
 class Tournament < ApplicationRecord
   # Associations
+  belongs_to :organization, optional: true  # Optional for now during migration
   has_many :golfers, dependent: :restrict_with_error
   has_many :groups, dependent: :restrict_with_error
   has_many :activity_logs, dependent: :nullify
+  has_many :tournament_assignments, dependent: :destroy
+  has_many :assigned_users, through: :tournament_assignments, source: :user
 
   # Validations
   validates :name, presence: true
   validates :year, presence: true, numericality: { only_integer: true }
-  validates :status, presence: true, inclusion: { in: %w[draft open closed archived] }
+  validates :status, presence: true, inclusion: { in: %w[draft open closed in_progress completed archived] }
   validates :max_capacity, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
-  validates :entry_fee, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :entry_fee, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :slug, uniqueness: { scope: :organization_id, case_sensitive: false }, allow_blank: true
+
+  # Callbacks
+  before_validation :generate_slug, on: :create
 
   # Scopes
   scope :active, -> { where.not(status: 'archived') }
@@ -17,9 +26,13 @@ class Tournament < ApplicationRecord
   scope :open_for_registration, -> { where(status: 'open', registration_open: true) }
   scope :by_year, ->(year) { where(year: year) }
   scope :recent, -> { order(year: :desc, created_at: :desc) }
+  scope :for_organization, ->(org) { where(organization: org) }
 
   # Status constants
-  STATUSES = %w[draft open closed archived].freeze
+  STATUSES = %w[draft open closed in_progress completed archived].freeze
+  
+  # Format constants
+  FORMATS = %w[scramble stroke stableford best_ball match custom].freeze
 
   # Class methods
   def self.current
@@ -27,7 +40,11 @@ class Tournament < ApplicationRecord
     open_for_registration.first || active.recent.first
   end
 
-  # Instance methods
+  def self.find_by_org_and_slug!(organization, slug)
+    for_organization(organization).find_by!(slug: slug.downcase)
+  end
+
+  # Status checks
   def draft?
     status == 'draft'
   end
@@ -40,6 +57,14 @@ class Tournament < ApplicationRecord
     status == 'closed'
   end
 
+  def in_progress?
+    status == 'in_progress'
+  end
+
+  def completed?
+    status == 'completed'
+  end
+
   def archived?
     status == 'archived'
   end
@@ -48,11 +73,13 @@ class Tournament < ApplicationRecord
     open? && registration_open?
   end
 
+  # Money helpers
   def entry_fee_dollars
-    return 125.00 if entry_fee.nil?
+    return 0.00 if entry_fee.nil?
     entry_fee / 100.0
   end
 
+  # Capacity helpers
   def confirmed_count
     golfers.confirmed.count
   end
@@ -61,39 +88,35 @@ class Tournament < ApplicationRecord
     golfers.waitlist.count
   end
 
-  # Total capacity remaining (for admin view)
   def capacity_remaining
-    return max_capacity if max_capacity.nil?
+    return nil if max_capacity.nil?
     remaining = max_capacity - confirmed_count
     remaining.negative? ? 0 : remaining
   end
 
-  # Public-facing capacity (excludes reserved slots)
   def public_capacity
     return max_capacity if max_capacity.nil?
     public_cap = max_capacity - (reserved_slots || 0)
     public_cap.negative? ? 0 : public_cap
   end
 
-  # Spots remaining for public registration
   def public_capacity_remaining
     return public_capacity if public_capacity.nil?
     remaining = public_capacity - confirmed_count
     remaining.negative? ? 0 : remaining
   end
 
-  # Is public registration at capacity?
   def public_at_capacity?
     return false if max_capacity.nil?
     confirmed_count >= public_capacity
   end
 
-  # Is total capacity reached (including reserved)?
   def at_capacity?
     return false if max_capacity.nil?
     confirmed_count >= max_capacity
   end
 
+  # Stats
   def checked_in_count
     golfers.checked_in.count
   end
@@ -102,27 +125,51 @@ class Tournament < ApplicationRecord
     golfers.paid.count
   end
 
+  # Display helpers
   def display_name
-    "#{edition} #{name} (#{year})"
+    "#{edition} #{name} (#{year})".strip
   end
 
   def short_name
     "#{year} Tournament"
   end
 
-  # Archive this tournament
+  def full_url(base_url = nil)
+    return nil unless organization
+    base = base_url || ENV.fetch('FRONTEND_URL', 'http://localhost:5173')
+    "#{base}/#{organization.slug}/tournaments/#{slug}"
+  end
+
+  # Actions
   def archive!
     update!(status: 'archived', registration_open: false)
   end
 
-  # Copy this tournament to create a new one for next year
+  def open_registration!
+    update!(status: 'open', registration_open: true)
+  end
+
+  def close_registration!
+    update!(registration_open: false)
+  end
+
+  def start!
+    update!(status: 'in_progress', registration_open: false)
+  end
+
+  def complete!
+    update!(status: 'completed')
+  end
+
+  # Copy tournament for next year
   def copy_for_next_year
     Tournament.new(
+      organization: organization,
       name: name,
       year: year + 1,
       edition: increment_edition,
       status: 'draft',
-      event_date: nil, # User should set new date
+      event_date: nil,
       registration_time: registration_time,
       start_time: start_time,
       location_name: location_name,
@@ -141,10 +188,27 @@ class Tournament < ApplicationRecord
 
   private
 
+  def generate_slug
+    return if slug.present?
+    return unless name.present?
+
+    base_slug = name.downcase.gsub(/[^a-z0-9]+/, '-').gsub(/^-|-$/, '')
+    base_slug = "#{base_slug}-#{year}" if year.present?
+    
+    # Ensure uniqueness within organization
+    candidate = base_slug
+    counter = 1
+    while Tournament.exists?(organization_id: organization_id, slug: candidate)
+      candidate = "#{base_slug}-#{counter}"
+      counter += 1
+    end
+    
+    self.slug = candidate
+  end
+
   def increment_edition
     return '1st' if edition.blank?
     
-    # Extract number from edition (e.g., "5th" -> 5)
     current_num = edition.to_i
     next_num = current_num + 1
     

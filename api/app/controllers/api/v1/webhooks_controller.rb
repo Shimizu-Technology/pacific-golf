@@ -3,7 +3,7 @@ module Api
     class WebhooksController < ApplicationController
       # Skip CSRF protection and authentication for webhooks
       skip_before_action :verify_authenticity_token, raise: false
-      skip_before_action :authenticate_admin!, raise: false
+      skip_before_action :authenticate_user!, raise: false
 
       # POST /api/v1/webhooks/stripe
       def stripe

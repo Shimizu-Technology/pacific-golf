@@ -1,7 +1,7 @@
 module Api
   module V1
     class CheckoutController < BaseController
-      skip_before_action :authenticate_admin!
+      skip_before_action :authenticate_user!
 
       # POST /api/v1/checkout
       # Create a Stripe checkout session for a golfer (or simulate in test mode)

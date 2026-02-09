@@ -2,7 +2,7 @@ module Api
   module V1
     class PaymentLinksController < ApplicationController
       # Skip authentication - these are public endpoints
-      skip_before_action :authenticate_admin!, raise: false
+      skip_before_action :authenticate_user!, raise: false
       skip_before_action :verify_authenticity_token, raise: false
 
       # GET /api/v1/payment_links/:token
