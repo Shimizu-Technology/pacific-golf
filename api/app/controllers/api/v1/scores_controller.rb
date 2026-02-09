@@ -1,0 +1,328 @@
+# frozen_string_literal: true
+
+module Api
+  module V1
+    class ScoresController < BaseController
+      skip_before_action :authenticate_user!, only: [:index, :leaderboard]
+      before_action :set_tournament
+      before_action :set_score, only: [:update, :destroy, :verify]
+
+      # GET /api/v1/tournaments/:tournament_id/scores
+      # Public - get all scores for a tournament
+      def index
+        scores = @tournament.scores.includes(:golfer, :group)
+
+        # Filter by group
+        scores = scores.where(group_id: params[:group_id]) if params[:group_id].present?
+        
+        # Filter by golfer
+        scores = scores.where(golfer_id: params[:golfer_id]) if params[:golfer_id].present?
+        
+        # Filter by hole
+        scores = scores.where(hole: params[:hole]) if params[:hole].present?
+
+        render json: {
+          scores: scores.order(:group_id, :hole).map { |s| score_response(s) }
+        }
+      end
+
+      # GET /api/v1/tournaments/:tournament_id/scores/leaderboard
+      # Public - get leaderboard data
+      def leaderboard
+        # Determine scoring type from tournament
+        is_team_scoring = @tournament.tournament_format == 'scramble'
+
+        if is_team_scoring
+          leaderboard_data = team_leaderboard
+        else
+          leaderboard_data = individual_leaderboard
+        end
+
+        render json: {
+          tournament: {
+            id: @tournament.id,
+            name: @tournament.name,
+            format: @tournament.tournament_format,
+            total_holes: @tournament.total_holes || 18,
+            total_par: @tournament.total_par || 72
+          },
+          scoring_type: is_team_scoring ? 'team' : 'individual',
+          leaderboard: leaderboard_data,
+          last_updated: Time.current.iso8601
+        }
+      end
+
+      # POST /api/v1/tournaments/:tournament_id/scores
+      # Auth required - create a score
+      def create
+        @score = @tournament.scores.build(score_params)
+        @score.entered_by = current_user
+
+        # Auto-set group from golfer if not provided
+        if @score.group_id.blank? && @score.golfer_id.present?
+          golfer = Golfer.find_by(id: @score.golfer_id)
+          @score.group = golfer&.group
+        end
+
+        if @score.save
+          render json: {
+            score: score_response(@score),
+            message: 'Score recorded successfully'
+          }, status: :created
+        else
+          render json: { error: @score.errors.full_messages.join(', ') }, status: :unprocessable_entity
+        end
+      end
+
+      # PATCH /api/v1/tournaments/:tournament_id/scores/:id
+      # Auth required - update a score
+      def update
+        if @score.update(score_params)
+          render json: {
+            score: score_response(@score),
+            message: 'Score updated successfully'
+          }
+        else
+          render json: { error: @score.errors.full_messages.join(', ') }, status: :unprocessable_entity
+        end
+      end
+
+      # DELETE /api/v1/tournaments/:tournament_id/scores/:id
+      # Auth required - delete a score
+      def destroy
+        @score.destroy
+        render json: { message: 'Score deleted' }
+      end
+
+      # POST /api/v1/tournaments/:tournament_id/scores/:id/verify
+      # Auth required - verify a score
+      def verify
+        @score.verify!(current_user)
+        render json: {
+          score: score_response(@score),
+          message: 'Score verified'
+        }
+      end
+
+      # POST /api/v1/tournaments/:tournament_id/scores/batch
+      # Auth required - create multiple scores at once (for full scorecard submission)
+      def batch
+        scores_data = params[:scores] || []
+        created_scores = []
+        errors = []
+
+        ActiveRecord::Base.transaction do
+          scores_data.each do |score_data|
+            score = @tournament.scores.build(
+              hole: score_data[:hole],
+              strokes: score_data[:strokes],
+              golfer_id: score_data[:golfer_id],
+              group_id: score_data[:group_id],
+              score_type: score_data[:score_type] || 'individual',
+              entered_by: current_user
+            )
+
+            # Auto-set group from golfer if not provided
+            if score.group_id.blank? && score.golfer_id.present?
+              golfer = Golfer.find_by(id: score.golfer_id)
+              score.group = golfer&.group
+            end
+
+            if score.save
+              created_scores << score
+            else
+              errors << { hole: score_data[:hole], errors: score.errors.full_messages }
+            end
+          end
+
+          # Rollback if any errors
+          raise ActiveRecord::Rollback if errors.any?
+        end
+
+        if errors.empty?
+          render json: {
+            scores: created_scores.map { |s| score_response(s) },
+            message: "#{created_scores.count} scores recorded"
+          }, status: :created
+        else
+          render json: { errors: errors }, status: :unprocessable_entity
+        end
+      end
+
+      # GET /api/v1/tournaments/:tournament_id/scores/scorecard
+      # Auth required - get scorecard for a group
+      def scorecard
+        group = @tournament.groups.find(params[:group_id])
+        golfers = group.golfers.includes(:scores)
+
+        # Get all scores for this group
+        scores_by_golfer = {}
+        group.golfers.each do |golfer|
+          scores_by_golfer[golfer.id] = golfer.scores
+            .where(tournament: @tournament)
+            .index_by(&:hole)
+        end
+
+        # Build hole-by-hole scorecard
+        holes = (1..(@tournament.total_holes || 18)).map do |hole_num|
+          hole_par = (@tournament.hole_pars || {})[hole_num.to_s]&.to_i || 4
+          
+          {
+            hole: hole_num,
+            par: hole_par,
+            scores: golfers.map do |golfer|
+              score = scores_by_golfer[golfer.id]&.[](hole_num)
+              {
+                golfer_id: golfer.id,
+                golfer_name: golfer.name,
+                strokes: score&.strokes,
+                relative: score&.relative_score
+              }
+            end
+          }
+        end
+
+        render json: {
+          group: {
+            id: group.id,
+            group_number: group.group_number,
+            hole_position: group.hole_position_label
+          },
+          golfers: golfers.map { |g| { id: g.id, name: g.name } },
+          holes: holes,
+          totals: golfers.map do |golfer|
+            scores = scores_by_golfer[golfer.id]&.values || []
+            {
+              golfer_id: golfer.id,
+              golfer_name: golfer.name,
+              total_strokes: scores.sum(&:strokes),
+              total_relative: scores.sum { |s| s.relative_score || 0 },
+              holes_completed: scores.count
+            }
+          end
+        }
+      end
+
+      private
+
+      def set_tournament
+        @tournament = Tournament.find(params[:tournament_id])
+      end
+
+      def set_score
+        @score = @tournament.scores.find(params[:id])
+      end
+
+      def score_params
+        params.require(:score).permit(
+          :hole, :strokes, :golfer_id, :group_id, :score_type, :notes
+        )
+      end
+
+      def score_response(score)
+        {
+          id: score.id,
+          hole: score.hole,
+          strokes: score.strokes,
+          par: score.par,
+          relative_score: score.relative_score,
+          relative_name: score.relative_score_name,
+          score_type: score.score_type,
+          verified: score.verified,
+          golfer: score.golfer ? { id: score.golfer.id, name: score.golfer.name } : nil,
+          group: { id: score.group.id, group_number: score.group.group_number },
+          entered_at: score.created_at.iso8601
+        }
+      end
+
+      def individual_leaderboard
+        # Get all golfers with their scores
+        golfers_with_scores = @tournament.golfers
+          .confirmed
+          .includes(:scores, :group)
+          .map do |golfer|
+            scores = golfer.scores.where(tournament: @tournament)
+            total_strokes = scores.sum(:strokes)
+            total_relative = scores.sum(:relative_score)
+            holes_completed = scores.count
+
+            {
+              golfer_id: golfer.id,
+              name: golfer.name,
+              group_number: golfer.group&.group_number,
+              total_strokes: total_strokes,
+              total_relative: total_relative,
+              holes_completed: holes_completed,
+              thru: holes_completed,
+              display_score: format_relative_score(total_relative),
+              checked_in: golfer.checked_in_at.present?
+            }
+          end
+
+        # Sort by relative score (ascending), then by holes completed (descending)
+        golfers_with_scores
+          .select { |g| g[:holes_completed] > 0 }
+          .sort_by { |g| [g[:total_relative], -g[:holes_completed]] }
+          .each_with_index.map { |g, i| g.merge(position: i + 1) }
+      end
+
+      def team_leaderboard
+        # Get all groups with their team scores
+        groups_with_scores = @tournament.groups
+          .includes(:golfers)
+          .map do |group|
+            # For scramble, use team scores or best ball from individual scores
+            team_scores = @tournament.scores
+              .where(group: group, score_type: 'team')
+            
+            if team_scores.any?
+              total_strokes = team_scores.sum(:strokes)
+              total_relative = team_scores.sum(:relative_score)
+              holes_completed = team_scores.count
+            else
+              # Fallback: use best ball from individuals
+              holes_completed = 0
+              total_strokes = 0
+              total_relative = 0
+              
+              (1..(@tournament.total_holes || 18)).each do |hole|
+                hole_scores = @tournament.scores
+                  .where(group: group, hole: hole, score_type: 'individual')
+                
+                if hole_scores.any?
+                  best = hole_scores.order(:strokes).first
+                  total_strokes += best.strokes
+                  total_relative += best.relative_score || 0
+                  holes_completed += 1
+                end
+              end
+            end
+
+            {
+              group_id: group.id,
+              group_number: group.group_number,
+              team_name: group.golfers.map(&:name).join(' / '),
+              golfers: group.golfers.map { |g| { id: g.id, name: g.name } },
+              total_strokes: total_strokes,
+              total_relative: total_relative,
+              holes_completed: holes_completed,
+              thru: holes_completed,
+              display_score: format_relative_score(total_relative)
+            }
+          end
+
+        # Sort by relative score
+        groups_with_scores
+          .select { |g| g[:holes_completed] > 0 }
+          .sort_by { |g| [g[:total_relative], -g[:holes_completed]] }
+          .each_with_index.map { |g, i| g.merge(position: i + 1) }
+      end
+
+      def format_relative_score(score)
+        return 'E' if score == 0
+        return nil if score.nil?
+        score > 0 ? "+#{score}" : score.to_s
+      end
+    end
+  end
+end

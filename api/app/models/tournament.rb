@@ -5,6 +5,7 @@ class Tournament < ApplicationRecord
   belongs_to :organization, optional: true  # Optional for now during migration
   has_many :golfers, dependent: :restrict_with_error
   has_many :groups, dependent: :restrict_with_error
+  has_many :scores, dependent: :destroy
   has_many :activity_logs, dependent: :nullify
   has_many :tournament_assignments, dependent: :destroy
   has_many :assigned_users, through: :tournament_assignments, source: :user

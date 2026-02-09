@@ -87,6 +87,20 @@ Rails.application.routes.draw do
         end
       end
 
+      # Scores & Leaderboard
+      scope 'tournaments/:tournament_id' do
+        resources :scores, only: [:index, :create, :update, :destroy] do
+          member do
+            post :verify
+          end
+          collection do
+            get :leaderboard
+            get :scorecard
+            post :batch
+          end
+        end
+      end
+
       # Groups
       resources :groups do
         member do

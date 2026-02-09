@@ -28,6 +28,7 @@ import { OrgAdminDashboard } from './pages/OrgAdminDashboard';
 import { OrgTournamentAdmin } from './pages/OrgTournamentAdmin';
 import { OrgCheckInPage } from './pages/OrgCheckInPage';
 import { CreateTournamentPage } from './pages/CreateTournamentPage';
+import { LeaderboardPage, ScorecardPage } from './pages';
 
 // Wrapper component for admin routes with tournament context
 function AdminRouteWrapper({ children }: { children: React.ReactNode }) {
@@ -94,6 +95,16 @@ function App() {
           }
         />
 
+        {/* Live Leaderboard (Public) */}
+        <Route
+          path="/:orgSlug/tournaments/:tournamentSlug/leaderboard"
+          element={
+            <OrgRouteWrapper>
+              <LeaderboardPage />
+            </OrgRouteWrapper>
+          }
+        />
+
         {/* ===========================================
             ORG-SCOPED ADMIN ROUTES (Multi-tenant)
             =========================================== */}
@@ -141,6 +152,18 @@ function App() {
             <ProtectedRoute>
               <OrganizationProvider>
                 <OrgCheckInPage />
+              </OrganizationProvider>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Scorecard Entry (Admin) */}
+        <Route
+          path="/:orgSlug/admin/tournaments/:tournamentSlug/scorecard"
+          element={
+            <ProtectedRoute>
+              <OrganizationProvider>
+                <ScorecardPage />
               </OrganizationProvider>
             </ProtectedRoute>
           }

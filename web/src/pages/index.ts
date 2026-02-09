@@ -17,3 +17,5 @@ export { OrgTournamentPage } from './OrgTournamentPage';
 export { OrgRegistrationSuccessPage } from './OrgRegistrationSuccessPage';
 export { OrgCheckInPage } from './OrgCheckInPage';
 export { CreateTournamentPage } from './CreateTournamentPage';
+export { LeaderboardPage } from './LeaderboardPage';
+export { ScorecardPage } from './ScorecardPage';
