@@ -32,7 +32,20 @@ class Tournament < ApplicationRecord
   STATUSES = %w[draft open closed in_progress completed archived].freeze
   
   # Format constants
-  FORMATS = %w[scramble stroke stableford best_ball match custom].freeze
+  FORMATS = %w[scramble stroke stableford best_ball match captain_choice custom].freeze
+  
+  # Scoring type constants
+  SCORING_TYPES = %w[gross net both stableford].freeze
+  
+  # Format validations
+  validates :tournament_format, inclusion: { in: FORMATS }, allow_nil: true
+  validates :scoring_type, inclusion: { in: SCORING_TYPES }, allow_nil: true
+  validates :team_size, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 4 }, allow_nil: true
+  
+  # Alias for backwards compatibility with 'format_name' column
+  def format
+    tournament_format
+  end
 
   # Class methods
   def self.current
@@ -77,6 +90,40 @@ class Tournament < ApplicationRecord
   def entry_fee_dollars
     return 0.00 if entry_fee.nil?
     entry_fee / 100.0
+  end
+
+  def early_bird_fee_dollars
+    return 0.00 if early_bird_fee.nil?
+    early_bird_fee / 100.0
+  end
+
+  def current_fee
+    early_bird_active? ? early_bird_fee : entry_fee
+  end
+
+  def current_fee_dollars
+    (current_fee || 0) / 100.0
+  end
+
+  # Early bird pricing
+  def early_bird_active?
+    return false if early_bird_fee.nil? || early_bird_deadline.nil?
+    Time.current < early_bird_deadline
+  end
+
+  def early_bird_expired?
+    return true if early_bird_deadline.nil?
+    Time.current >= early_bird_deadline
+  end
+
+  # Registration deadlines
+  def registration_deadline_passed?
+    return false if registration_deadline.nil?
+    Time.current >= registration_deadline
+  end
+
+  def can_register?
+    open? && registration_open? && !registration_deadline_passed? && !at_capacity?
   end
 
   # Capacity helpers

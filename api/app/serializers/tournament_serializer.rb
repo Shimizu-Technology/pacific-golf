@@ -13,10 +13,39 @@ class TournamentSerializer < ActiveModel::Serializer
              :checked_in_count, :paid_count,
              :display_name, :short_name,
              :organization_id, :organization_slug,
+             # New configuration fields
+             :tournament_format, :scoring_type, :team_size, :allow_partial_teams,
+             :handicap_required, :handicap_max,
+             :use_flights, :flights_config,
+             # Pricing
+             :early_bird_fee, :early_bird_fee_dollars, :early_bird_deadline,
+             :early_bird_active, :current_fee, :current_fee_dollars,
+             # Registration
+             :registration_deadline, :waitlist_enabled, :waitlist_max,
+             # Payment
+             :payment_instructions, :allow_cash, :allow_check, :allow_card,
+             # Schedule
+             :check_in_time, :shotgun_start, :tee_times_enabled, :tee_time_interval_minutes,
              :created_at, :updated_at
 
   def organization_slug
     object.organization&.slug
+  end
+
+  def early_bird_fee_dollars
+    object.early_bird_fee_dollars
+  end
+
+  def early_bird_active
+    object.early_bird_active?
+  end
+
+  def current_fee
+    object.current_fee
+  end
+
+  def current_fee_dollars
+    object.current_fee_dollars
   end
 
   def entry_fee_dollars

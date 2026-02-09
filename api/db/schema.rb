@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_10_004027) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_10_004028) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -150,32 +150,57 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004027) do
   end
 
   create_table "tournaments", force: :cascade do |t|
+    t.boolean "allow_card", default: true
+    t.boolean "allow_cash", default: true
+    t.boolean "allow_check", default: true
+    t.boolean "allow_partial_teams", default: false
+    t.string "check_in_time"
     t.string "checks_payable_to"
+    t.jsonb "config", default: {}
     t.string "contact_name"
     t.string "contact_phone"
     t.datetime "created_at", null: false
+    t.datetime "early_bird_deadline"
+    t.integer "early_bird_fee"
     t.string "edition"
     t.integer "entry_fee", default: 12500
     t.string "event_date"
     t.string "fee_includes"
+    t.jsonb "flights_config", default: {}
     t.string "format_name"
+    t.integer "handicap_max"
+    t.boolean "handicap_required", default: false
     t.string "location_address"
     t.string "location_name"
     t.integer "max_capacity", default: 160
     t.string "name", null: false
     t.uuid "organization_id"
+    t.text "payment_instructions"
+    t.datetime "registration_deadline"
     t.boolean "registration_open", default: false, null: false
     t.string "registration_time"
     t.integer "reserved_slots", default: 0, null: false
+    t.string "scoring_type", default: "gross"
+    t.boolean "shotgun_start", default: true
     t.string "slug"
     t.string "start_time"
     t.string "status", default: "draft", null: false
+    t.integer "team_size", default: 4
+    t.integer "tee_time_interval_minutes", default: 10
+    t.boolean "tee_times_enabled", default: false
+    t.string "tournament_format", default: "scramble"
     t.datetime "updated_at", null: false
+    t.boolean "use_flights", default: false
+    t.boolean "waitlist_enabled", default: true
+    t.integer "waitlist_max"
     t.integer "year", null: false
+    t.index ["early_bird_deadline"], name: "index_tournaments_on_early_bird_deadline"
     t.index ["organization_id", "slug"], name: "index_tournaments_on_organization_id_and_slug", unique: true
     t.index ["organization_id"], name: "index_tournaments_on_organization_id"
+    t.index ["registration_deadline"], name: "index_tournaments_on_registration_deadline"
     t.index ["status", "year"], name: "index_tournaments_on_status_and_year"
     t.index ["status"], name: "index_tournaments_on_status"
+    t.index ["tournament_format"], name: "index_tournaments_on_tournament_format"
     t.index ["year"], name: "index_tournaments_on_year"
   end
 
