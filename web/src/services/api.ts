@@ -1,13 +1,33 @@
 // API configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+// Organization types
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  logo_url?: string;
+  primary_color?: string;
+  banner_url?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  website_url?: string;
+  subscription_status?: string;
+  tournament_count?: number;
+  admin_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Types for API responses
 export interface Tournament {
   id: number;
   name: string;
+  slug: string;
   year: number;
   edition: string | null;
-  status: 'draft' | 'open' | 'closed' | 'archived';
+  status: 'draft' | 'open' | 'closed' | 'in_progress' | 'completed' | 'archived';
   event_date: string | null;
   registration_time: string | null;
   start_time: string | null;
@@ -17,9 +37,8 @@ export interface Tournament {
   reserved_slots: number;
   entry_fee: number;
   entry_fee_dollars: number;
-  employee_entry_fee: number;
-  employee_entry_fee_dollars: number;
-  employee_numbers_count: number;
+  organization_id?: string;
+  organization_slug?: string;
   format_name: string | null;
   fee_includes: string | null;
   checks_payable_to: string | null;
@@ -386,6 +405,43 @@ class ApiClient {
     return this.request(`/api/v1/tournaments/${id}/close`, {
       method: 'POST',
     });
+  }
+
+  // Organization endpoints
+  async getOrganization(slug: string): Promise<Organization> {
+    return this.request(`/api/v1/organizations/${slug}`, {}, false);
+  }
+
+  async getOrganizationTournaments(orgSlug: string): Promise<Tournament[]> {
+    return this.request(`/api/v1/organizations/${orgSlug}/tournaments`, {}, false);
+  }
+
+  async getOrganizationTournament(orgSlug: string, tournamentSlug: string): Promise<Tournament> {
+    return this.request(`/api/v1/organizations/${orgSlug}/tournaments/${tournamentSlug}`, {}, false);
+  }
+
+  async getMyOrganizations(): Promise<Organization[]> {
+    return this.request('/api/v1/admin/organizations');
+  }
+
+  async createOrganization(data: Partial<Organization>): Promise<Organization> {
+    return this.request('/api/v1/admin/organizations', {
+      method: 'POST',
+      body: JSON.stringify({ organization: data }),
+    });
+  }
+
+  async updateOrganization(id: string, data: Partial<Organization>): Promise<Organization> {
+    return this.request(`/api/v1/admin/organizations/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ organization: data }),
+    });
+  }
+
+  // Simple axios-like interface for OrganizationProvider
+  async get(url: string): Promise<{ data: any }> {
+    const data = await this.request(url.startsWith('/api') ? url : `/api/v1${url}`, {}, false);
+    return { data };
   }
 
   // Public endpoints (no auth required)

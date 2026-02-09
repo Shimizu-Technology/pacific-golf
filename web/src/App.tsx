@@ -17,6 +17,8 @@ import {
 } from './pages';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { TournamentProvider } from './contexts';
+import { OrganizationProvider } from './components/OrganizationProvider';
+import { OrganizationLandingPage } from './pages/OrganizationLandingPage';
 
 // Wrapper component for admin routes with tournament context
 function AdminRouteWrapper({ children }: { children: React.ReactNode }) {
@@ -29,12 +31,63 @@ function AdminRouteWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Wrapper for organization-scoped public routes
+function OrgRouteWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <OrganizationProvider>
+      {children}
+    </OrganizationProvider>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Toaster position="top-right" />
       <Routes>
-        {/* Public Routes */}
+        {/* ===========================================
+            ORGANIZATION-SCOPED PUBLIC ROUTES (Multi-tenant)
+            =========================================== */}
+        
+        {/* Organization landing page - shows all tournaments */}
+        <Route
+          path="/:orgSlug"
+          element={
+            <OrgRouteWrapper>
+              <OrganizationLandingPage />
+            </OrgRouteWrapper>
+          }
+        />
+
+        {/* Tournament-specific registration */}
+        <Route
+          path="/:orgSlug/tournaments/:tournamentSlug"
+          element={
+            <OrgRouteWrapper>
+              <LandingPage />
+            </OrgRouteWrapper>
+          }
+        />
+        <Route
+          path="/:orgSlug/tournaments/:tournamentSlug/register"
+          element={
+            <OrgRouteWrapper>
+              <RegistrationPage />
+            </OrgRouteWrapper>
+          }
+        />
+        <Route
+          path="/:orgSlug/tournaments/:tournamentSlug/success"
+          element={
+            <OrgRouteWrapper>
+              <RegistrationSuccessPage />
+            </OrgRouteWrapper>
+          }
+        />
+
+        {/* ===========================================
+            LEGACY PUBLIC ROUTES (Backwards compatibility)
+            =========================================== */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/register" element={<RegistrationPage />} />
         <Route path="/registration/success" element={<RegistrationSuccessPage />} />
@@ -43,6 +96,10 @@ function App() {
         <Route path="/pay/:token" element={<PaymentLinkPage />} />
         <Route path="/pay/:token/success" element={<PaymentLinkPage />} />
 
+        {/* ===========================================
+            ADMIN ROUTES
+            =========================================== */}
+        
         {/* Admin Login (public) */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
 
@@ -96,7 +153,7 @@ function App() {
           }
         />
 
-        {/* Catch-all redirect */}
+        {/* Catch-all redirect to root */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
