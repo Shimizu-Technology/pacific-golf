@@ -48,6 +48,8 @@ Rails.application.routes.draw do
       get 'admin/organizations' => 'organizations#index'
       post 'admin/organizations' => 'organizations#create'
       patch 'admin/organizations/:id' => 'organizations#update'
+      get 'admin/organizations/:slug/tournaments' => 'organizations#admin_tournaments'
+      get 'admin/organizations/:slug/tournaments/:tournament_slug' => 'organizations#admin_tournament'
 
       # Tournaments (admin)
       resources :tournaments, except: [:create] do

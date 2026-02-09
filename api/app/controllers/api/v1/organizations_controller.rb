@@ -87,6 +87,76 @@ module Api
         render json: organizations.map { |org| organization_response(org) }
       end
 
+      # GET /api/v1/admin/organizations/:slug/tournaments
+      # Admin endpoint - returns all tournaments with stats
+      def admin_tournaments
+        organization = Organization.find_by_slug!(params[:slug])
+        require_org_admin!(organization)
+        return if performed?
+
+        tournaments = organization.tournaments.order(event_date: :desc)
+
+        tournament_data = tournaments.map do |t|
+          {
+            id: t.id,
+            name: t.name,
+            slug: t.slug,
+            date: t.event_date,
+            status: t.status,
+            registration_count: t.golfers.where(registration_status: 'confirmed').count,
+            capacity: t.max_golfers,
+            revenue: t.golfers.where(payment_status: 'paid').sum { |g| g.entry_fee_paid || 0 }
+          }
+        end
+
+        stats = {
+          total_tournaments: tournaments.count,
+          active_tournaments: tournaments.where(status: %w[open in_progress]).count,
+          total_registrations: organization.tournaments.joins(:golfers)
+                                          .where(golfers: { registration_status: 'confirmed' }).count,
+          total_revenue: organization.tournaments.joins(:golfers)
+                                    .where(golfers: { payment_status: 'paid' })
+                                    .sum('golfers.entry_fee_paid') || 0
+        }
+
+        render json: { tournaments: tournament_data, stats: stats }
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Organization not found' }, status: :not_found
+      end
+
+      # GET /api/v1/admin/organizations/:slug/tournaments/:tournament_slug
+      # Admin endpoint - returns tournament details with all golfers
+      def admin_tournament
+        organization = Organization.find_by_slug!(params[:slug])
+        require_org_admin!(organization)
+        return if performed?
+
+        tournament = organization.tournaments.find_by!(slug: params[:tournament_slug])
+        golfers = tournament.golfers.order(created_at: :desc)
+
+        stats = {
+          total_registrations: golfers.count,
+          confirmed: golfers.where(registration_status: 'confirmed').count,
+          waitlisted: golfers.where(registration_status: 'waitlist').count,
+          cancelled: golfers.where(registration_status: 'cancelled').count,
+          paid: golfers.where(payment_status: 'paid').count,
+          unpaid: golfers.where(payment_status: 'unpaid').count,
+          checked_in: golfers.where.not(checked_in_at: nil).count,
+          revenue: golfers.where(payment_status: 'paid').sum { |g| g.entry_fee_paid || 0 }
+        }
+
+        render json: {
+          tournament: tournament,
+          golfers: golfers.as_json(
+            only: [:id, :name, :email, :phone, :company, :registration_status, 
+                   :payment_status, :payment_method, :checked_in_at, :created_at]
+          ),
+          stats: stats
+        }
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Tournament not found' }, status: :not_found
+      end
+
       private
 
       def organization_params

@@ -24,6 +24,8 @@ import {
   OrgTournamentPage,
   OrgRegistrationSuccessPage,
 } from './pages';
+import { OrgAdminDashboard } from './pages/OrgAdminDashboard';
+import { OrgTournamentAdmin } from './pages/OrgTournamentAdmin';
 
 // Wrapper component for admin routes with tournament context
 function AdminRouteWrapper({ children }: { children: React.ReactNode }) {
@@ -87,6 +89,34 @@ function App() {
             <OrgRouteWrapper>
               <OrgRegistrationSuccessPage />
             </OrgRouteWrapper>
+          }
+        />
+
+        {/* ===========================================
+            ORG-SCOPED ADMIN ROUTES (Multi-tenant)
+            =========================================== */}
+        
+        {/* Organization Admin Dashboard */}
+        <Route
+          path="/:orgSlug/admin"
+          element={
+            <ProtectedRoute>
+              <OrganizationProvider>
+                <OrgAdminDashboard />
+              </OrganizationProvider>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Tournament Admin Dashboard */}
+        <Route
+          path="/:orgSlug/admin/tournaments/:tournamentSlug"
+          element={
+            <ProtectedRoute>
+              <OrganizationProvider>
+                <OrgTournamentAdmin />
+              </OrganizationProvider>
+            </ProtectedRoute>
           }
         />
 
