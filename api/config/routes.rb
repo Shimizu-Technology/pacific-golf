@@ -1,29 +1,67 @@
+# frozen_string_literal: true
+
 Rails.application.routes.draw do
   # Health check
-  get "health" => "health#show"
-  get "up" => "rails/health#show", as: :rails_health_check
+  get 'health' => 'health#show'
+  get 'up' => 'rails/health#show', as: :rails_health_check
 
   # ActionCable WebSocket
-  mount ActionCable.server => "/cable"
+  mount ActionCable.server => '/cable'
 
   # API routes
   namespace :api do
     namespace :v1 do
-      # Tournaments
-      resources :tournaments do
+      # ===========================================
+      # PUBLIC ENDPOINTS (no auth required)
+      # ===========================================
+
+      # Organizations (public)
+      get 'organizations/:slug' => 'organizations#show'
+      get 'organizations/:slug/tournaments' => 'organizations#tournaments'
+      get 'organizations/:slug/tournaments/:tournament_slug' => 'organizations#tournament'
+
+      # Current tournament (legacy, for backwards compatibility)
+      get 'tournaments/current' => 'tournaments#current'
+
+      # Registration (public)
+      get 'golfers/registration_status' => 'golfers#registration_status'
+      post 'golfers' => 'golfers#create'
+
+      # Payment Links (public endpoints)
+      get 'payment_links/:token' => 'payment_links#show'
+      post 'payment_links/:token/checkout' => 'payment_links#create_checkout'
+
+      # Checkout (public)
+      post 'checkout' => 'checkout#create'
+      post 'checkout/embedded' => 'checkout#create_embedded'
+      post 'checkout/confirm' => 'checkout#confirm'
+      get 'checkout/session/:session_id' => 'checkout#session_status'
+
+      # Webhooks (public, authenticated via signature)
+      post 'webhooks/stripe' => 'webhooks#stripe'
+
+      # ===========================================
+      # ADMIN ENDPOINTS (auth required)
+      # ===========================================
+
+      # Admin organizations
+      get 'admin/organizations' => 'organizations#index'
+      post 'admin/organizations' => 'organizations#create'
+      patch 'admin/organizations/:id' => 'organizations#update'
+
+      # Tournaments (admin)
+      resources :tournaments, except: [:create] do
         member do
           post :archive
           post :copy
           post :open
           post :close
         end
-        collection do
-          get :current
-        end
       end
+      post 'admin/tournaments' => 'tournaments#create'
 
-      # Golfers
-      resources :golfers do
+      # Golfers (admin)
+      resources :golfers, except: [:create] do
         member do
           post :check_in
           post :payment_details
@@ -36,15 +74,10 @@ Rails.application.routes.draw do
           post :send_payment_link
         end
         collection do
-          get :registration_status
           get :stats
           post :bulk_send_payment_links
         end
       end
-      
-      # Payment Links (public endpoints)
-      get "payment_links/:token" => "payment_links#show"
-      post "payment_links/:token/checkout" => "payment_links#create_checkout"
 
       # Groups
       resources :groups do
@@ -60,7 +93,7 @@ Rails.application.routes.draw do
         end
       end
 
-      # Admins
+      # Users/Admins (legacy endpoint name for backwards compatibility)
       resources :admins do
         collection do
           get :me
@@ -68,7 +101,7 @@ Rails.application.routes.draw do
       end
 
       # Settings (singleton resource)
-      resource :settings, only: [:show, :update]
+      resource :settings, only: %i[show update]
 
       # Activity Logs
       resources :activity_logs, only: [:index] do
@@ -77,15 +110,6 @@ Rails.application.routes.draw do
           get 'golfer/:golfer_id', action: :golfer_history, as: :golfer_history
         end
       end
-
-      # Checkout
-      post "checkout" => "checkout#create"
-      post "checkout/embedded" => "checkout#create_embedded"
-      post "checkout/confirm" => "checkout#confirm"
-      get "checkout/session/:session_id" => "checkout#session_status"
-
-      # Webhooks
-      post "webhooks/stripe" => "webhooks#stripe"
     end
   end
 end

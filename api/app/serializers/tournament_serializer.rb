@@ -1,18 +1,23 @@
 class TournamentSerializer < ActiveModel::Serializer
-  attributes :id, :name, :year, :edition, :status,
+  attributes :id, :name, :slug, :year, :edition, :status,
              :event_date, :registration_time, :start_time,
              :location_name, :location_address,
-             :max_capacity, :reserved_slots, 
+             :max_capacity, :reserved_slots,
              :entry_fee, :entry_fee_dollars,
              :format_name, :fee_includes, :checks_payable_to,
              :contact_name, :contact_phone,
              :registration_open, :can_register,
-             :confirmed_count, :waitlist_count, 
+             :confirmed_count, :waitlist_count,
              :capacity_remaining, :at_capacity,
              :public_capacity, :public_capacity_remaining, :public_at_capacity,
              :checked_in_count, :paid_count,
              :display_name, :short_name,
+             :organization_id, :organization_slug,
              :created_at, :updated_at
+
+  def organization_slug
+    object.organization&.slug
+  end
 
   def entry_fee_dollars
     object.entry_fee_dollars
