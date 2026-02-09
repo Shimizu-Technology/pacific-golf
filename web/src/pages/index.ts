@@ -15,3 +15,4 @@ export { OrganizationLandingPage } from './OrganizationLandingPage';
 export { OrgRegistrationPage } from './OrgRegistrationPage';
 export { OrgTournamentPage } from './OrgTournamentPage';
 export { OrgRegistrationSuccessPage } from './OrgRegistrationSuccessPage';
+export { OrgCheckInPage } from './OrgCheckInPage';
