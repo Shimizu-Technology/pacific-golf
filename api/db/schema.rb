@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_10_004028) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_10_004030) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -112,6 +112,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004028) do
     t.index ["slug"], name: "index_organizations_on_slug", unique: true
   end
 
+  create_table "scores", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "entered_by_id"
+    t.bigint "golfer_id"
+    t.bigint "group_id", null: false
+    t.integer "hole", null: false
+    t.text "notes"
+    t.integer "par"
+    t.integer "relative_score"
+    t.string "score_type", default: "individual"
+    t.integer "strokes", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "verified", default: false
+    t.datetime "verified_at"
+    t.index ["entered_by_id"], name: "index_scores_on_entered_by_id"
+    t.index ["golfer_id"], name: "index_scores_on_golfer_id"
+    t.index ["group_id"], name: "index_scores_on_group_id"
+    t.index ["score_type"], name: "index_scores_on_score_type"
+    t.index ["tournament_id", "golfer_id"], name: "index_scores_on_tournament_id_and_golfer_id"
+    t.index ["tournament_id", "group_id", "hole"], name: "index_scores_on_tournament_id_and_group_id_and_hole"
+    t.index ["tournament_id", "hole"], name: "index_scores_on_tournament_id_and_hole"
+    t.index ["tournament_id"], name: "index_scores_on_tournament_id"
+  end
+
   create_table "settings", force: :cascade do |t|
     t.string "admin_email"
     t.string "checks_payable_to", default: "GIAAEO"
@@ -159,6 +184,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004028) do
     t.jsonb "config", default: {}
     t.string "contact_name"
     t.string "contact_phone"
+    t.string "course_name"
+    t.decimal "course_rating", precision: 4, scale: 1
     t.datetime "created_at", null: false
     t.datetime "early_bird_deadline"
     t.integer "early_bird_fee"
@@ -170,6 +197,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004028) do
     t.string "format_name"
     t.integer "handicap_max"
     t.boolean "handicap_required", default: false
+    t.jsonb "hole_handicaps", default: {}
+    t.jsonb "hole_pars", default: {}
     t.string "location_address"
     t.string "location_name"
     t.integer "max_capacity", default: 160
@@ -182,12 +211,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004028) do
     t.integer "reserved_slots", default: 0, null: false
     t.string "scoring_type", default: "gross"
     t.boolean "shotgun_start", default: true
+    t.integer "slope_rating"
     t.string "slug"
     t.string "start_time"
     t.string "status", default: "draft", null: false
     t.integer "team_size", default: 4
+    t.string "tee_name"
     t.integer "tee_time_interval_minutes", default: 10
     t.boolean "tee_times_enabled", default: false
+    t.integer "total_holes", default: 18
+    t.integer "total_par"
     t.string "tournament_format", default: "scramble"
     t.datetime "updated_at", null: false
     t.boolean "use_flights", default: false
@@ -221,6 +254,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004028) do
   add_foreign_key "groups", "tournaments"
   add_foreign_key "organization_memberships", "organizations"
   add_foreign_key "organization_memberships", "users"
+  add_foreign_key "scores", "golfers"
+  add_foreign_key "scores", "groups"
+  add_foreign_key "scores", "tournaments"
+  add_foreign_key "scores", "users", column: "entered_by_id"
   add_foreign_key "tournament_assignments", "tournaments"
   add_foreign_key "tournament_assignments", "users"
   add_foreign_key "tournaments", "organizations"

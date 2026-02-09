@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  tournament: one
+  golfer: one
+  group: one
+  hole: 1
+  strokes: 1
+  par: 1
+  relative_score: 1
+  entered_by: one
+  verified: false
+  verified_at: 2026-02-10 01:04:58
+  notes: MyText
+
+two:
+  tournament: two
+  golfer: two
+  group: two
+  hole: 1
+  strokes: 1
+  par: 1
+  relative_score: 1
+  entered_by: two
+  verified: false
+  verified_at: 2026-02-10 01:04:58
+  notes: MyText

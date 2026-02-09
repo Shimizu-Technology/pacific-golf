@@ -499,8 +499,8 @@ export const OrgRegistrationPage: React.FC = () => {
           company: formData.company,
           address: formData.mailingAddress,
         }}
-        amount={entryFee}
-        tournamentName={tournament.display_name}
+        entryFee={entryFee}
+        stripePublicKey={import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY}
       />
 
       {/* Footer */}
