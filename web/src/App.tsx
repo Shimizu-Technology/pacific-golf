@@ -18,7 +18,7 @@ import {
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { TournamentProvider } from './contexts';
 import { OrganizationProvider } from './components/OrganizationProvider';
-import { OrganizationLandingPage } from './pages/OrganizationLandingPage';
+import { OrganizationLandingPage, OrgRegistrationPage } from './pages';
 
 // Wrapper component for admin routes with tournament context
 function AdminRouteWrapper({ children }: { children: React.ReactNode }) {
@@ -72,7 +72,7 @@ function App() {
           path="/:orgSlug/tournaments/:tournamentSlug/register"
           element={
             <OrgRouteWrapper>
-              <RegistrationPage />
+              <OrgRegistrationPage />
             </OrgRouteWrapper>
           }
         />

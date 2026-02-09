@@ -12,3 +12,4 @@ export { AdminSettingsPage } from './AdminSettingsPage';
 export { ReportsPage } from './ReportsPage';
 export { TournamentManagementPage } from './TournamentManagementPage';
 export { OrganizationLandingPage } from './OrganizationLandingPage';
+export { OrgRegistrationPage } from './OrgRegistrationPage';
