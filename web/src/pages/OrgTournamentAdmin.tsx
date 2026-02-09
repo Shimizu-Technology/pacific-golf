@@ -284,15 +284,26 @@ export const OrgTournamentAdmin: React.FC = () => {
         style={{ backgroundColor: organization.primary_color || '#1e40af' }}
       >
         <div className="max-w-7xl mx-auto">
-          <Link
-            to={`/${organization.slug}/admin`}
-            className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Dashboard</span>
-          </Link>
-          <h1 className="text-2xl font-bold">{tournament.name}</h1>
-          <p className="text-white/80 mt-1">Tournament Management</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <Link
+                to={`/${organization.slug}/admin`}
+                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Dashboard</span>
+              </Link>
+              <h1 className="text-2xl font-bold">{tournament.name}</h1>
+              <p className="text-white/80 mt-1">Tournament Management</p>
+            </div>
+            <Link
+              to={`/${organization.slug}/admin/tournaments/${tournamentSlug}/checkin`}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 font-semibold"
+            >
+              <UserCheck className="w-5 h-5" />
+              <span>Check-In Mode</span>
+            </Link>
+          </div>
         </div>
       </header>
 

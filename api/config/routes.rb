@@ -66,6 +66,7 @@ Rails.application.routes.draw do
       resources :golfers, except: [:create] do
         member do
           post :check_in
+          post :undo_check_in
           post :payment_details
           post :promote
           post :demote

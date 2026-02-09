@@ -401,6 +401,28 @@ module Api
         render json: golfer
       end
 
+      # POST /api/v1/golfers/:id/undo_check_in
+      def undo_check_in
+        golfer = Golfer.find(params[:id])
+        
+        unless golfer.checked_in_at.present?
+          render json: { error: 'Golfer is not checked in' }, status: :unprocessable_entity
+          return
+        end
+
+        golfer.update!(checked_in_at: nil)
+
+        ActivityLog.log(
+          admin: current_admin,
+          action: 'golfer_unchecked',
+          target: golfer,
+          details: "Unchecked #{golfer.name}"
+        )
+
+        broadcast_golfer_update(golfer)
+        render json: golfer
+      end
+
       # POST /api/v1/golfers/:id/payment_details
       def payment_details
         golfer = Golfer.find(params[:id])

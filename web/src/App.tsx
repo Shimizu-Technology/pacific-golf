@@ -26,6 +26,7 @@ import {
 } from './pages';
 import { OrgAdminDashboard } from './pages/OrgAdminDashboard';
 import { OrgTournamentAdmin } from './pages/OrgTournamentAdmin';
+import { OrgCheckInPage } from './pages/OrgCheckInPage';
 
 // Wrapper component for admin routes with tournament context
 function AdminRouteWrapper({ children }: { children: React.ReactNode }) {
@@ -115,6 +116,18 @@ function App() {
             <ProtectedRoute>
               <OrganizationProvider>
                 <OrgTournamentAdmin />
+              </OrganizationProvider>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Tournament Check-In */}
+        <Route
+          path="/:orgSlug/admin/tournaments/:tournamentSlug/checkin"
+          element={
+            <ProtectedRoute>
+              <OrganizationProvider>
+                <OrgCheckInPage />
               </OrganizationProvider>
             </ProtectedRoute>
           }
