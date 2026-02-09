@@ -13,3 +13,5 @@ export { ReportsPage } from './ReportsPage';
 export { TournamentManagementPage } from './TournamentManagementPage';
 export { OrganizationLandingPage } from './OrganizationLandingPage';
 export { OrgRegistrationPage } from './OrgRegistrationPage';
+export { OrgTournamentPage } from './OrgTournamentPage';
+export { OrgRegistrationSuccessPage } from './OrgRegistrationSuccessPage';
