@@ -163,7 +163,58 @@ module Api
         render json: { error: 'Tournament not found' }, status: :not_found
       end
 
+      # POST /api/v1/admin/organizations/:slug/tournaments
+      # Create a new tournament for the organization
+      def create_tournament
+        organization = Organization.find_by_slug!(params[:slug])
+        require_org_admin!(organization)
+        return if performed?
+
+        tournament = organization.tournaments.build(tournament_params)
+        
+        # Generate slug if not provided
+        if tournament.slug.blank?
+          base_slug = "#{tournament.name.parameterize}-#{tournament.year}"
+          tournament.slug = base_slug
+          
+          # Ensure uniqueness
+          counter = 1
+          while organization.tournaments.exists?(slug: tournament.slug)
+            tournament.slug = "#{base_slug}-#{counter}"
+            counter += 1
+          end
+        end
+
+        if tournament.save
+          render json: { 
+            tournament: tournament.as_json(
+              only: [:id, :name, :slug, :year, :edition, :status, :event_date, 
+                     :location_name, :entry_fee, :max_capacity]
+            ),
+            message: 'Tournament created successfully'
+          }, status: :created
+        else
+          render json: { error: tournament.errors.full_messages.join(', ') }, status: :unprocessable_entity
+        end
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Organization not found' }, status: :not_found
+      end
+
       private
+
+      def tournament_params
+        params.require(:tournament).permit(
+          :name, :year, :edition, :status, :slug,
+          :event_date, :registration_time, :start_time, :check_in_time,
+          :location_name, :location_address,
+          :tournament_format, :scoring_type, :team_size, :shotgun_start,
+          :max_capacity, :reserved_slots, :waitlist_enabled, :waitlist_max,
+          :entry_fee, :early_bird_fee, :early_bird_deadline,
+          :allow_cash, :allow_check, :allow_card, :checks_payable_to, :payment_instructions,
+          :registration_deadline,
+          :contact_name, :contact_phone, :fee_includes
+        )
+      end
 
       def organization_params
         params.require(:organization).permit(

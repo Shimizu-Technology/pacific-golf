@@ -49,6 +49,7 @@ Rails.application.routes.draw do
       post 'admin/organizations' => 'organizations#create'
       patch 'admin/organizations/:id' => 'organizations#update'
       get 'admin/organizations/:slug/tournaments' => 'organizations#admin_tournaments'
+      post 'admin/organizations/:slug/tournaments' => 'organizations#create_tournament'
       get 'admin/organizations/:slug/tournaments/:tournament_slug' => 'organizations#admin_tournament'
 
       # Tournaments (admin)
