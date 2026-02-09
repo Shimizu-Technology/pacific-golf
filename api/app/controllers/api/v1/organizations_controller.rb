@@ -200,7 +200,40 @@ module Api
         render json: { error: 'Organization not found' }, status: :not_found
       end
 
+      # POST /api/v1/admin/organizations/:slug/tournaments/:tournament_slug/golfers
+      # Admin endpoint - create a golfer (manual registration)
+      def create_golfer
+        organization = Organization.find_by_slug!(params[:slug])
+        require_org_admin!(organization)
+        return if performed?
+
+        tournament = organization.tournaments.find_by!(slug: params[:tournament_slug])
+        golfer = tournament.golfers.build(golfer_params)
+
+        if golfer.save
+          render json: {
+            golfer: golfer.as_json(
+              only: [:id, :name, :email, :phone, :company, :registration_status,
+                     :payment_status, :payment_method, :notes, :created_at]
+            ),
+            message: 'Golfer added successfully'
+          }, status: :created
+        else
+          render json: { error: golfer.errors.full_messages.join(', ') }, status: :unprocessable_entity
+        end
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Tournament not found' }, status: :not_found
+      end
+
       private
+
+      def golfer_params
+        params.require(:golfer).permit(
+          :name, :email, :phone, :mobile, :company, :address,
+          :payment_type, :payment_status, :payment_method,
+          :registration_status, :notes, :waiver_accepted_at
+        )
+      end
 
       def tournament_params
         params.require(:tournament).permit(

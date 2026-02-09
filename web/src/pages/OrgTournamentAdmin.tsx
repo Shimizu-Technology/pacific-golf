@@ -16,6 +16,7 @@ import {
   Phone,
   Building2,
   UserCheck,
+  UserPlus,
   CreditCard,
   Loader2,
   AlertCircle,
@@ -23,6 +24,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { AddGolferModal } from '../components/AddGolferModal';
 
 interface Golfer {
   id: number;
@@ -81,6 +83,9 @@ export const OrgTournamentAdmin: React.FC = () => {
   
   // Selected golfer for detail view
   const [selectedGolfer, setSelectedGolfer] = useState<Golfer | null>(null);
+  
+  // Add golfer modal
+  const [showAddGolferModal, setShowAddGolferModal] = useState(false);
 
   const fetchData = async () => {
     if (!organization || !tournamentSlug) return;
@@ -306,13 +311,22 @@ export const OrgTournamentAdmin: React.FC = () => {
               <h1 className="text-2xl font-bold">{tournament.name}</h1>
               <p className="text-white/80 mt-1">Tournament Management</p>
             </div>
-            <Link
-              to={`/${organization.slug}/admin/tournaments/${tournamentSlug}/checkin`}
-              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 font-semibold"
-            >
-              <UserCheck className="w-5 h-5" />
-              <span>Check-In Mode</span>
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowAddGolferModal(true)}
+                className="flex items-center gap-2 px-4 py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 font-medium"
+              >
+                <UserPlus className="w-5 h-5" />
+                <span>Add Golfer</span>
+              </button>
+              <Link
+                to={`/${organization.slug}/admin/tournaments/${tournamentSlug}/checkin`}
+                className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 font-semibold"
+              >
+                <UserCheck className="w-5 h-5" />
+                <span>Check-In Mode</span>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -604,6 +618,19 @@ export const OrgTournamentAdmin: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Add Golfer Modal */}
+      {tournament && (
+        <AddGolferModal
+          isOpen={showAddGolferModal}
+          onClose={() => setShowAddGolferModal(false)}
+          onSuccess={fetchData}
+          tournamentId={tournament.id}
+          tournamentSlug={tournamentSlug || ''}
+          orgSlug={organization?.slug || ''}
+          entryFee={tournament.entry_fee || 0}
+        />
+      )}
     </div>
   );
 };

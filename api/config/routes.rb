@@ -51,6 +51,7 @@ Rails.application.routes.draw do
       get 'admin/organizations/:slug/tournaments' => 'organizations#admin_tournaments'
       post 'admin/organizations/:slug/tournaments' => 'organizations#create_tournament'
       get 'admin/organizations/:slug/tournaments/:tournament_slug' => 'organizations#admin_tournament'
+      post 'admin/organizations/:slug/tournaments/:tournament_slug/golfers' => 'organizations#create_golfer'
 
       # Tournaments (admin)
       resources :tournaments, except: [:create] do
