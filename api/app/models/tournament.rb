@@ -3,7 +3,6 @@ class Tournament < ApplicationRecord
   has_many :golfers, dependent: :restrict_with_error
   has_many :groups, dependent: :restrict_with_error
   has_many :activity_logs, dependent: :nullify
-  has_many :employee_numbers, dependent: :destroy
 
   # Validations
   validates :name, presence: true
@@ -11,7 +10,6 @@ class Tournament < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[draft open closed archived] }
   validates :max_capacity, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :entry_fee, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
-  validates :employee_entry_fee, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   # Scopes
   scope :active, -> { where.not(status: 'archived') }
@@ -53,23 +51,6 @@ class Tournament < ApplicationRecord
   def entry_fee_dollars
     return 125.00 if entry_fee.nil?
     entry_fee / 100.0
-  end
-
-  def employee_entry_fee_dollars
-    return 50.00 if employee_entry_fee.nil?
-    employee_entry_fee / 100.0
-  end
-
-  # Check if an employee number is valid and available
-  def validate_employee_number(number)
-    return { valid: false, error: "Employee number is required" } if number.blank?
-    
-    emp_record = employee_numbers.find_by(employee_number: number)
-    
-    return { valid: false, error: "Invalid employee number" } unless emp_record
-    return { valid: false, error: "This employee number has already been used" } if emp_record.used?
-    
-    { valid: true, employee_number_record: emp_record }
   end
 
   def confirmed_count
@@ -149,7 +130,6 @@ class Tournament < ApplicationRecord
       max_capacity: max_capacity,
       reserved_slots: reserved_slots,
       entry_fee: entry_fee,
-      employee_entry_fee: employee_entry_fee,
       format_name: format_name,
       fee_includes: fee_includes,
       checks_payable_to: checks_payable_to,

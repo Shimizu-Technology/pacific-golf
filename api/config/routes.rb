@@ -34,12 +34,10 @@ Rails.application.routes.draw do
           post :refund
           post :mark_refunded
           post :send_payment_link
-          post :toggle_employee
         end
         collection do
           get :registration_status
           get :stats
-          post :bulk_set_employee
           post :bulk_send_payment_links
         end
       end
@@ -77,17 +75,6 @@ Rails.application.routes.draw do
         collection do
           get :summary
           get 'golfer/:golfer_id', action: :golfer_history, as: :golfer_history
-        end
-      end
-
-      # Employee Numbers
-      resources :employee_numbers, only: [:index, :create, :update, :destroy] do
-        member do
-          post :release
-        end
-        collection do
-          post :bulk_create
-          post :validate  # Public endpoint for registration form
         end
       end
 

@@ -85,45 +85,15 @@ module Api
             raise ActiveRecord::Rollback
           end
 
-          # Handle employee registration with lock
-          employee_number_record = nil
-          if params[:employee_number].present?
-            # Lock the employee number record to prevent double-use
-            emp_record = tournament.employee_numbers.lock.find_by(employee_number: params[:employee_number])
-            
-            unless emp_record
-              error_response = { errors: ["Invalid employee number"], status: :unprocessable_entity }
-              raise ActiveRecord::Rollback
-            end
-            
-            if emp_record.used?
-              error_response = { errors: ["This employee number has already been used"], status: :unprocessable_entity }
-              raise ActiveRecord::Rollback
-            end
-            
-            employee_number_record = emp_record
-          end
-
           golfer = tournament.golfers.new(golfer_params)
           golfer.waiver_accepted_at = Time.current if params[:waiver_accepted]
 
-          # Set employee fields if valid employee number provided
-          if employee_number_record
-            golfer.is_employee = true
-            golfer.employee_number = params[:employee_number]
-            golfer.employee_number_record = employee_number_record
-          end
-
           if golfer.save
-            # Mark employee number as used (within same transaction)
-            employee_number_record&.mark_used!(golfer)
-
             result = {
               golfer: golfer,
               message: golfer.registration_status == "confirmed" ?
                 "Your spot is confirmed!" :
-                "You have been added to the waitlist.",
-              employee_discount_applied: golfer.is_employee
+                "You have been added to the waitlist."
             }
           else
             error_response = { errors: golfer.errors.full_messages, status: :unprocessable_entity }
@@ -140,8 +110,7 @@ module Api
 
           render json: {
             golfer: GolferSerializer.new(result[:golfer]),
-            message: result[:message],
-            employee_discount_applied: result[:employee_discount_applied]
+            message: result[:message]
           }, status: :created
         end
       end
@@ -437,13 +406,9 @@ module Api
         golfer = Golfer.find(params[:id])
         old_status = golfer.payment_status
         
-        # Calculate the payment amount based on employee status
+        # Calculate the payment amount
         tournament = golfer.tournament
-        payment_amount = if golfer.is_employee
-          tournament&.employee_entry_fee || 5000
-        else
-          tournament&.entry_fee || 12500
-        end
+        payment_amount = tournament&.entry_fee || 12500
 
         golfer.update!(
           payment_status: "paid",
@@ -458,13 +423,12 @@ module Api
           admin: current_admin,
           action: 'payment_marked',
           target: golfer,
-          details: "Marked #{golfer.name} as paid (#{params[:payment_method]}) - $#{format('%.2f', payment_amount / 100.0)}#{golfer.is_employee ? ' (Employee Rate)' : ''}",
+          details: "Marked #{golfer.name} as paid (#{params[:payment_method]}) - $#{format('%.2f', payment_amount / 100.0)}",
           metadata: {
             payment_method: params[:payment_method],
             receipt_number: params[:receipt_number],
             previous_status: old_status,
-            payment_amount_cents: payment_amount,
-            is_employee: golfer.is_employee
+            payment_amount_cents: payment_amount
           }
         )
 
@@ -623,121 +587,6 @@ module Api
         render json: golfer
       end
 
-      # POST /api/v1/golfers/:id/toggle_employee
-      # Mark or unmark a golfer as an employee (admin only)
-      def toggle_employee
-        golfer = Golfer.find(params[:id])
-        old_status = golfer.is_employee
-
-        # Toggle the employee status
-        golfer.update!(is_employee: !old_status)
-
-        action_text = golfer.is_employee ? "marked as employee" : "removed employee status"
-        
-        ActivityLog.log(
-          admin: current_admin,
-          action: 'employee_status_changed',
-          target: golfer,
-          details: "#{golfer.name} #{action_text}",
-          metadata: { 
-            previous_status: old_status, 
-            new_status: golfer.is_employee 
-          }
-        )
-
-        broadcast_golfer_update(golfer)
-        render json: golfer
-      end
-
-      # POST /api/v1/golfers/bulk_set_employee
-      # Mark or unmark multiple golfers as employees (admin only)
-      # Skips golfers who have already paid (can't change rate after payment)
-      def bulk_set_employee
-        golfer_ids = params[:golfer_ids]
-        is_employee = params[:is_employee]
-
-        unless golfer_ids.is_a?(Array) && golfer_ids.any?
-          render json: { error: "golfer_ids must be a non-empty array" }, status: :unprocessable_entity
-          return
-        end
-
-        unless [true, false].include?(is_employee)
-          render json: { error: "is_employee must be true or false" }, status: :unprocessable_entity
-          return
-        end
-
-        # Find all golfers (scoped to avoid cross-tournament updates)
-        tournament = find_tournament
-        return render_tournament_required unless tournament
-
-        golfers = tournament.golfers.where(id: golfer_ids)
-        
-        if golfers.empty?
-          render json: { error: "No matching golfers found" }, status: :not_found
-          return
-        end
-
-        updated_count = 0
-        skipped_count = 0
-        skipped_reasons = []
-        updated_golfers = []
-
-        golfers.find_each do |golfer|
-          # Skip if already the desired status
-          if golfer.is_employee == is_employee
-            skipped_count += 1
-            skipped_reasons << { name: golfer.name, reason: "already #{is_employee ? 'employee' : 'non-employee'}" }
-            next
-          end
-
-          # Skip if already paid - can't change rate after payment
-          if golfer.payment_status == 'paid'
-            skipped_count += 1
-            skipped_reasons << { name: golfer.name, reason: "already paid" }
-            next
-          end
-
-          # Skip if refunded - registration is cancelled
-          if golfer.payment_status == 'refunded' || golfer.registration_status == 'cancelled'
-            skipped_count += 1
-            skipped_reasons << { name: golfer.name, reason: "cancelled/refunded" }
-            next
-          end
-
-          golfer.update!(is_employee: is_employee)
-          updated_golfers << golfer
-          updated_count += 1
-
-          # Log for each golfer individually (shows in their activity history)
-          action_text_single = is_employee ? "marked as employee" : "removed employee status"
-          ActivityLog.log(
-            admin: current_admin,
-            action: 'employee_status_changed',
-            target: golfer,
-            details: "#{golfer.name} #{action_text_single} (bulk action)",
-            metadata: { 
-              previous_status: !is_employee, 
-              new_status: is_employee,
-              bulk_action: true
-            }
-          )
-
-          # Broadcast each update
-          broadcast_golfer_update(golfer)
-        end
-
-        action_text = is_employee ? "marked as employees" : "removed employee status"
-
-        render json: {
-          success: true,
-          message: "#{updated_count} golfer(s) #{action_text}",
-          updated_count: updated_count,
-          skipped_count: skipped_count,
-          skipped_reasons: skipped_reasons,
-          golfers: ActiveModelSerializers::SerializableResource.new(updated_golfers)
-        }
-      end
-
       # POST /api/v1/golfers/bulk_send_payment_links
       # Send payment links to multiple unpaid golfers
       def bulk_send_payment_links
@@ -844,10 +693,6 @@ module Api
             registration_open: tournament.can_register?,
             entry_fee_cents: tournament.entry_fee || 12500,
             entry_fee_dollars: tournament.entry_fee_dollars,
-            # Employee discount info
-            employee_entry_fee_cents: tournament.employee_entry_fee || 5000,
-            employee_entry_fee_dollars: tournament.employee_entry_fee_dollars,
-            employee_discount_available: tournament.employee_numbers.available.any?,
             # Tournament configuration for landing page
             tournament_year: tournament.year,
             tournament_edition: tournament.edition,
@@ -903,9 +748,7 @@ module Api
           capacity_remaining: tournament.capacity_remaining,
           at_capacity: tournament.at_capacity?,
           entry_fee_cents: tournament.entry_fee || 12500,
-          entry_fee_dollars: tournament.entry_fee_dollars,
-          employee_entry_fee_cents: tournament.employee_entry_fee || 5000,
-          employee_entry_fee_dollars: tournament.employee_entry_fee_dollars
+          entry_fee_dollars: tournament.entry_fee_dollars
         }
       end
 

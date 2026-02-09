@@ -4,8 +4,6 @@ class TournamentSerializer < ActiveModel::Serializer
              :location_name, :location_address,
              :max_capacity, :reserved_slots, 
              :entry_fee, :entry_fee_dollars,
-             :employee_entry_fee, :employee_entry_fee_dollars,
-             :employee_numbers_count,
              :format_name, :fee_includes, :checks_payable_to,
              :contact_name, :contact_phone,
              :registration_open, :can_register,
@@ -18,14 +16,6 @@ class TournamentSerializer < ActiveModel::Serializer
 
   def entry_fee_dollars
     object.entry_fee_dollars
-  end
-
-  def employee_entry_fee_dollars
-    object.employee_entry_fee_dollars
-  end
-
-  def employee_numbers_count
-    object.employee_numbers.count
   end
 
   def can_register
