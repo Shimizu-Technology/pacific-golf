@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_10_004030) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_10_004033) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -112,6 +112,55 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004030) do
     t.index ["slug"], name: "index_organizations_on_slug", unique: true
   end
 
+  create_table "raffle_prizes", force: :cascade do |t|
+    t.boolean "claimed", default: false
+    t.datetime "claimed_at"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "image_url"
+    t.string "name", null: false
+    t.integer "position", default: 0
+    t.string "sponsor_logo_url"
+    t.string "sponsor_name"
+    t.string "tier", default: "standard"
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "value_cents", default: 0
+    t.string "winner_email"
+    t.string "winner_name"
+    t.string "winner_phone"
+    t.bigint "winning_ticket_id"
+    t.boolean "won", default: false
+    t.datetime "won_at"
+    t.index ["tournament_id", "position"], name: "index_raffle_prizes_on_tournament_id_and_position"
+    t.index ["tournament_id", "tier"], name: "index_raffle_prizes_on_tournament_id_and_tier"
+    t.index ["tournament_id"], name: "index_raffle_prizes_on_tournament_id"
+  end
+
+  create_table "raffle_tickets", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "drawn_at"
+    t.bigint "golfer_id"
+    t.boolean "is_winner", default: false
+    t.string "payment_status", default: "pending"
+    t.integer "price_cents", default: 0
+    t.datetime "purchased_at"
+    t.string "purchaser_email"
+    t.string "purchaser_name"
+    t.string "purchaser_phone"
+    t.bigint "raffle_prize_id"
+    t.string "stripe_payment_intent_id"
+    t.string "ticket_number", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["golfer_id"], name: "index_raffle_tickets_on_golfer_id"
+    t.index ["raffle_prize_id"], name: "index_raffle_tickets_on_raffle_prize_id"
+    t.index ["ticket_number"], name: "index_raffle_tickets_on_ticket_number", unique: true
+    t.index ["tournament_id", "is_winner"], name: "index_raffle_tickets_on_tournament_id_and_is_winner"
+    t.index ["tournament_id", "payment_status"], name: "index_raffle_tickets_on_tournament_id_and_payment_status"
+    t.index ["tournament_id"], name: "index_raffle_tickets_on_tournament_id"
+  end
+
   create_table "scores", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "entered_by_id"
@@ -205,6 +254,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004030) do
     t.string "name", null: false
     t.uuid "organization_id"
     t.text "payment_instructions"
+    t.boolean "raffle_auto_draw", default: false
+    t.text "raffle_description"
+    t.datetime "raffle_draw_time"
+    t.boolean "raffle_enabled", default: false
+    t.integer "raffle_max_tickets_per_person"
+    t.integer "raffle_ticket_price_cents", default: 500
+    t.integer "raffle_tickets_per_purchase", default: 1
     t.datetime "registration_deadline"
     t.boolean "registration_open", default: false, null: false
     t.string "registration_time"
@@ -254,6 +310,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004030) do
   add_foreign_key "groups", "tournaments"
   add_foreign_key "organization_memberships", "organizations"
   add_foreign_key "organization_memberships", "users"
+  add_foreign_key "raffle_prizes", "raffle_tickets", column: "winning_ticket_id"
+  add_foreign_key "raffle_prizes", "tournaments"
+  add_foreign_key "raffle_tickets", "golfers"
+  add_foreign_key "raffle_tickets", "raffle_prizes"
+  add_foreign_key "raffle_tickets", "tournaments"
   add_foreign_key "scores", "golfers"
   add_foreign_key "scores", "groups"
   add_foreign_key "scores", "tournaments"

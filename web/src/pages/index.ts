@@ -19,3 +19,5 @@ export { OrgCheckInPage } from './OrgCheckInPage';
 export { CreateTournamentPage } from './CreateTournamentPage';
 export { LeaderboardPage } from './LeaderboardPage';
 export { ScorecardPage } from './ScorecardPage';
+export { RaffleBoardPage } from './RaffleBoardPage';
+export { RaffleManagementPage } from './RaffleManagementPage';

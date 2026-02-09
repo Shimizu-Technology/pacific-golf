@@ -28,7 +28,7 @@ import { OrgAdminDashboard } from './pages/OrgAdminDashboard';
 import { OrgTournamentAdmin } from './pages/OrgTournamentAdmin';
 import { OrgCheckInPage } from './pages/OrgCheckInPage';
 import { CreateTournamentPage } from './pages/CreateTournamentPage';
-import { LeaderboardPage, ScorecardPage } from './pages';
+import { LeaderboardPage, ScorecardPage, RaffleBoardPage, RaffleManagementPage } from './pages';
 
 // Wrapper component for admin routes with tournament context
 function AdminRouteWrapper({ children }: { children: React.ReactNode }) {
@@ -105,6 +105,16 @@ function App() {
           }
         />
 
+        {/* Raffle Board (Public) */}
+        <Route
+          path="/:orgSlug/tournaments/:tournamentSlug/raffle"
+          element={
+            <OrgRouteWrapper>
+              <RaffleBoardPage />
+            </OrgRouteWrapper>
+          }
+        />
+
         {/* ===========================================
             ORG-SCOPED ADMIN ROUTES (Multi-tenant)
             =========================================== */}
@@ -164,6 +174,18 @@ function App() {
             <ProtectedRoute>
               <OrganizationProvider>
                 <ScorecardPage />
+              </OrganizationProvider>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Raffle Management (Admin) */}
+        <Route
+          path="/:orgSlug/admin/tournaments/:tournamentSlug/raffle"
+          element={
+            <ProtectedRoute>
+              <OrganizationProvider>
+                <RaffleManagementPage />
               </OrganizationProvider>
             </ProtectedRoute>
           }
