@@ -1,6 +1,8 @@
 # Tournament fixtures
 tournament_one:
+  organization: org_one
   name: "Test Tournament"
+  slug: "test-tournament-2026"
   year: 2026
   edition: "5th"
   status: "open"
@@ -19,7 +21,9 @@ tournament_one:
   registration_open: true
 
 tournament_archived:
+  organization: org_one
   name: "Old Tournament"
+  slug: "old-tournament-2025"
   year: 2025
   edition: "4th"
   status: "archived"
@@ -36,4 +40,3 @@ tournament_archived:
   contact_name: "Test Contact"
   contact_phone: "671-555-0000"
   registration_open: false
-

@@ -1,18 +1,18 @@
-# Admin fixtures
-admin_one:
+# User fixtures
+user_one:
   clerk_id: "clerk_test_admin_1"
   name: "Test Admin"
   email: "admin@test.com"
-  role: "admin"
+  role: "org_admin"
 
-admin_two:
+super_admin:
   clerk_id: "clerk_test_admin_2"
   name: "Super Admin"
   email: "super@test.com"
   role: "super_admin"
 
-admin_no_clerk:
+user_no_clerk:
   clerk_id: ~
   name: ~
   email: "pending@test.com"
-  role: "admin"
+  role: "org_admin"

@@ -1,7 +1,7 @@
 # ActivityLog fixtures
 check_in_log:
   tournament: tournament_one
-  admin: admin_one
+  user: user_one
   action: "golfer_checked_in"
   target_type: "Golfer"
   target_id: 1
@@ -10,7 +10,7 @@ check_in_log:
 
 payment_log:
   tournament: tournament_one
-  admin: admin_one
+  user: user_one
   action: "payment_marked"
   target_type: "Golfer"
   target_id: 1
@@ -19,7 +19,7 @@ payment_log:
 
 group_assign_log:
   tournament: tournament_one
-  admin: admin_two
+  user: super_admin
   action: "golfer_assigned_to_group"
   target_type: "Golfer"
   target_id: 1

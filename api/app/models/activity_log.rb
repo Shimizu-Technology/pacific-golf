@@ -1,6 +1,10 @@
 class ActivityLog < ApplicationRecord
-  belongs_to :admin, optional: true
+  belongs_to :user, foreign_key: :admin_id, optional: true
   belongs_to :tournament, optional: true
+  
+  # Alias for backwards compatibility
+  alias_method :admin, :user
+  alias_method :admin=, :user=
 
   # Action types
   ACTIONS = %w[
@@ -74,6 +78,6 @@ class ActivityLog < ApplicationRecord
   
   # Get the display name for the admin who performed this action
   def admin_display_name
-    admin&.name.presence || admin&.email || metadata&.dig('admin_email') || 'System'
+    user&.name.presence || user&.email || metadata&.dig('admin_email') || 'System'
   end
 end
