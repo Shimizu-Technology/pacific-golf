@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import {
   LandingPage,
   RegistrationPage,
@@ -52,9 +53,10 @@ function OrgRouteWrapper({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Toaster position="top-right" />
-      <Routes>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Toaster position="top-right" />
+        <Routes>
         {/* ===========================================
             ORGANIZATION-SCOPED PUBLIC ROUTES (Multi-tenant)
             =========================================== */}
@@ -274,7 +276,8 @@ function App() {
         {/* Catch-all redirect to root */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
