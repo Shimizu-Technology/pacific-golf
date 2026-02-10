@@ -6,7 +6,7 @@ import {
   Calendar, MapPin, Users, DollarSign, Clock, 
   Trophy, Loader2, AlertCircle, ChevronLeft, Star, Building2, ExternalLink, Check
 } from 'lucide-react';
-import { Button, Card } from '../components/ui';
+import { Button, Card, PageTransition } from '../components/ui';
 
 export function OrgTournamentPage() {
   const { orgSlug, tournamentSlug } = useParams<{ orgSlug: string; tournamentSlug: string }>();
@@ -79,6 +79,7 @@ export function OrgTournamentPage() {
   };
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header 
@@ -350,6 +351,7 @@ export function OrgTournamentPage() {
         </div>
       </footer>
     </div>
+    </PageTransition>
   );
 }
 

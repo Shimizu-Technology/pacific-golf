@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
+import { PageTransition } from '../components/ui';
 import { useOrganization } from '../components/OrganizationProvider';
 import { 
   Users, 
@@ -138,6 +139,7 @@ export const OrgAdminDashboard: React.FC = () => {
   };
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header 
@@ -283,5 +285,6 @@ export const OrgAdminDashboard: React.FC = () => {
         </div>
       </main>
     </div>
+    </PageTransition>
   );
 };

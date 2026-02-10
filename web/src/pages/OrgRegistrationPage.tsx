@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Input, Card } from '../components/ui';
+import { Button, Input, Card, PageTransition } from '../components/ui';
 import { LiabilityWaiver } from '../components/LiabilityWaiver';
 import { PaymentModal } from '../components/PaymentModal';
 import { ChevronLeft, ChevronRight, Trophy, AlertCircle, CheckCircle, Loader2, Check } from 'lucide-react';
@@ -234,6 +234,7 @@ export const OrgRegistrationPage: React.FC = () => {
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header 
@@ -512,5 +513,6 @@ export const OrgRegistrationPage: React.FC = () => {
         </div>
       </footer>
     </div>
+    </PageTransition>
   );
 };

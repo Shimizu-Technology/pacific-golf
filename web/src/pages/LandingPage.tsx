@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useUser, UserButton } from '@clerk/clerk-react';
-import { Button } from '../components/ui';
+import { Button, PageTransition } from '../components/ui';
 import { Calendar, MapPin, Users, LayoutDashboard, Phone, ChevronRight, Check } from 'lucide-react';
 import { api, RegistrationStatus } from '../services/api';
 
@@ -19,6 +19,7 @@ export const LandingPage: React.FC = () => {
   }, []);
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-emerald-50 relative overflow-hidden">
       {/* Subtle golf course pattern overlay */}
       <div 
@@ -319,5 +320,6 @@ export const LandingPage: React.FC = () => {
         </div>
       </div>
     </div>
+    </PageTransition>
   );
 };
