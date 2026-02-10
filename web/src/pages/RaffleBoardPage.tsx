@@ -319,8 +319,11 @@ export const RaffleBoardPage: React.FC = () => {
                       Ticket #{prize.winner.ticket_number}
                     </p>
                     {prize.claimed && (
-                      <span className="mt-3 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs">
-                        ✓ Claimed
+                      <span className="mt-3 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Claimed
                       </span>
                     )}
                   </div>

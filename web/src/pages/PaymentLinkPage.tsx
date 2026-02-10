@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import { api } from '../services/api';
-import { Loader2, CheckCircle, AlertCircle, CreditCard, User, Mail, Building2, Calendar, MapPin, Trophy } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, CreditCard, User, Mail, Building2, Calendar, MapPin, Trophy, Check } from 'lucide-react';
 
 interface PaymentInfo {
   golfer: {
@@ -215,7 +215,7 @@ export default function PaymentLinkPage() {
               <div className="flex justify-between text-sm items-center">
                 <span className="text-gray-600">Payment:</span>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                  ✓ Paid{isEmployee && ' (Employee Rate)'}
+                  <Check className="w-3 h-3" /> Paid{isEmployee && ' (Employee Rate)'}
                 </span>
               </div>
               {amountPaid && (

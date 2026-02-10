@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
 import { Card, Button, Input } from '../components/ui';
-import { Save, Settings as SettingsIcon, RefreshCw, UserPlus, Trash2, Users, CheckCircle, Clock, Calendar, ExternalLink } from 'lucide-react';
+import { Save, Settings as SettingsIcon, RefreshCw, UserPlus, Trash2, Users, CheckCircle, Clock, Calendar, ExternalLink, Check, X, AlertTriangle } from 'lucide-react';
 import { api, Settings, Admin } from '../services/api';
 import { useTournament } from '../contexts';
 import toast from 'react-hot-toast';
@@ -210,8 +210,10 @@ export const AdminSettingsPage: React.FC = () => {
             </div>
             
             <div className={`mt-4 p-3 rounded-lg ${currentTournament.registration_open ? 'bg-green-50' : 'bg-red-50'}`}>
-              <p className={`text-sm font-medium ${currentTournament.registration_open ? 'text-green-800' : 'text-red-800'}`}>
-                {currentTournament.registration_open ? '✓ Registration is OPEN' : '✕ Registration is CLOSED'}
+              <p className={`text-sm font-medium flex items-center gap-2 ${currentTournament.registration_open ? 'text-green-800' : 'text-red-800'}`}>
+                {currentTournament.registration_open 
+                  ? <><Check className="w-4 h-4" /> Registration is OPEN</> 
+                  : <><X className="w-4 h-4" /> Registration is CLOSED</>}
               </p>
             </div>
           </Card>
@@ -279,16 +281,16 @@ export const AdminSettingsPage: React.FC = () => {
 
             {settings.payment_mode === 'test' && (
               <div className="mt-4 bg-amber-100 border border-amber-300 rounded-lg p-3 lg:p-4">
-                <p className="text-xs lg:text-sm text-amber-900 font-medium">
-                  ⚠️ Test Mode Active - No real payments will be processed
+                <p className="text-xs lg:text-sm text-amber-900 font-medium flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" /> Test Mode Active - No real payments will be processed
                 </p>
               </div>
             )}
 
             {settings.payment_mode === 'production' && !settings.stripe_secret_key && (
               <div className="mt-4 bg-red-100 border border-red-300 rounded-lg p-3 lg:p-4">
-                <p className="text-xs lg:text-sm text-red-900 font-medium">
-                  ⚠️ Production mode requires Stripe API keys. Configure them below.
+                <p className="text-xs lg:text-sm text-red-900 font-medium flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" /> Production mode requires Stripe API keys. Configure them below.
                 </p>
               </div>
             )}

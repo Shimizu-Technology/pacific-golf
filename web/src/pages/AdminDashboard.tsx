@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
 import { Card, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Select } from '../components/ui';
-import { Search, Download, RefreshCw, ChevronDown, ChevronUp, X, User, Mail, Phone, Building2, Users, MapPin, CheckCircle, CreditCard, FileText, UserPlus, Calendar, FileSpreadsheet, ArrowUpCircle, Ban, RotateCcw, Pencil, Save, Send, Copy, Loader2, ArrowUpDown, UserCheck, SendHorizontal } from 'lucide-react';
+import { Search, Download, RefreshCw, ChevronDown, ChevronUp, X, User, Mail, Phone, Building2, Users, MapPin, CheckCircle, CreditCard, FileText, UserPlus, Calendar, FileSpreadsheet, ArrowUpCircle, Ban, RotateCcw, Pencil, Save, Send, Copy, Loader2, ArrowUpDown, UserCheck, SendHorizontal, AlertTriangle, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, Golfer, GolferStats, ActivityLog } from '../services/api';
 import { AddGolferModal } from '../components/AddGolferModal';
@@ -1182,8 +1182,8 @@ export const AdminDashboard: React.FC = () => {
                   <div className="h-12 w-px bg-gray-300 mx-4" />
                   <div>
                     <p className="text-sm text-gray-600">Status</p>
-                    <p className={`text-lg font-semibold ${stats.at_capacity ? 'text-amber-600' : 'text-emerald-600'}`}>
-                      {stats.at_capacity ? '⚠️ Waitlist Only' : `${stats.capacity_remaining} spots available`}
+                    <p className={`text-lg font-semibold flex items-center gap-1 ${stats.at_capacity ? 'text-amber-600' : 'text-emerald-600'}`}>
+                      {stats.at_capacity ? <><AlertTriangle className="w-5 h-5" /> Waitlist Only</> : `${stats.capacity_remaining} spots available`}
                     </p>
                   </div>
                 </div>
@@ -1446,7 +1446,7 @@ export const AdminDashboard: React.FC = () => {
                               <span className="text-xs text-red-600 font-medium">Cancelled</span>
                             )}
                             {golfer.checked_in && golfer.registration_status !== 'cancelled' && (
-                              <span className="text-xs text-green-600 font-medium">✓ Checked In</span>
+                              <span className="text-xs text-green-600 font-medium flex items-center gap-1"><Check className="w-3 h-3" /> Checked In</span>
                             )}
                           </div>
                         </div>
@@ -2414,8 +2414,8 @@ export const AdminDashboard: React.FC = () => {
                           )}
                         </button>
                         {stats?.at_capacity && (
-                          <p className="text-xs text-amber-600 mt-2">
-                            ⚠️ Tournament is at capacity. Cannot promote until a spot opens.
+                          <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> Tournament is at capacity. Cannot promote until a spot opens.
                           </p>
                         )}
                       </div>
@@ -2613,8 +2613,8 @@ export const AdminDashboard: React.FC = () => {
               {/* Eligible golfers */}
               {eligibleGolfers.length > 0 && (
                 <div className="bg-green-50 rounded-lg p-3 mb-3 max-h-32 overflow-y-auto">
-                  <p className="text-sm font-medium text-green-700 mb-2">
-                    ✓ Will be updated ({eligibleGolfers.length}):
+                  <p className="text-sm font-medium text-green-700 mb-2 flex items-center gap-1">
+                    <Check className="w-4 h-4" /> Will be updated ({eligibleGolfers.length}):
                   </p>
                   <ul className="text-sm text-green-600 space-y-1">
                     {eligibleGolfers.slice(0, 5).map(g => (
@@ -2725,8 +2725,8 @@ export const AdminDashboard: React.FC = () => {
               {/* Eligible golfers */}
               {eligibleGolfers.length > 0 && (
                 <div className="bg-green-50 rounded-lg p-3 mb-3 max-h-32 overflow-y-auto">
-                  <p className="text-sm font-medium text-green-700 mb-2">
-                    ✓ Will receive email ({eligibleGolfers.length}):
+                  <p className="text-sm font-medium text-green-700 mb-2 flex items-center gap-1">
+                    <Check className="w-4 h-4" /> Will receive email ({eligibleGolfers.length}):
                   </p>
                   <ul className="text-sm text-green-600 space-y-1">
                     {eligibleGolfers.slice(0, 5).map(g => (

@@ -4,7 +4,7 @@ import { useOrganization } from '../components/OrganizationProvider';
 import { api, Tournament, Sponsor } from '../services/api';
 import { 
   Calendar, MapPin, Users, DollarSign, Clock, 
-  Trophy, Loader2, AlertCircle, ChevronLeft, Star, Building2, ExternalLink
+  Trophy, Loader2, AlertCircle, ChevronLeft, Star, Building2, ExternalLink, Check
 } from 'lucide-react';
 import { Button, Card } from '../components/ui';
 
@@ -190,8 +190,8 @@ export function OrgTournamentPage() {
                 </div>
 
                 {tournament.early_bird_active && tournament.early_bird_deadline && (
-                  <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
-                    ✓ Early bird pricing active until {new Date(tournament.early_bird_deadline).toLocaleDateString()}
+                  <div className="text-sm text-green-600 bg-green-50 p-2 rounded flex items-center gap-1">
+                    <Check className="w-4 h-4" /> Early bird pricing active until {new Date(tournament.early_bird_deadline).toLocaleDateString()}
                   </div>
                 )}
 
@@ -245,17 +245,17 @@ export function OrgTournamentPage() {
               <ul className="space-y-2 text-sm text-gray-600">
                 {tournament.allow_card && (
                   <li className="flex items-center gap-2">
-                    <span className="text-green-500">✓</span> Credit/Debit Card
+                    <Check className="w-4 h-4 text-green-500" /> Credit/Debit Card
                   </li>
                 )}
                 {tournament.allow_cash && (
                   <li className="flex items-center gap-2">
-                    <span className="text-green-500">✓</span> Cash (on tournament day)
+                    <Check className="w-4 h-4 text-green-500" /> Cash (on tournament day)
                   </li>
                 )}
                 {tournament.allow_check && (
                   <li className="flex items-center gap-2">
-                    <span className="text-green-500">✓</span> Check
+                    <Check className="w-4 h-4 text-green-500" /> Check
                     {tournament.checks_payable_to && (
                       <span className="text-gray-400">
                         (payable to {tournament.checks_payable_to})

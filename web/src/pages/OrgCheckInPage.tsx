@@ -14,7 +14,8 @@ import {
   Users,
   Clock,
   AlertTriangle,
-  Loader2
+  Loader2,
+  PartyPopper
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -127,8 +128,8 @@ export const OrgCheckInPage: React.FC = () => {
         audio.play().catch(() => {});
       } catch {}
 
-      toast.success(`✓ ${golfer.name} checked in!`, {
-        icon: '🏌️',
+      toast.success(`${golfer.name} checked in!`, {
+        icon: '✅',
         duration: 2000,
       });
 
@@ -295,7 +296,7 @@ export const OrgCheckInPage: React.FC = () => {
                 ? 'No golfers match your search'
                 : showCheckedIn
                 ? 'No golfers found'
-                : 'All golfers checked in! 🎉'}
+                : <span className="flex items-center justify-center gap-2">All golfers checked in! <PartyPopper className="w-5 h-5 text-yellow-500" /></span>}
             </div>
           ) : (
             sortedGolfers.map((golfer) => (

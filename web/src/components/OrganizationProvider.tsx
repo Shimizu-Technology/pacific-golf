@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useOrganizationStore } from '../stores/organizationStore';
 import { api } from '../services/api';
+import { AlertTriangle } from 'lucide-react';
 
 interface OrganizationProviderProps {
   children: React.ReactNode;
@@ -69,7 +70,7 @@ export function OrganizationProvider({
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto px-4">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Organization Not Found</h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <button

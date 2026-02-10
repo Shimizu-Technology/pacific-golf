@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Input, Card } from '../components/ui';
 import { LiabilityWaiver } from '../components/LiabilityWaiver';
 import { PaymentModal } from '../components/PaymentModal';
-import { ChevronLeft, ChevronRight, Trophy, UserCheck, AlertCircle, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trophy, UserCheck, AlertCircle, CheckCircle, Check } from 'lucide-react';
 import { api, RegistrationStatus } from '../services/api';
 
 interface FormData {
@@ -504,8 +504,8 @@ export const RegistrationPage: React.FC = () => {
                           <p className="text-sm text-red-600 mt-1">{employeeValidation.error}</p>
                         )}
                         {employeeValidation.isValid && (
-                          <p className="text-sm text-green-600 mt-1">
-                            ✓ Employee discount will be applied - You pay ${employeeFee.toFixed(2)}
+                          <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
+                            <Check className="w-4 h-4" /> Employee discount will be applied - You pay ${employeeFee.toFixed(2)}
                           </p>
                         )}
                       </div>

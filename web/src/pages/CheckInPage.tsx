@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
 import { Card, Button, Input, Select } from '../components/ui';
-import { Search, CheckCircle, DollarSign, User, RefreshCw, X, UserCheck, CreditCard, Users, Clock, ArrowUpCircle, Send, Copy, Loader2, Pencil } from 'lucide-react';
+import { Search, CheckCircle, DollarSign, User, RefreshCw, X, UserCheck, CreditCard, Users, Clock, ArrowUpCircle, Send, Copy, Loader2, Pencil, AlertTriangle, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, Golfer, GolferStats, ActivityLog } from '../services/api';
 import { useGolferChannel } from '../hooks/useGolferChannel';
@@ -197,8 +197,9 @@ const PlayerDetailPanel: React.FC<{
 
           {capacityRemaining <= 0 && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-              <p className="text-sm text-red-700">
-                ⚠️ Tournament is at capacity. Cannot add more players until a spot opens.
+              <p className="text-sm text-red-700 flex items-center justify-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Tournament is at capacity. Cannot add more players until a spot opens.
               </p>
             </div>
           )}
@@ -334,7 +335,9 @@ const PlayerDetailPanel: React.FC<{
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  {isTogglingEmployee ? 'Updating...' : golfer.is_employee ? '✓ Applied' : 'Apply'}
+                  {isTogglingEmployee ? 'Updating...' : golfer.is_employee ? (
+                    <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Applied</span>
+                  ) : 'Apply'}
                 </button>
               </div>
             )}
@@ -924,7 +927,7 @@ export const CheckInPage: React.FC = () => {
                       : 'bg-green-100 text-green-700'
                 }`}>
                   {stats.at_capacity 
-                    ? '⚠️ At Capacity' 
+                    ? <span className="flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> At Capacity</span>
                     : `${stats.capacity_remaining} spots left`}
                   {stats.reserved_slots > 0 && ` (${stats.reserved_slots} reserved)`}
                 </div>

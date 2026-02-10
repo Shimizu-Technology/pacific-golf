@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useUser, UserButton } from '@clerk/clerk-react';
 import { Button } from '../components/ui';
-import { Calendar, MapPin, Users, LayoutDashboard, Phone, ChevronRight } from 'lucide-react';
+import { Calendar, MapPin, Users, LayoutDashboard, Phone, ChevronRight, Check } from 'lucide-react';
 import { api, RegistrationStatus } from '../services/api';
 
 export const LandingPage: React.FC = () => {
@@ -195,7 +195,7 @@ export const LandingPage: React.FC = () => {
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700">
                       {(registrationStatus?.fee_includes || 'Green Fee, Ditty Bag, Drinks & Food').split(',').map((item, index) => (
                         <span key={index} className="flex items-center gap-1">
-                          <span className="text-[#059669]">✓</span> {item.trim()}
+                          <Check className="w-4 h-4 text-[#059669]" /> {item.trim()}
                         </span>
                       ))}
                     </div>

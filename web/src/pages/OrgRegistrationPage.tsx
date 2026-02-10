@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Input, Card } from '../components/ui';
 import { LiabilityWaiver } from '../components/LiabilityWaiver';
 import { PaymentModal } from '../components/PaymentModal';
-import { ChevronLeft, ChevronRight, Trophy, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trophy, AlertCircle, CheckCircle, Loader2, Check } from 'lucide-react';
 import { api, Tournament } from '../services/api';
 import { useOrganization } from '../components/OrganizationProvider';
 
@@ -397,8 +397,8 @@ export const OrgRegistrationPage: React.FC = () => {
                 <span className="text-2xl font-bold">${entryFee.toFixed(2)}</span>
               </div>
               {tournament.early_bird_active && (
-                <p className="text-sm text-green-600 mt-1">
-                  ✓ Early bird pricing applied
+                <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
+                  <Check className="w-4 h-4" /> Early bird pricing applied
                 </p>
               )}
               {tournament.fee_includes && (

@@ -814,7 +814,7 @@ export const GroupManagementPage: React.FC = () => {
                                   </p>
                                   <p className="text-xs text-gray-400 mb-2 lg:mb-3 hidden lg:block">
                                     {isOverThisGroup && canDropHere 
-                                      ? '✓ Drop here to add player!' 
+                                      ? <span className="flex items-center gap-1 text-green-500"><Check className="w-3 h-3" /> Drop here to add player!</span>
                                       : 'Drag players from the left to add them'}
                                   </p>
                                   {unassigned.length > 0 && !activeId && (

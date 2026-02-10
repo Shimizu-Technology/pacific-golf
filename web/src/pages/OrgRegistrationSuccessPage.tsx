@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useOrganization } from '../components/OrganizationProvider';
-import { CheckCircle, Calendar, MapPin, Mail, CreditCard, ArrowLeft, Share2 } from 'lucide-react';
+import { CheckCircle, Calendar, MapPin, Mail, CreditCard, ArrowLeft, Share2, Check } from 'lucide-react';
 import { Button, Card } from '../components/ui';
 import confetti from 'canvas-confetti';
 
@@ -125,7 +125,7 @@ export function OrgRegistrationSuccessPage() {
               
               {paymentComplete ? (
                 <div className="bg-green-50 text-green-800 p-3 rounded-lg">
-                  <p className="font-medium">✓ Payment Complete</p>
+                  <p className="font-medium flex items-center gap-1"><Check className="w-4 h-4" /> Payment Complete</p>
                   <p className="text-sm">Thank you! Your payment has been processed.</p>
                 </div>
               ) : paymentPending ? (
