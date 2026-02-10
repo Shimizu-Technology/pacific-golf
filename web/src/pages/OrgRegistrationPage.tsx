@@ -191,7 +191,7 @@ export const OrgRegistrationPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
+          <Loader2 className="h-12 w-12 animate-spin text-brand-600 mx-auto" />
           <p className="mt-4 text-gray-600">Loading registration...</p>
         </div>
       </div>
@@ -261,7 +261,7 @@ export const OrgRegistrationPage: React.FC = () => {
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
                     step >= s.num
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-brand-600 text-white'
                       : 'bg-gray-200 text-gray-500'
                   }`}
                 >
@@ -272,7 +272,7 @@ export const OrgRegistrationPage: React.FC = () => {
               {idx < 2 && (
                 <div
                   className={`flex-1 h-1 mx-2 ${
-                    step > s.num ? 'bg-blue-600' : 'bg-gray-200'
+                    step > s.num ? 'bg-brand-600' : 'bg-gray-200'
                   }`}
                 />
               )}
@@ -364,7 +364,7 @@ export const OrgRegistrationPage: React.FC = () => {
                   name="waiverAccepted"
                   checked={formData.waiverAccepted}
                   onChange={handleInputChange}
-                  className="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="mt-1 w-5 h-5 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                 />
                 <span className="text-sm text-gray-700">
                   I have read and agree to the terms of the liability waiver above.
@@ -412,7 +412,7 @@ export const OrgRegistrationPage: React.FC = () => {
             <div className="space-y-3">
               {tournament.allow_card && (
                 <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer ${
-                  formData.paymentOption === 'pay-now' ? 'border-blue-600 bg-blue-50' : 'border-gray-200'
+                  formData.paymentOption === 'pay-now' ? 'border-brand-600 bg-brand-50' : 'border-gray-200'
                 }`}>
                   <input
                     type="radio"
@@ -420,7 +420,7 @@ export const OrgRegistrationPage: React.FC = () => {
                     value="pay-now"
                     checked={formData.paymentOption === 'pay-now'}
                     onChange={handleInputChange}
-                    className="w-5 h-5 text-blue-600"
+                    className="w-5 h-5 text-brand-600"
                   />
                   <div>
                     <span className="font-medium">Pay Now with Card</span>
@@ -431,7 +431,7 @@ export const OrgRegistrationPage: React.FC = () => {
 
               {(tournament.allow_cash || tournament.allow_check) && (
                 <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer ${
-                  formData.paymentOption === 'pay-on-day' ? 'border-blue-600 bg-blue-50' : 'border-gray-200'
+                  formData.paymentOption === 'pay-on-day' ? 'border-brand-600 bg-brand-50' : 'border-gray-200'
                 }`}>
                   <input
                     type="radio"
@@ -439,7 +439,7 @@ export const OrgRegistrationPage: React.FC = () => {
                     value="pay-on-day"
                     checked={formData.paymentOption === 'pay-on-day'}
                     onChange={handleInputChange}
-                    className="w-5 h-5 text-blue-600"
+                    className="w-5 h-5 text-brand-600"
                   />
                   <div>
                     <span className="font-medium">Pay on Tournament Day</span>

@@ -42,15 +42,15 @@ export const PaymentCancelPage: React.FC = () => {
             <h2 className="font-semibold text-gray-900 mb-3">What happens now?</h2>
             <ul className="text-sm text-gray-600 text-left space-y-2">
               <li className="flex items-start gap-2">
-                <span className="text-blue-600">•</span>
+                <span className="text-brand-600">•</span>
                 Your registration is saved with "Pay on Day" status
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-600">•</span>
+                <span className="text-brand-600">•</span>
                 You can pay online anytime by contacting us
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-600">•</span>
+                <span className="text-brand-600">•</span>
                 Or pay at check-in on tournament day
               </li>
             </ul>

@@ -234,7 +234,7 @@ export const CreateTournamentPage: React.FC = () => {
       className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
     >
       <div className="flex items-center gap-3">
-        <div className="text-blue-600">{icon}</div>
+        <div className="text-brand-600">{icon}</div>
         <h3 className="font-semibold text-gray-900">{title}</h3>
       </div>
       {expandedSections[section] ? (
@@ -268,7 +268,7 @@ export const CreateTournamentPage: React.FC = () => {
         placeholder={placeholder}
         min={min}
         step={step}
-        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent ${
           error ? 'border-red-500' : 'border-gray-300'
         }`}
       />
@@ -343,7 +343,7 @@ export const CreateTournamentPage: React.FC = () => {
                     name="status"
                     value={formData.status}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                   >
                     <option value="draft">Draft (not visible to public)</option>
                     <option value="open">Open (registration available)</option>
@@ -419,7 +419,7 @@ export const CreateTournamentPage: React.FC = () => {
                       name="tournament_format"
                       value={formData.tournament_format}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                     >
                       <option value="scramble">Scramble</option>
                       <option value="stroke">Stroke Play</option>
@@ -436,7 +436,7 @@ export const CreateTournamentPage: React.FC = () => {
                       name="scoring_type"
                       value={formData.scoring_type}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                     >
                       <option value="gross">Gross</option>
                       <option value="net">Net</option>
@@ -461,7 +461,7 @@ export const CreateTournamentPage: React.FC = () => {
                       name="shotgun_start"
                       checked={formData.shotgun_start}
                       onChange={handleChange}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500"
                     />
                     <label className="text-sm font-medium text-gray-700">Shotgun Start</label>
                   </div>
@@ -499,7 +499,7 @@ export const CreateTournamentPage: React.FC = () => {
                     name="waitlist_enabled"
                     checked={formData.waitlist_enabled}
                     onChange={handleChange}
-                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                    className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500"
                   />
                   <label className="text-sm font-medium text-gray-700">Enable Waitlist</label>
                 </div>
@@ -566,7 +566,7 @@ export const CreateTournamentPage: React.FC = () => {
                     onChange={handleChange}
                     rows={3}
                     placeholder="e.g., Green fees, cart, lunch, prizes, goody bag..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
               </div>
@@ -585,7 +585,7 @@ export const CreateTournamentPage: React.FC = () => {
                       name="allow_card"
                       checked={formData.allow_card}
                       onChange={handleChange}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500"
                     />
                     <span className="text-sm font-medium text-gray-700">Credit Card (Stripe)</span>
                   </label>
@@ -596,7 +596,7 @@ export const CreateTournamentPage: React.FC = () => {
                       name="allow_cash"
                       checked={formData.allow_cash}
                       onChange={handleChange}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500"
                     />
                     <span className="text-sm font-medium text-gray-700">Cash</span>
                   </label>
@@ -607,7 +607,7 @@ export const CreateTournamentPage: React.FC = () => {
                       name="allow_check"
                       checked={formData.allow_check}
                       onChange={handleChange}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500"
                     />
                     <span className="text-sm font-medium text-gray-700">Check</span>
                   </label>
@@ -632,7 +632,7 @@ export const CreateTournamentPage: React.FC = () => {
                     onChange={handleChange}
                     rows={3}
                     placeholder="Additional payment instructions..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
               </div>
@@ -675,7 +675,7 @@ export const CreateTournamentPage: React.FC = () => {
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

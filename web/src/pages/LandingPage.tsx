@@ -19,7 +19,7 @@ export const LandingPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-emerald-50 relative overflow-hidden">
       {/* Subtle golf course pattern overlay */}
       <div 
         className="absolute inset-0 opacity-[0.03]"
@@ -97,7 +97,7 @@ export const LandingPage: React.FC = () => {
 
         {/* Main Content Card */}
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl shadow-blue-900/10 overflow-hidden">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl shadow-brand-900/10 overflow-hidden">
             {/* Event Details Header */}
             <div className="bg-gradient-to-r from-[#1e3a5f] to-[#2c5282] px-4 sm:px-6 md:px-8 py-4 md:py-5">
               <h3 className="text-white text-sm md:text-base font-semibold tracking-wider uppercase text-center">
@@ -108,7 +108,7 @@ export const LandingPage: React.FC = () => {
             <div className="p-4 sm:p-6 md:p-8">
               {/* Info Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-                <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-4 md:p-5 border border-blue-100">
+                <div className="bg-gradient-to-br from-slate-50 to-brand-50 rounded-xl p-4 md:p-5 border border-brand-100">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-[#1e3a5f] rounded-lg">
                       <Calendar className="text-white" size={18} />
@@ -128,7 +128,7 @@ export const LandingPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-4 md:p-5 border border-blue-100">
+                <div className="bg-gradient-to-br from-slate-50 to-brand-50 rounded-xl p-4 md:p-5 border border-brand-100">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-[#1e3a5f] rounded-lg">
                       <MapPin className="text-white" size={18} />
@@ -144,7 +144,7 @@ export const LandingPage: React.FC = () => {
                     ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300'
                     : registrationStatus?.at_capacity 
                     ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200' 
-                    : 'bg-gradient-to-br from-slate-50 to-blue-50 border-blue-100'
+                    : 'bg-gradient-to-br from-slate-50 to-brand-50 border-brand-100'
                 }`}>
                   <div className="flex items-center gap-3 mb-3">
                     <div className={`p-2 rounded-lg ${
@@ -217,7 +217,7 @@ export const LandingPage: React.FC = () => {
                   <Button
                     size="lg"
                     onClick={() => navigate('/register')}
-                    className="w-full sm:w-auto text-base bg-[#1e3a5f] hover:bg-[#2c5282] shadow-lg shadow-blue-900/20"
+                    className="w-full sm:w-auto text-base bg-[#1e3a5f] hover:bg-[#2c5282] shadow-lg shadow-brand-900/20"
                   >
                     Register Now
                     <ChevronRight size={18} className="ml-1" />
@@ -243,7 +243,7 @@ export const LandingPage: React.FC = () => {
         {/* Contact Footer */}
         <div className="max-w-2xl mx-auto text-center mt-8 md:mt-10 px-4">
           {/* Desktop: Single row pill */}
-          <div className="hidden sm:inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-5 py-3 shadow-lg shadow-blue-900/5">
+          <div className="hidden sm:inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-5 py-3 shadow-lg shadow-brand-900/5">
             <Phone size={16} className="text-[#1e3a5f]" />
             <span className="text-sm text-gray-600">For more information:</span>
             <span className="font-bold text-[#1e3a5f]">{registrationStatus?.contact_name || 'Peter Torres'}</span>
@@ -253,7 +253,7 @@ export const LandingPage: React.FC = () => {
           </div>
           
           {/* Mobile: Styled like other cards */}
-          <div className="sm:hidden bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-4 border border-blue-100 shadow-lg shadow-blue-900/5">
+          <div className="sm:hidden bg-gradient-to-br from-slate-50 to-brand-50 rounded-xl p-4 border border-brand-100 shadow-lg shadow-brand-900/5">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 bg-[#1e3a5f] rounded-lg">
                 <Phone className="text-white" size={18} />

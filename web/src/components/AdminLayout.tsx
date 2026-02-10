@@ -44,7 +44,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-100 pb-20 lg:pb-0">
       {/* Top Navigation */}
-      <nav className="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
+      <nav className="bg-brand-800 text-white shadow-lg sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-14 lg:h-16">
             <button 
@@ -54,7 +54,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <Trophy size={28} className="lg:w-8 lg:h-8" />
               <div className="text-left">
                 <h1 className="font-bold text-base lg:text-lg">Tournament Admin</h1>
-                <p className="text-[10px] lg:text-xs text-blue-200 hidden sm:block">
+                <p className="text-[10px] lg:text-xs text-brand-200 hidden sm:block">
                   {currentTournament?.name?.replace(' Golf Tournament', '') || 'Loading...'}
                 </p>
               </div>
@@ -64,7 +64,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <div className="hidden lg:block relative">
               <button
                 onClick={() => setTournamentDropdownOpen(!tournamentDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-blue-800 hover:bg-blue-700 rounded-lg text-sm transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 bg-brand-700 hover:bg-brand-700 rounded-lg text-sm transition-colors"
               >
                 <Calendar size={16} />
                 <span className="max-w-[200px] truncate">
@@ -89,7 +89,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                             onClick={() => handleTournamentSelect(tournament)}
                             className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                               currentTournament?.id === tournament.id
-                                ? 'bg-blue-100 text-blue-900'
+                                ? 'bg-brand-100 text-brand-800'
                                 : 'text-gray-700 hover:bg-gray-100'
                             }`}
                           >
@@ -117,7 +117,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                             onClick={() => handleTournamentSelect(tournament)}
                             className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                               currentTournament?.id === tournament.id
-                                ? 'bg-blue-100 text-blue-900'
+                                ? 'bg-brand-100 text-brand-800'
                                 : 'text-gray-500 hover:bg-gray-100'
                             }`}
                           >
@@ -131,7 +131,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                               setTournamentDropdownOpen(false);
                               navigate('/admin/tournaments');
                             }}
-                            className="w-full text-left px-3 py-2 text-xs text-blue-600 hover:text-blue-800"
+                            className="w-full text-left px-3 py-2 text-xs text-brand-600 hover:text-brand-800"
                           >
                             View all {archivedTournaments.length} archived →
                           </button>
@@ -145,7 +145,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                           setTournamentDropdownOpen(false);
                           navigate('/admin/tournaments');
                         }}
-                        className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                        className="w-full text-left px-3 py-2 text-sm text-brand-600 hover:text-brand-800 font-medium"
                       >
                         Manage Tournaments →
                       </button>
@@ -158,13 +158,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <div className="flex items-center gap-2 lg:gap-4">
               <button
                 onClick={() => navigate('/')}
-                className="hidden lg:flex items-center gap-1 text-sm text-blue-200 hover:text-white transition-colors"
+                className="hidden lg:flex items-center gap-1 text-sm text-brand-200 hover:text-white transition-colors"
               >
                 <Home size={16} />
                 Home
               </button>
               {user && (
-                <span className="hidden lg:inline text-sm text-blue-200 max-w-[150px] truncate">
+                <span className="hidden lg:inline text-sm text-brand-200 max-w-[150px] truncate">
                   {user.firstName || user.emailAddresses[0]?.emailAddress}
                 </span>
               )}
@@ -180,7 +180,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               {/* Mobile menu button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-1.5 rounded-lg hover:bg-blue-800 transition-colors"
+                className="lg:hidden p-1.5 rounded-lg hover:bg-brand-700 transition-colors"
               >
                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
@@ -190,18 +190,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         {/* Mobile dropdown menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-blue-800 border-t border-blue-700 animate-fade-in">
+          <div className="lg:hidden bg-brand-700 border-t border-brand-600 animate-fade-in">
             <div className="container mx-auto px-4 py-3 space-y-1">
               {/* Tournament selector for mobile */}
               <div className="mb-3 px-2">
-                <p className="text-xs text-blue-300 mb-2">Current Tournament:</p>
+                <p className="text-xs text-brand-300 mb-2">Current Tournament:</p>
                 <select
                   value={currentTournament?.id || ''}
                   onChange={(e) => {
                     const selected = tournaments.find(t => t.id === parseInt(e.target.value));
                     if (selected) handleTournamentSelect(selected);
                   }}
-                  className="w-full bg-blue-900 text-white border border-blue-600 rounded-lg px-3 py-2 text-sm"
+                  className="w-full bg-brand-800 text-white border border-brand-600 rounded-lg px-3 py-2 text-sm"
                 >
                   {tournaments.map(t => (
                     <option key={t.id} value={t.id}>
@@ -220,8 +220,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     onClick={() => handleNavigate(item.path)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-blue-900 text-white'
-                        : 'text-blue-100 hover:bg-blue-700'
+                        ? 'bg-brand-800 text-white'
+                        : 'text-brand-100 hover:bg-brand-700'
                     }`}
                   >
                     <Icon size={20} />
@@ -231,7 +231,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               })}
               <button
                 onClick={() => handleNavigate('/')}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 hover:bg-blue-700 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-100 hover:bg-brand-700 transition-colors"
               >
                 <Home size={20} />
                 <span className="font-medium">Home</span>
@@ -255,7 +255,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     onClick={() => navigate(item.path)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-blue-900 text-white'
+                        ? 'bg-brand-800 text-white'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
@@ -285,7 +285,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 onClick={() => navigate(item.path)}
                 className={`flex flex-col items-center justify-center flex-1 py-2 px-1 rounded-lg transition-colors ${
                   isActive
-                    ? 'text-blue-900'
+                    ? 'text-brand-800'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >

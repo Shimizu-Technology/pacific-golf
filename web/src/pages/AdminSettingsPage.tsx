@@ -151,7 +151,7 @@ export const AdminSettingsPage: React.FC = () => {
     <AdminLayout>
       <div className="space-y-4 lg:space-y-6">
         <div className="flex items-center gap-2 lg:gap-3">
-          <SettingsIcon className="text-blue-900" size={28} />
+          <SettingsIcon className="text-brand-800" size={28} />
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Settings</h1>
         </div>
 
@@ -332,14 +332,14 @@ export const AdminSettingsPage: React.FC = () => {
                 type="password"
               />
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 lg:p-4">
-                <p className="text-xs lg:text-sm text-blue-900">
+              <div className="bg-brand-50 border border-brand-200 rounded-lg p-3 lg:p-4">
+                <p className="text-xs lg:text-sm text-brand-800">
                   <strong>Note:</strong> Find your Stripe API keys in your{' '}
                   <a
                     href="https://dashboard.stripe.com/apikeys"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline hover:text-blue-700"
+                    className="underline hover:text-brand-700"
                   >
                     Stripe Dashboard
                   </a>
@@ -348,7 +348,7 @@ export const AdminSettingsPage: React.FC = () => {
                     href="https://dashboard.stripe.com/webhooks"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline hover:text-blue-700"
+                    className="underline hover:text-brand-700"
                   >
                     Webhooks settings
                   </a>
@@ -409,7 +409,7 @@ export const AdminSettingsPage: React.FC = () => {
         {/* Admin Management Section */}
         <Card className="p-4 lg:p-6">
           <div className="flex items-center gap-2 mb-2 lg:mb-4">
-            <Users className="text-blue-900" size={22} />
+            <Users className="text-brand-800" size={22} />
             <h2 className="text-lg lg:text-xl font-bold text-gray-900">
               Admin Management
             </h2>
@@ -426,7 +426,7 @@ export const AdminSettingsPage: React.FC = () => {
                 value={newAdminEmail}
                 onChange={(e) => setNewAdminEmail(e.target.value)}
                 placeholder="Enter email to add admin..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-800 text-sm"
               />
             </div>
             <Button
@@ -473,7 +473,7 @@ export const AdminSettingsPage: React.FC = () => {
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {admin.email}
                           {currentAdmin?.id === admin.id && (
-                            <span className="ml-2 text-xs text-blue-600">(You)</span>
+                            <span className="ml-2 text-xs text-brand-600">(You)</span>
                           )}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -506,8 +506,8 @@ export const AdminSettingsPage: React.FC = () => {
             )}
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 lg:p-4 mt-4">
-            <p className="text-xs lg:text-sm text-blue-900">
+          <div className="bg-brand-50 border border-brand-200 rounded-lg p-3 lg:p-4 mt-4">
+            <p className="text-xs lg:text-sm text-brand-800">
               <strong>How it works:</strong> Add an email address, and when that person signs up/logs in through Clerk with that email, they'll automatically get admin access.
             </p>
           </div>

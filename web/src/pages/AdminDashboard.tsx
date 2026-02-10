@@ -937,7 +937,7 @@ export const AdminDashboard: React.FC = () => {
           <p className="text-red-600">{error}</p>
           <button
             onClick={fetchData}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-800 text-white rounded-lg hover:bg-brand-700"
           >
             <RefreshCw size={18} />
             Retry
@@ -956,7 +956,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowAddModal(true)}
-              className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
+              className="p-2 text-brand-600 hover:text-brand-800 transition-colors"
               title="Add Golfer"
             >
               <UserPlus size={18} />
@@ -982,7 +982,7 @@ export const AdminDashboard: React.FC = () => {
                 <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50 animate-fade-in">
                   <button
                     onClick={exportAllReports}
-                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-blue-50 flex items-center gap-2 text-blue-900 font-medium border-b border-gray-100"
+                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-brand-50 flex items-center gap-2 text-brand-800 font-medium border-b border-gray-100"
                   >
                     <FileSpreadsheet size={16} />
                     All Reports (Excel)
@@ -1098,7 +1098,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-brand-800 text-white rounded-lg hover:bg-brand-700 transition-colors"
               >
                 <Download size={18} />
                 <span>Export</span>
@@ -1110,7 +1110,7 @@ export const AdminDashboard: React.FC = () => {
                 <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50 animate-fade-in">
                   <button
                     onClick={exportAllReports}
-                    className="w-full px-4 py-3 text-left text-sm hover:bg-blue-50 flex items-center gap-3 text-blue-900 font-medium border-b border-gray-100"
+                    className="w-full px-4 py-3 text-left text-sm hover:bg-brand-50 flex items-center gap-3 text-brand-800 font-medium border-b border-gray-100"
                   >
                     <FileSpreadsheet size={18} />
                     <div>
@@ -1210,9 +1210,9 @@ export const AdminDashboard: React.FC = () => {
 
         {/* Desktop Stats Grid - Full cards */}
         <div className="hidden lg:grid lg:grid-cols-5 gap-4">
-          <Card className="bg-blue-50 border-l-4 border-blue-900">
+          <Card className="bg-brand-50 border-l-4 border-brand-800">
             <h3 className="text-sm font-medium text-gray-600 mb-1">Total</h3>
-            <p className="text-3xl font-bold text-blue-900">{stats?.total || 0}</p>
+            <p className="text-3xl font-bold text-brand-800">{stats?.total || 0}</p>
             <p className="text-xs text-gray-500 mt-0.5">excl. cancelled</p>
           </Card>
           <Card className="bg-green-50 border-l-4 border-green-600">
@@ -1243,7 +1243,7 @@ export const AdminDashboard: React.FC = () => {
               placeholder="Search by name, email, or company..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 text-base"
+              className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-800 text-base"
             />
             {searchTerm && (
               <button
@@ -1269,7 +1269,7 @@ export const AdminDashboard: React.FC = () => {
           {activeFilterCount > 0 && (
             <button
               onClick={clearAllFilters}
-              className="text-sm text-blue-600 hover:text-blue-800 mb-3"
+              className="text-sm text-brand-600 hover:text-brand-800 mb-3"
             >
               Clear all filters
             </button>
@@ -1395,8 +1395,8 @@ export const AdminDashboard: React.FC = () => {
                     key={golfer.id}
                     className={`w-full text-left bg-gray-50 rounded-lg p-4 border transition-colors ${
                       selectedGolferIds.has(golfer.id) 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
+                        ? 'border-brand-500 bg-brand-50' 
+                        : 'border-gray-200 hover:border-brand-300 hover:bg-brand-50/50'
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -1409,7 +1409,7 @@ export const AdminDashboard: React.FC = () => {
                           type="checkbox"
                           checked={selectedGolferIds.has(golfer.id)}
                           onChange={() => {}}
-                          className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="h-5 w-5 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
                         />
                       </div>
                       
@@ -1423,7 +1423,7 @@ export const AdminDashboard: React.FC = () => {
                             <div className="flex items-center gap-2">
                               <p className="font-semibold text-gray-900 truncate">{golfer.name}</p>
                               {golfer.is_employee && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-700">
                                   👤
                                 </span>
                               )}
@@ -1458,7 +1458,7 @@ export const AdminDashboard: React.FC = () => {
                           <span
                             className={`${
                               golfer.registration_status === 'confirmed'
-                                ? 'text-blue-600'
+                                ? 'text-brand-600'
                                 : 'text-gray-500'
                             }`}
                           >
@@ -1487,7 +1487,7 @@ export const AdminDashboard: React.FC = () => {
                             }
                           }}
                           onChange={toggleSelectAllVisible}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
                           title={allVisibleSelected ? "Deselect all visible" : "Select all visible"}
                         />
                       </TableHead>
@@ -1603,8 +1603,8 @@ export const AdminDashboard: React.FC = () => {
                         key={golfer.id} 
                         className={`cursor-pointer transition-colors ${
                           selectedGolferIds.has(golfer.id) 
-                            ? 'bg-blue-50 hover:bg-blue-100' 
-                            : 'hover:bg-blue-50'
+                            ? 'bg-brand-50 hover:bg-brand-100' 
+                            : 'hover:bg-brand-50'
                         }`}
                         onClick={() => handleSelectGolfer(golfer)}
                       >
@@ -1625,7 +1625,7 @@ export const AdminDashboard: React.FC = () => {
                                   return newSet;
                                 });
                               }}
-                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                              className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
                             />
                           </div>
                         </TableCell>
@@ -1633,7 +1633,7 @@ export const AdminDashboard: React.FC = () => {
                           <div className="flex items-center gap-2">
                             {golfer.name}
                             {golfer.is_employee && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700" title="Employee">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-700" title="Employee">
                                 👤
                               </span>
                             )}
@@ -1660,7 +1660,7 @@ export const AdminDashboard: React.FC = () => {
                               golfer.registration_status === 'cancelled'
                                 ? 'bg-red-100 text-red-800'
                                 : golfer.registration_status === 'confirmed'
-                                ? 'bg-blue-100 text-blue-800'
+                                ? 'bg-brand-100 text-brand-800'
                                 : 'bg-gray-100 text-gray-800'
                             }`}
                           >
@@ -1732,14 +1732,14 @@ export const AdminDashboard: React.FC = () => {
                   selectedGolfer.checked_in 
                     ? 'bg-green-100' 
                     : selectedGolfer.payment_status === 'paid'
-                    ? 'bg-blue-100'
+                    ? 'bg-brand-100'
                     : 'bg-amber-100'
                 }`}>
                   <User className={
                     selectedGolfer.checked_in 
                       ? 'text-green-600' 
                       : selectedGolfer.payment_status === 'paid'
-                      ? 'text-blue-600'
+                      ? 'text-brand-600'
                       : 'text-amber-600'
                   } size={28} />
                 </div>
@@ -1747,7 +1747,7 @@ export const AdminDashboard: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-bold text-gray-900">{selectedGolfer.name}</h2>
                     {selectedGolfer.is_employee && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-700">
                         👤 Employee
                       </span>
                     )}
@@ -1758,7 +1758,7 @@ export const AdminDashboard: React.FC = () => {
                         selectedGolfer.registration_status === 'cancelled'
                           ? 'bg-red-100 text-red-800'
                           : selectedGolfer.registration_status === 'confirmed'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-brand-100 text-brand-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
@@ -1780,7 +1780,7 @@ export const AdminDashboard: React.FC = () => {
                   {!isEditingGolfer && selectedGolfer.registration_status !== 'cancelled' && (
                     <button
                       onClick={handleStartEdit}
-                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                      className="flex items-center gap-1 text-xs text-brand-600 hover:text-brand-800 font-medium"
                     >
                       <Pencil size={12} />
                       Edit
@@ -1797,7 +1797,7 @@ export const AdminDashboard: React.FC = () => {
                         type="text"
                         value={editGolferData.name}
                         onChange={(e) => setEditGolferData(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                         placeholder="Full name"
                       />
                     </div>
@@ -1807,7 +1807,7 @@ export const AdminDashboard: React.FC = () => {
                         type="email"
                         value={editGolferData.email}
                         onChange={(e) => setEditGolferData(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                         placeholder="email@example.com"
                       />
                     </div>
@@ -1817,7 +1817,7 @@ export const AdminDashboard: React.FC = () => {
                         type="tel"
                         value={editGolferData.phone}
                         onChange={(e) => setEditGolferData(prev => ({ ...prev, phone: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                         placeholder="(671) 123-4567"
                       />
                     </div>
@@ -1827,7 +1827,7 @@ export const AdminDashboard: React.FC = () => {
                         type="text"
                         value={editGolferData.company}
                         onChange={(e) => setEditGolferData(prev => ({ ...prev, company: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                         placeholder="Company name"
                       />
                     </div>
@@ -1837,7 +1837,7 @@ export const AdminDashboard: React.FC = () => {
                         type="text"
                         value={editGolferData.address}
                         onChange={(e) => setEditGolferData(prev => ({ ...prev, address: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                         placeholder="Mailing address"
                       />
                     </div>
@@ -1854,7 +1854,7 @@ export const AdminDashboard: React.FC = () => {
                       <button
                         onClick={handleSaveEdit}
                         disabled={isSavingEdit}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-white bg-brand-600 rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
                       >
                         {isSavingEdit ? (
                           <RefreshCw size={14} className="animate-spin" />
@@ -2078,7 +2078,7 @@ export const AdminDashboard: React.FC = () => {
                       <button
                         onClick={() => handleSendPaymentLink(selectedGolfer)}
                         disabled={isSendingPaymentLink}
-                        className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                       >
                         {isSendingPaymentLink ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -2151,7 +2151,7 @@ export const AdminDashboard: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                         selectedGolfer.registration_status === 'confirmed'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-brand-100 text-brand-800'
                           : 'bg-gray-200 text-gray-700'
                       }`}>
                         {selectedGolfer.registration_status === 'confirmed' ? 'Confirmed' : 'Waitlist'}
@@ -2435,7 +2435,7 @@ export const AdminDashboard: React.FC = () => {
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {golferActivityLogs.map(log => (
                       <div key={log.id} className="flex items-start gap-2 text-sm bg-gray-50 rounded-lg p-2">
-                        <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5" />
+                        <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5" />
                         <div className="flex-1 min-w-0">
                           <p className="text-gray-700">{log.details}</p>
                           {/* Show what changed for golfer_updated actions */}
@@ -2673,7 +2673,7 @@ export const AdminDashboard: React.FC = () => {
                   disabled={isBulkProcessing || eligibleGolfers.length === 0}
                   className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors disabled:opacity-50 ${
                     showBulkEmployeeConfirm === 'add' 
-                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      ? 'bg-brand-600 hover:bg-brand-700' 
                       : 'bg-amber-600 hover:bg-amber-700'
                   }`}
                 >
@@ -2782,7 +2782,7 @@ export const AdminDashboard: React.FC = () => {
                 <button
                   onClick={handleBulkSendPaymentLinks}
                   disabled={isBulkProcessing || eligibleGolfers.length === 0}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors disabled:opacity-50"
                 >
                   {isBulkProcessing ? (
                     <span className="flex items-center justify-center gap-2">

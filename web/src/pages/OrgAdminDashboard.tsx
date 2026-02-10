@@ -83,7 +83,7 @@ export const OrgAdminDashboard: React.FC = () => {
   if (orgLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
       </div>
     );
   }
@@ -113,7 +113,7 @@ export const OrgAdminDashboard: React.FC = () => {
       draft: 'bg-gray-100 text-gray-700',
       open: 'bg-green-100 text-green-700',
       closed: 'bg-yellow-100 text-yellow-700',
-      completed: 'bg-blue-100 text-blue-700',
+      completed: 'bg-brand-100 text-brand-700',
     };
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || styles.draft}`}>
@@ -167,8 +167,8 @@ export const OrgAdminDashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Trophy className="w-6 h-6 text-blue-600" />
+                <div className="p-3 bg-brand-100 rounded-lg">
+                  <Trophy className="w-6 h-6 text-brand-600" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Total Tournaments</p>
@@ -221,7 +221,7 @@ export const OrgAdminDashboard: React.FC = () => {
             <h2 className="text-lg font-semibold text-gray-900">Tournaments</h2>
             <button
               onClick={() => navigate(`/${organization.slug}/admin/tournaments/new`)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition"
             >
               <Plus className="w-4 h-4" />
               <span>New Tournament</span>
@@ -235,7 +235,7 @@ export const OrgAdminDashboard: React.FC = () => {
               <p className="text-gray-500 mb-6">Create your first tournament to get started.</p>
               <button
                 onClick={() => navigate(`/${organization.slug}/admin/tournaments/new`)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create Tournament</span>

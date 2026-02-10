@@ -206,7 +206,7 @@ export const EditGolferModal: React.FC<EditGolferModalProps> = ({
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 ${
                 errors.name ? 'border-red-500' : 'border-gray-300'
               }`}
             />
@@ -224,7 +224,7 @@ export const EditGolferModal: React.FC<EditGolferModalProps> = ({
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -239,7 +239,7 @@ export const EditGolferModal: React.FC<EditGolferModalProps> = ({
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 ${
                   errors.phone ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -260,7 +260,7 @@ export const EditGolferModal: React.FC<EditGolferModalProps> = ({
                 value={formData.company}
                 onChange={handleChange}
                 placeholder="Optional"
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
               />
             </div>
           </div>
@@ -285,7 +285,7 @@ export const EditGolferModal: React.FC<EditGolferModalProps> = ({
                     checked={formData.payment_status === 'unpaid'}
                     onChange={handleChange}
                     disabled={isRefunded}
-                    className="w-4 h-4 text-blue-600"
+                    className="w-4 h-4 text-brand-600"
                   />
                   <span className="text-gray-700">Unpaid</span>
                 </label>
@@ -297,7 +297,7 @@ export const EditGolferModal: React.FC<EditGolferModalProps> = ({
                     checked={formData.payment_status === 'paid'}
                     onChange={handleChange}
                     disabled={isRefunded}
-                    className="w-4 h-4 text-blue-600"
+                    className="w-4 h-4 text-brand-600"
                   />
                   <span className="text-gray-700">Paid</span>
                 </label>
@@ -325,7 +325,7 @@ export const EditGolferModal: React.FC<EditGolferModalProps> = ({
                       key={value}
                       className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
                         formData.payment_method === value
-                          ? 'border-blue-500 bg-blue-50'
+                          ? 'border-brand-500 bg-brand-50'
                           : 'border-gray-300 hover:bg-gray-50'
                       }`}
                     >
@@ -337,8 +337,8 @@ export const EditGolferModal: React.FC<EditGolferModalProps> = ({
                         onChange={handleChange}
                         className="sr-only"
                       />
-                      <Icon className={`w-4 h-4 ${formData.payment_method === value ? 'text-blue-600' : 'text-gray-400'}`} />
-                      <span className={formData.payment_method === value ? 'text-blue-700 font-medium' : 'text-gray-700'}>
+                      <Icon className={`w-4 h-4 ${formData.payment_method === value ? 'text-brand-600' : 'text-gray-400'}`} />
+                      <span className={formData.payment_method === value ? 'text-brand-700 font-medium' : 'text-gray-700'}>
                         {label}
                       </span>
                     </label>
@@ -362,7 +362,7 @@ export const EditGolferModal: React.FC<EditGolferModalProps> = ({
               onChange={handleChange}
               rows={2}
               placeholder="Any additional notes..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             />
           </div>
 
@@ -378,7 +378,7 @@ export const EditGolferModal: React.FC<EditGolferModalProps> = ({
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-700 font-medium disabled:opacity-50"
             >
               {saving ? (
                 <>

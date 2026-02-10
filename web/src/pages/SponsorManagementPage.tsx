@@ -129,7 +129,7 @@ export const SponsorManagementPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
       </div>
     );
   }
@@ -165,7 +165,7 @@ export const SponsorManagementPage: React.FC = () => {
               </button>
               <button
                 onClick={() => { setEditingSponsor(null); setShowModal(true); }}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-white text-brand-600 rounded-lg hover:bg-brand-50 font-medium"
               >
                 <Plus className="w-5 h-5" />
                 Add Sponsor
@@ -179,7 +179,7 @@ export const SponsorManagementPage: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 py-4">
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3">
-            <Building2 className="w-8 h-8 text-blue-500" />
+            <Building2 className="w-8 h-8 text-brand-500" />
             <div>
               <p className="text-sm text-gray-500">Total Sponsors</p>
               <p className="text-xl font-bold">{sponsors.length}</p>
@@ -243,7 +243,7 @@ export const SponsorManagementPage: React.FC = () => {
                           href={sponsor.website_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                          className="text-sm text-brand-600 hover:underline flex items-center gap-1 mt-1"
                         >
                           <ExternalLink className="w-3 h-3" />
                           Website
@@ -454,7 +454,7 @@ const SponsorModal: React.FC<{
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50"
             >
               {saving ? 'Saving...' : (sponsor ? 'Update' : 'Create')}
             </button>

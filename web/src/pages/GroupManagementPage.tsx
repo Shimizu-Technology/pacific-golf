@@ -94,7 +94,7 @@ const DroppableGroupZone: React.FC<DroppableGroupZoneProps> = ({ groupId, childr
       ref={setNodeRef}
       className={`border-2 border-dashed rounded-lg p-3 lg:p-4 text-center transition-colors min-h-[80px] ${
         isOver && canDrop
-          ? 'border-blue-500 bg-blue-50'
+          ? 'border-brand-500 bg-brand-50'
           : isOver && !canDrop
           ? 'border-red-300 bg-red-50'
           : 'border-gray-300'
@@ -525,7 +525,7 @@ export const GroupManagementPage: React.FC = () => {
               <p className="text-xs lg:text-sm text-gray-500 mt-1">
                 {groups.length} group{groups.length !== 1 ? 's' : ''} • {unassigned.length} unassigned
                 {searchQuery && (
-                  <span className="ml-2 text-blue-600">
+                  <span className="ml-2 text-brand-600">
                     • Showing {groupsByHole.reduce((acc, h) => acc + h.groups.length, 0)} matching
                   </span>
                 )}
@@ -577,7 +577,7 @@ export const GroupManagementPage: React.FC = () => {
               placeholder="Search by hole number or golfer name... (view only - does not edit data)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-10 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+              className="block w-full pl-10 pr-10 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white shadow-sm"
             />
             {searchQuery && (
               <button
@@ -613,9 +613,9 @@ export const GroupManagementPage: React.FC = () => {
                 className="w-full flex items-center justify-between p-4 bg-white rounded-lg shadow-md border border-gray-200"
               >
                 <div className="flex items-center gap-2">
-                  <Users size={20} className="text-blue-900" />
+                  <Users size={20} className="text-brand-800" />
                   <span className="font-semibold text-gray-900">Unassigned Players</span>
-                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                  <span className="bg-brand-100 text-brand-800 text-xs font-medium px-2 py-0.5 rounded-full">
                     {unassigned.length}
                   </span>
                 </div>
@@ -695,7 +695,7 @@ export const GroupManagementPage: React.FC = () => {
                       <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                         {hole !== null ? (
                           <>
-                            <span className="w-8 h-8 bg-blue-900 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                            <span className="w-8 h-8 bg-brand-800 text-white rounded-full flex items-center justify-center text-sm font-bold">
                               {hole}
                             </span>
                             Hole {hole}
@@ -732,7 +732,7 @@ export const GroupManagementPage: React.FC = () => {
                               golferCount === 4 
                                 ? 'border-2 border-green-500' 
                                 : isNewGroup 
-                                ? 'border-2 border-blue-500 ring-4 ring-blue-100 animate-pulse' 
+                                ? 'border-2 border-brand-500 ring-4 ring-brand-100 animate-pulse' 
                                 : ''
                             }`}
                           >
@@ -749,7 +749,7 @@ export const GroupManagementPage: React.FC = () => {
                                     </span>
                                   )}
                                   {isNewGroup && (
-                                    <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                                    <span className="text-xs font-medium text-brand-600 bg-brand-100 px-2 py-0.5 rounded-full">
                                       New!
                                     </span>
                                   )}
@@ -783,9 +783,9 @@ export const GroupManagementPage: React.FC = () => {
                                 return (
                                   <div
                                     key={player.id}
-                                    className="flex items-center gap-2 lg:gap-3 p-2 lg:p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                                    className="flex items-center gap-2 lg:gap-3 p-2 lg:p-3 bg-brand-50 border border-brand-200 rounded-lg"
                                   >
-                                    <div className="w-7 h-7 lg:w-8 lg:h-8 bg-blue-900 text-white rounded-full flex items-center justify-center font-bold text-xs lg:text-sm flex-shrink-0">
+                                    <div className="w-7 h-7 lg:w-8 lg:h-8 bg-brand-800 text-white rounded-full flex items-center justify-center font-bold text-xs lg:text-sm flex-shrink-0">
                                       {group.hole_position_label || '?'}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -838,7 +838,7 @@ export const GroupManagementPage: React.FC = () => {
                                       </select>
                                       <button
                                         onClick={() => openBulkAddModal(group.id)}
-                                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-900 text-white rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors"
+                                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-brand-800 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors"
                                       >
                                         <UserPlus size={16} />
                                         <span>Add Multiple</span>
@@ -861,7 +861,7 @@ export const GroupManagementPage: React.FC = () => {
 
         <DragOverlay>
           {activeGolfer ? (
-            <div className="bg-white border-2 border-blue-500 rounded-lg p-3 shadow-xl cursor-grabbing">
+            <div className="bg-white border-2 border-brand-500 rounded-lg p-3 shadow-xl cursor-grabbing">
               <p className="font-medium text-gray-900">{activeGolfer.name}</p>
               <p className="text-xs text-gray-500">{activeGolfer.email}</p>
             </div>
@@ -889,7 +889,7 @@ export const GroupManagementPage: React.FC = () => {
                 <p className="text-sm text-gray-500">
                   {spotsAvailable} spot{spotsAvailable !== 1 ? 's' : ''} available
                   {selectedPlayerIds.length > 0 && (
-                    <span className="text-blue-600 font-medium">
+                    <span className="text-brand-600 font-medium">
                       {' '}· {Math.min(selectedPlayerIds.length, spotsAvailable)} selected
                     </span>
                   )}
@@ -922,14 +922,14 @@ export const GroupManagementPage: React.FC = () => {
                         disabled={isDisabled}
                         className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left ${
                           isSelected
-                            ? 'border-blue-500 bg-blue-50'
+                            ? 'border-brand-500 bg-brand-50'
                             : isDisabled
                             ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                            : 'border-gray-200 hover:border-brand-300 hover:bg-gray-50'
                         }`}
                       >
                         <div className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${
-                          isSelected ? 'bg-blue-500' : 'border-2 border-gray-300'
+                          isSelected ? 'bg-brand-500' : 'border-2 border-gray-300'
                         }`}>
                           {isSelected && <Check size={16} className="text-white" />}
                         </div>

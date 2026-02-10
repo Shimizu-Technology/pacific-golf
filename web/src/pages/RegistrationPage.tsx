@@ -283,7 +283,7 @@ export const RegistrationPage: React.FC = () => {
   // Show registration closed message
   if (registrationStatus && registrationStatus.registration_open === false) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 relative overflow-hidden py-6 sm:py-12 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-emerald-50 relative overflow-hidden py-6 sm:py-12 flex items-center justify-center">
         <div 
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -317,7 +317,7 @@ export const RegistrationPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 relative overflow-hidden py-6 sm:py-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-emerald-50 relative overflow-hidden py-6 sm:py-12">
       {/* Subtle pattern overlay */}
       <div 
         className="absolute inset-0 opacity-[0.03]"
@@ -443,7 +443,7 @@ export const RegistrationPage: React.FC = () => {
 
                 {/* Employee Discount Section */}
                 {registrationStatus?.employee_discount_available && (
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <div className="p-4 bg-brand-50 rounded-lg border border-brand-100">
                     <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
@@ -460,9 +460,9 @@ export const RegistrationPage: React.FC = () => {
                             setEmployeeValidation({ isValidating: false, isValid: null, error: null, discountedFee: null });
                           }
                         }}
-                        className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-5 h-5 text-brand-600 border-gray-300 rounded focus:ring-brand-500"
                       />
-                      <label htmlFor="isEmployee" className="text-sm font-medium text-blue-900 flex items-center gap-2 cursor-pointer">
+                      <label htmlFor="isEmployee" className="text-sm font-medium text-brand-800 flex items-center gap-2 cursor-pointer">
                         <UserCheck size={16} />
                         I am a GIAA employee
                       </label>
@@ -484,13 +484,13 @@ export const RegistrationPage: React.FC = () => {
                                 ? 'border-green-300 focus:ring-green-500' 
                                 : employeeValidation.isValid === false 
                                   ? 'border-red-300 focus:ring-red-500'
-                                  : 'border-gray-300 focus:ring-blue-500'
+                                  : 'border-gray-300 focus:ring-brand-500'
                             }`}
                             placeholder="Enter your employee number"
                           />
                           <div className="absolute right-3 top-2.5">
                             {employeeValidation.isValidating && (
-                              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                              <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
                             )}
                             {!employeeValidation.isValidating && employeeValidation.isValid === true && (
                               <CheckCircle className="w-5 h-5 text-green-500" />
@@ -577,7 +577,7 @@ export const RegistrationPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <label className={`flex items-start gap-3 p-3 sm:p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${formData.paymentOption === 'pay-now' ? 'border-[#1e3a5f] bg-blue-50' : 'border-gray-200'}`}>
+                  <label className={`flex items-start gap-3 p-3 sm:p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${formData.paymentOption === 'pay-now' ? 'border-[#1e3a5f] bg-brand-50' : 'border-gray-200'}`}>
                     <input
                       type="radio"
                       name="paymentOption"
@@ -594,7 +594,7 @@ export const RegistrationPage: React.FC = () => {
                     </div>
                   </label>
 
-                  <label className={`flex items-start gap-3 p-3 sm:p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${formData.paymentOption === 'pay-on-day' ? 'border-[#1e3a5f] bg-blue-50' : 'border-gray-200'}`}>
+                  <label className={`flex items-start gap-3 p-3 sm:p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${formData.paymentOption === 'pay-on-day' ? 'border-[#1e3a5f] bg-brand-50' : 'border-gray-200'}`}>
                     <input
                       type="radio"
                       name="paymentOption"

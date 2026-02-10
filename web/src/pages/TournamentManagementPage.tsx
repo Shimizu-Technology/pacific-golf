@@ -123,7 +123,7 @@ export const TournamentManagementPage = () => {
     const isCurrent = currentTournament?.id === tournament.id;
 
     return (
-      <Card className={`mb-4 overflow-hidden ${isCurrent ? 'ring-2 ring-blue-500' : ''}`}>
+      <Card className={`mb-4 overflow-hidden ${isCurrent ? 'ring-2 ring-brand-500' : ''}`}>
         <div className="p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -131,7 +131,7 @@ export const TournamentManagementPage = () => {
                 <h3 className="text-lg font-semibold text-gray-900 truncate">{tournament.display_name}</h3>
                 {getStatusBadge(tournament.status)}
                 {isCurrent && (
-                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                  <span className="px-2 py-0.5 bg-brand-100 text-brand-800 text-xs font-medium rounded-full">
                     Current
                   </span>
                 )}
@@ -283,7 +283,7 @@ export const TournamentManagementPage = () => {
                       <UserCheck size={14} className="mr-1" /> 
                       Employee Numbers
                       {tournament.employee_numbers_count > 0 && (
-                        <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
+                        <span className="ml-1 px-1.5 py-0.5 text-xs bg-brand-100 text-brand-700 rounded-full">
                           {tournament.employee_numbers_count}
                         </span>
                       )}
@@ -352,7 +352,7 @@ export const TournamentManagementPage = () => {
             onClick={() => setActiveTab('active')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'active'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-brand-600 text-brand-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -362,7 +362,7 @@ export const TournamentManagementPage = () => {
             onClick={() => setActiveTab('archived')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'archived'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-brand-600 text-brand-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -577,7 +577,7 @@ const TournamentFormModal = ({ isOpen, onClose, tournament, onSuccess }: Tournam
               max={formData.max_capacity || 0}
               value={formData.reserved_slots || 0}
               onChange={(e) => handleChange('reserved_slots', parseInt(e.target.value) || 0)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-800 focus:border-transparent"
             />
             <p className="mt-1 text-xs text-gray-500">
               Slots reserved for VIPs/sponsors. Public sees {(formData.max_capacity || 0) - (formData.reserved_slots || 0)} spots.
@@ -614,7 +614,7 @@ const TournamentFormModal = ({ isOpen, onClose, tournament, onSuccess }: Tournam
                   const cents = Math.round(dollars * 100);
                   handleChange('entry_fee', cents);
                 }}
-                className="w-full pl-7 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent"
+                className="w-full pl-7 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-800 focus:border-transparent"
                 placeholder="125.00"
               />
             </div>
@@ -636,7 +636,7 @@ const TournamentFormModal = ({ isOpen, onClose, tournament, onSuccess }: Tournam
                   const cents = Math.round(dollars * 100);
                   handleChange('employee_entry_fee', cents);
                 }}
-                className="w-full pl-7 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent"
+                className="w-full pl-7 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-800 focus:border-transparent"
                 placeholder="50.00"
               />
             </div>
@@ -843,10 +843,10 @@ const EmployeeNumbersModal = ({ isOpen, onClose, tournament }: EmployeeNumbersMo
         </div>
 
         {/* Employee Fee Info */}
-        <div className="p-3 bg-blue-50 rounded-lg text-sm">
-          <p className="text-blue-800">
+        <div className="p-3 bg-brand-50 rounded-lg text-sm">
+          <p className="text-brand-800">
             <strong>Employee Rate:</strong> ${tournament.employee_entry_fee_dollars.toFixed(2)} 
-            <span className="text-blue-600 ml-2">(vs ${tournament.entry_fee_dollars.toFixed(2)} regular)</span>
+            <span className="text-brand-600 ml-2">(vs ${tournament.entry_fee_dollars.toFixed(2)} regular)</span>
           </p>
         </div>
 
@@ -887,7 +887,7 @@ const EmployeeNumbersModal = ({ isOpen, onClose, tournament }: EmployeeNumbersMo
             <textarea
               value={bulkInput}
               onChange={(e) => setBulkInput(e.target.value)}
-              className="w-full h-32 p-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-32 p-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="12345,John Smith&#10;67890,Jane Doe&#10;11111"
             />
             <div className="flex gap-2">
@@ -938,7 +938,7 @@ const EmployeeNumbersModal = ({ isOpen, onClose, tournament }: EmployeeNumbersMo
                       {emp.used ? (
                         <button
                           onClick={() => handleRelease(emp.id)}
-                          className="text-blue-600 hover:text-blue-800 text-xs"
+                          className="text-brand-600 hover:text-brand-800 text-xs"
                         >
                           <RefreshCw size={14} className="inline mr-1" />
                           Release

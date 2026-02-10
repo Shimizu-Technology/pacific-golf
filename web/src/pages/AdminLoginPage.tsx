@@ -26,8 +26,8 @@ export const AdminLoginPage: React.FC = () => {
   // Show loading while checking auth status
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-brand-50 to-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-800"></div>
       </div>
     );
   }
@@ -35,9 +35,9 @@ export const AdminLoginPage: React.FC = () => {
   // If already signed in, show loading (redirect will happen via useEffect)
   if (isSignedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-brand-50 to-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-800 mx-auto mb-4"></div>
           <p className="text-gray-600">Redirecting to dashboard...</p>
         </div>
       </div>
@@ -45,13 +45,13 @@ export const AdminLoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-brand-50 to-white flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <div className="flex justify-center items-center mb-4">
-            <Trophy className="text-blue-900" size={48} />
+            <Trophy className="text-brand-800" size={48} />
           </div>
-          <h1 className="text-3xl font-bold text-blue-900 mb-2">
+          <h1 className="text-3xl font-bold text-brand-800 mb-2">
             Admin Portal
           </h1>
           <p className="text-gray-600">
@@ -67,11 +67,11 @@ export const AdminLoginPage: React.FC = () => {
               elements: {
                 rootBox: "w-full",
                 card: "shadow-lg rounded-lg",
-                headerTitle: "text-blue-900",
+                headerTitle: "text-brand-800",
                 headerSubtitle: "text-gray-600",
                 socialButtonsBlockButton: "border-gray-300 hover:bg-gray-50",
-                formButtonPrimary: "bg-blue-900 hover:bg-blue-800",
-                footerActionLink: "text-blue-900 hover:text-blue-800",
+                formButtonPrimary: "bg-brand-800 hover:bg-brand-700",
+                footerActionLink: "text-brand-800 hover:text-brand-800",
               },
             }}
           />
@@ -80,7 +80,7 @@ export const AdminLoginPage: React.FC = () => {
         <div className="mt-6 text-center">
           <button
             onClick={() => navigate('/')}
-            className="text-blue-900 hover:underline text-sm"
+            className="text-brand-800 hover:underline text-sm"
           >
             Back to Home
           </button>

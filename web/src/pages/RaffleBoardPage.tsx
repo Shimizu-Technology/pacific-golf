@@ -138,7 +138,7 @@ export const RaffleBoardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-brand-900 flex items-center justify-center">
         <div className="text-center">
           <Gift className="w-16 h-16 text-yellow-400 mx-auto mb-4 animate-bounce" />
           <p className="text-white text-xl">Loading raffle...</p>
@@ -149,7 +149,7 @@ export const RaffleBoardPage: React.FC = () => {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-brand-900 flex items-center justify-center">
         <div className="text-center">
           <Gift className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-white mb-2">Raffle Unavailable</h2>
@@ -168,7 +168,7 @@ export const RaffleBoardPage: React.FC = () => {
   const { tournament, prizes, stats } = data;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-brand-900">
       {/* Header */}
       <header className="bg-black/30 backdrop-blur-sm border-b border-white/10 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -222,7 +222,7 @@ export const RaffleBoardPage: React.FC = () => {
             </div>
             <div className="w-px h-10 bg-white/20" />
             <div>
-              <p className="text-3xl font-bold text-blue-400">{stats.prizes_remaining}</p>
+              <p className="text-3xl font-bold text-brand-400">{stats.prizes_remaining}</p>
               <p className="text-white/60 text-sm">Remaining</p>
             </div>
             <div className="w-px h-10 bg-white/20" />

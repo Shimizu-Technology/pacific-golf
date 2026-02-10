@@ -132,7 +132,7 @@ export default function PaymentLinkPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-emerald-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center max-w-md w-full">
           <Loader2 className="w-12 h-12 text-[#1e3a5f] animate-spin mx-auto mb-4" />
           <p className="text-gray-600">
@@ -156,7 +156,7 @@ export default function PaymentLinkPage() {
     const contactPhone = paymentInfo?.contact_phone || '671.689.8677';
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 relative overflow-hidden py-6 sm:py-12">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-emerald-50 relative overflow-hidden py-6 sm:py-12">
         {/* Subtle pattern overlay */}
         <div 
           className="absolute inset-0 opacity-[0.03]"
@@ -227,7 +227,7 @@ export default function PaymentLinkPage() {
             </div>
 
             {/* What's Next */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="bg-brand-50 border border-brand-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
               <h3 className="font-semibold text-[#1e3a5f] text-sm sm:text-base mb-2">What's Next?</h3>
               <ul className="text-xs sm:text-sm text-gray-700 space-y-1 list-disc list-inside">
                 <li>Check your email for confirmation and additional details</li>
@@ -259,7 +259,7 @@ export default function PaymentLinkPage() {
   // Already paid state
   if (alreadyPaid) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-emerald-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center max-w-md w-full">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-10 h-10 text-green-600" />
@@ -282,7 +282,7 @@ export default function PaymentLinkPage() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-emerald-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center max-w-md w-full">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-10 h-10 text-red-600" />
@@ -303,7 +303,7 @@ export default function PaymentLinkPage() {
   // Show checkout
   if (showCheckout && stripePromise) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 flex items-center justify-center p-4 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-emerald-50 flex items-center justify-center p-4 py-8">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 w-full max-w-lg overflow-hidden">
           <div className="p-6 border-b border-gray-100 bg-gray-50">
             <div className="flex items-center gap-3">
@@ -342,7 +342,7 @@ export default function PaymentLinkPage() {
 
   // Main payment info view - styled to match registration page
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 relative overflow-hidden py-6 sm:py-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-emerald-50 relative overflow-hidden py-6 sm:py-12">
       {/* Subtle pattern overlay */}
       <div 
         className="absolute inset-0 opacity-[0.03]"
@@ -374,7 +374,7 @@ export default function PaymentLinkPage() {
                 </p>
               </div>
               {paymentInfo?.golfer.is_employee && (
-                <span className="px-3 py-1.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+                <span className="px-3 py-1.5 bg-brand-100 text-brand-700 text-xs font-semibold rounded-full">
                   👤 Employee Rate
                 </span>
               )}
@@ -419,7 +419,7 @@ export default function PaymentLinkPage() {
             </div>
 
             {/* Event Info */}
-            <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <div className="mt-4 bg-brand-50 border border-brand-100 rounded-xl p-4">
               <h4 className="font-semibold text-[#1e3a5f] text-sm mb-3 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 Event Details

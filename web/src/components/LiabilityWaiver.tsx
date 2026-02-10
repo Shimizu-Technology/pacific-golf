@@ -2,8 +2,8 @@ import React from 'react';
 
 export const LiabilityWaiver: React.FC = () => {
   return (
-    <div className="bg-blue-50 border-2 border-blue-900 rounded-lg p-6">
-      <h3 className="text-xl font-bold text-blue-900 mb-4 uppercase text-center">
+    <div className="bg-brand-50 border-2 border-brand-800 rounded-lg p-6">
+      <h3 className="text-xl font-bold text-brand-800 mb-4 uppercase text-center">
         Liability Waiver
       </h3>
       <div className="text-sm text-gray-700 space-y-3">

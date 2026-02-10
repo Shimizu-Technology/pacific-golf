@@ -110,13 +110,13 @@ export const LeaderboardPage: React.FC = () => {
 
   const getScoreColor = (relative: number) => {
     if (relative < 0) return 'text-red-600'; // Under par (good)
-    if (relative > 0) return 'text-blue-600'; // Over par
+    if (relative > 0) return 'text-brand-600'; // Over par
     return 'text-gray-900'; // Even
   };
 
   const getScoreIcon = (relative: number) => {
     if (relative < 0) return <ChevronDown className="w-4 h-4 text-red-500" />;
-    if (relative > 0) return <ChevronUp className="w-4 h-4 text-blue-500" />;
+    if (relative > 0) return <ChevronUp className="w-4 h-4 text-brand-500" />;
     return <Minus className="w-4 h-4 text-gray-400" />;
   };
 

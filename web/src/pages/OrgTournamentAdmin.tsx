@@ -355,7 +355,7 @@ export const OrgTournamentAdmin: React.FC = () => {
   if (orgLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
       </div>
     );
   }
@@ -418,7 +418,7 @@ export const OrgTournamentAdmin: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-xl shadow-sm p-4">
               <div className="flex items-center gap-3">
-                <Users className="w-8 h-8 text-blue-500" />
+                <Users className="w-8 h-8 text-brand-500" />
                 <div>
                   <p className="text-sm text-gray-500">Registered</p>
                   <p className="text-xl font-bold">{stats.confirmed}</p>
@@ -467,7 +467,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                   placeholder="Search by name, email, phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                 />
               </div>
 
@@ -476,7 +476,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="all">All Status</option>
                   <option value="confirmed">Confirmed</option>
@@ -487,7 +487,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                 <select
                   value={paymentFilter}
                   onChange={(e) => setPaymentFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="all">All Payment</option>
                   <option value="paid">Paid</option>
@@ -497,7 +497,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                 <select
                   value={checkinFilter}
                   onChange={(e) => setCheckinFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="all">All Check-in</option>
                   <option value="checked_in">Checked In</option>
@@ -516,7 +516,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                 </button>
                 <button
                   onClick={exportCSV}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700"
                 >
                   <Download className="w-4 h-4" />
                   <span>Export</span>
@@ -690,7 +690,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                       setEditingGolfer(selectedGolfer);
                       setSelectedGolfer(null);
                     }}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="flex-1 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700"
                   >
                     Edit
                   </button>

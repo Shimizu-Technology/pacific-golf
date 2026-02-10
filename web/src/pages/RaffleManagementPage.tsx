@@ -323,7 +323,7 @@ export const RaffleManagementPage: React.FC = () => {
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3">
-              <Ticket className="w-8 h-8 text-blue-500" />
+              <Ticket className="w-8 h-8 text-brand-500" />
               <div>
                 <p className="text-sm text-gray-500">Tickets Sold</p>
                 <p className="text-xl font-bold">{stats.paid}</p>

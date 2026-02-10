@@ -33,7 +33,7 @@ export function OrganizationLandingPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -113,7 +113,7 @@ export function OrganizationLandingPage() {
               {organization.contact_email && (
                 <p>
                   <span className="font-medium">Email:</span>{' '}
-                  <a href={`mailto:${organization.contact_email}`} className="text-blue-600 hover:underline">
+                  <a href={`mailto:${organization.contact_email}`} className="text-brand-600 hover:underline">
                     {organization.contact_email}
                   </a>
                 </p>
@@ -121,7 +121,7 @@ export function OrganizationLandingPage() {
               {organization.contact_phone && (
                 <p>
                   <span className="font-medium">Phone:</span>{' '}
-                  <a href={`tel:${organization.contact_phone}`} className="text-blue-600 hover:underline">
+                  <a href={`tel:${organization.contact_phone}`} className="text-brand-600 hover:underline">
                     {organization.contact_phone}
                   </a>
                 </p>
@@ -133,7 +133,7 @@ export function OrganizationLandingPage() {
                     href={organization.website_url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
+                    className="text-brand-600 hover:underline"
                   >
                     {organization.website_url}
                   </a>
@@ -170,7 +170,7 @@ function TournamentCard({ tournament, orgSlug, primaryColor }: TournamentCardPro
     open: 'bg-green-100 text-green-800',
     closed: 'bg-red-100 text-red-800',
     in_progress: 'bg-yellow-100 text-yellow-800',
-    completed: 'bg-blue-100 text-blue-800',
+    completed: 'bg-brand-100 text-brand-800',
     draft: 'bg-gray-100 text-gray-800',
   };
 

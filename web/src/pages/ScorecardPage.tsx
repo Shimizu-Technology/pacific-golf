@@ -212,8 +212,8 @@ export const ScorecardPage: React.FC = () => {
     if (diff <= -2) return 'bg-yellow-400 text-yellow-900'; // Eagle or better
     if (diff === -1) return 'bg-red-500 text-white'; // Birdie
     if (diff === 0) return 'bg-green-500 text-white'; // Par
-    if (diff === 1) return 'bg-blue-500 text-white'; // Bogey
-    if (diff === 2) return 'bg-blue-700 text-white'; // Double
+    if (diff === 1) return 'bg-brand-500 text-white'; // Bogey
+    if (diff === 2) return 'bg-brand-700 text-white'; // Double
     return 'bg-gray-700 text-white'; // Triple+
   };
 

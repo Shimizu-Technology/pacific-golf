@@ -40,7 +40,7 @@ export function OrgTournamentPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
+          <Loader2 className="h-12 w-12 animate-spin text-brand-600 mx-auto" />
           <p className="mt-4 text-gray-600">Loading tournament...</p>
         </div>
       </div>
@@ -66,7 +66,7 @@ export function OrgTournamentPage() {
     open: 'bg-green-100 text-green-800',
     closed: 'bg-red-100 text-red-800',
     in_progress: 'bg-yellow-100 text-yellow-800',
-    completed: 'bg-blue-100 text-blue-800',
+    completed: 'bg-brand-100 text-brand-800',
     draft: 'bg-gray-100 text-gray-800',
   };
 
@@ -327,7 +327,7 @@ export function OrgTournamentPage() {
                             href={sponsor.website_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:underline"
+                            className="text-xs text-brand-600 hover:underline"
                           >
                             Visit Website
                           </a>

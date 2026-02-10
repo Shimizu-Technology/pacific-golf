@@ -85,7 +85,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-800 mx-auto mb-4"></div>
           <p className="text-gray-600">Verifying access...</p>
         </div>
       </div>
@@ -112,7 +112,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           <div className="space-y-3">
             <button
               onClick={() => navigate('/')}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors font-medium"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-800 text-white rounded-lg hover:bg-brand-700 transition-colors font-medium"
             >
               <Home size={18} />
               Go to Home Page

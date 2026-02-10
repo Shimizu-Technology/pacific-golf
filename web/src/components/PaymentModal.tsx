@@ -110,8 +110,8 @@ export function PaymentModal({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${isEmployee ? 'bg-green-50' : 'bg-blue-50'}`}>
-                <CreditCard className={`w-5 h-5 ${isEmployee ? 'text-green-600' : 'text-blue-600'}`} />
+              <div className={`p-2 rounded-lg ${isEmployee ? 'bg-green-50' : 'bg-brand-50'}`}>
+                <CreditCard className={`w-5 h-5 ${isEmployee ? 'text-green-600' : 'text-brand-600'}`} />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
@@ -172,7 +172,7 @@ export function PaymentModal({
             {/* Loading state */}
             {isLoading && !error && (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
                 <span className="ml-3 text-gray-600">Loading payment form...</span>
               </div>
             )}

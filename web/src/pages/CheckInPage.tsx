@@ -53,14 +53,14 @@ const PlayerDetailPanel: React.FC<{
       <div className="flex items-center gap-3 lg:gap-4">
         <div className={`p-3 lg:p-4 rounded-full ${
           golfer.checked_in 
-            ? 'bg-blue-100' 
+            ? 'bg-brand-100' 
             : golfer.payment_status === 'paid' 
             ? 'bg-green-100' 
             : 'bg-amber-100'
         }`}>
           <User className={
             golfer.checked_in 
-              ? 'text-blue-600' 
+              ? 'text-brand-600' 
               : golfer.payment_status === 'paid' 
               ? 'text-green-600' 
               : 'text-amber-600'
@@ -100,9 +100,9 @@ const PlayerDetailPanel: React.FC<{
       </div>
 
       {golfer.checked_in ? (
-        <div className="bg-blue-50 border-2 border-blue-500 rounded-lg p-4 lg:p-6 text-center">
-          <CheckCircle className="mx-auto text-blue-600 mb-2" size={40} />
-          <p className="text-lg font-bold text-blue-600">
+        <div className="bg-brand-50 border-2 border-brand-500 rounded-lg p-4 lg:p-6 text-center">
+          <CheckCircle className="mx-auto text-brand-600 mb-2" size={40} />
+          <p className="text-lg font-bold text-brand-600">
             Already Checked In
           </p>
         </div>
@@ -374,7 +374,7 @@ const PlayerDetailPanel: React.FC<{
                   setPaymentInfo(prev => ({ ...prev, notes: e.target.value }))
                 }
                 placeholder="Any notes..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-800 text-sm"
                 rows={2}
               />
             </div>
@@ -400,19 +400,19 @@ const PlayerDetailPanel: React.FC<{
 
           {/* Send Payment Link Option */}
           {onSendPaymentLink && (
-            <div className="p-3 lg:p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
-              <h4 className="text-sm font-medium text-blue-900 flex items-center gap-2">
+            <div className="p-3 lg:p-4 bg-brand-50 border border-brand-200 rounded-lg space-y-2">
+              <h4 className="text-sm font-medium text-brand-800 flex items-center gap-2">
                 <Send size={16} />
                 Or Send Payment Link
               </h4>
-              <p className="text-xs text-blue-700">
+              <p className="text-xs text-brand-700">
                 Email a secure payment link to the golfer so they can pay online.
               </p>
               <div className="flex gap-2">
                 <Button
                   onClick={onSendPaymentLink}
                   variant="outline"
-                  className="flex-1 py-2 text-blue-700 border-blue-300 hover:bg-blue-100"
+                  className="flex-1 py-2 text-brand-700 border-brand-300 hover:bg-brand-100"
                   disabled={isSendingPaymentLink}
                 >
                   {isSendingPaymentLink ? (
@@ -448,7 +448,7 @@ const PlayerDetailPanel: React.FC<{
           <div className="space-y-2 max-h-40 overflow-y-auto">
             {activityLogs.map(log => (
               <div key={log.id} className="flex items-start gap-2 text-sm bg-gray-50 rounded-lg p-2">
-                <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5" />
+                <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-gray-700 text-xs">{log.details}</p>
                   <p className="text-xs text-gray-400">
@@ -947,17 +947,17 @@ export const CheckInPage: React.FC = () => {
             onClick={() => setActiveQueue('checked-in')}
             className={`p-3 lg:p-4 rounded-lg border-2 transition-all touch-manipulation ${
               activeQueue === 'checked-in' 
-                ? 'border-blue-500 ring-2 ring-blue-200 bg-blue-50' 
-                : 'border-gray-200 hover:border-blue-200 bg-white'
+                ? 'border-brand-500 ring-2 ring-brand-200 bg-brand-50' 
+                : 'border-gray-200 hover:border-brand-200 bg-white'
             }`}
           >
             <div className="flex items-center gap-2 lg:gap-3">
-              <div className={`p-2 lg:p-3 rounded-full ${activeQueue === 'checked-in' ? 'bg-blue-500' : 'bg-blue-100'}`}>
-                <UserCheck className={activeQueue === 'checked-in' ? 'text-white' : 'text-blue-600'} size={18} />
+              <div className={`p-2 lg:p-3 rounded-full ${activeQueue === 'checked-in' ? 'bg-brand-500' : 'bg-brand-100'}`}>
+                <UserCheck className={activeQueue === 'checked-in' ? 'text-white' : 'text-brand-600'} size={18} />
               </div>
               <div className="text-left">
-                <p className="text-[10px] lg:text-xs font-medium text-blue-700 uppercase">Checked In</p>
-                <p className="text-xl lg:text-2xl font-bold text-blue-600">{counts.checkedIn}</p>
+                <p className="text-[10px] lg:text-xs font-medium text-brand-700 uppercase">Checked In</p>
+                <p className="text-xl lg:text-2xl font-bold text-brand-600">{counts.checkedIn}</p>
               </div>
             </div>
           </button>
@@ -1096,7 +1096,7 @@ export const CheckInPage: React.FC = () => {
                     placeholder="Search name, email, phone..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-9 py-2 lg:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 text-sm lg:text-base"
+                    className="w-full pl-9 pr-9 py-2 lg:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-800 text-sm lg:text-base"
                   />
                   {searchTerm && (
                     <button
@@ -1111,7 +1111,7 @@ export const CheckInPage: React.FC = () => {
                 <select
                   value={lastNameFilter}
                   onChange={(e) => setLastNameFilter(e.target.value as 'all' | 'a-j' | 'k-z')}
-                  className="px-3 py-2 lg:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 text-sm lg:text-base bg-white font-medium"
+                  className="px-3 py-2 lg:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-800 text-sm lg:text-base bg-white font-medium"
                 >
                   <option value="all">All Names</option>
                   <option value="a-j">Last Name A-J</option>
@@ -1132,7 +1132,7 @@ export const CheckInPage: React.FC = () => {
                       onClick={() => handleSelectGolfer(golfer)}
                       className={`w-full text-left p-3 rounded-lg border-2 transition-all touch-manipulation ${
                         selectedGolfer?.id === golfer.id
-                          ? 'border-blue-500 bg-blue-50'
+                          ? 'border-brand-500 bg-brand-50'
                           : golfer.checked_in
                           ? 'border-green-200 bg-green-50 hover:border-green-300'
                           : golfer.payment_status === 'paid'
@@ -1147,12 +1147,12 @@ export const CheckInPage: React.FC = () => {
                               {golfer.name}
                             </p>
                             {golfer.is_employee && (
-                              <span className="text-[10px] lg:text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] lg:text-xs bg-brand-50 text-brand-600 px-1.5 py-0.5 rounded">
                                 👤
                               </span>
                             )}
                             {golfer.checked_in ? (
-                              <span className="text-[10px] lg:text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                              <span className="text-[10px] lg:text-xs bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded-full flex items-center gap-1">
                                 <CheckCircle size={10} /> Done
                               </span>
                             ) : golfer.payment_status === 'paid' ? (
@@ -1176,7 +1176,7 @@ export const CheckInPage: React.FC = () => {
                           </div>
                         </div>
                         {golfer.checked_in ? (
-                          <CheckCircle className="text-blue-600 flex-shrink-0" size={20} />
+                          <CheckCircle className="text-brand-600 flex-shrink-0" size={20} />
                         ) : golfer.payment_status === 'paid' ? (
                           <div className="w-5 h-5 border-2 border-green-400 rounded-full flex-shrink-0 bg-green-50" />
                         ) : (
