@@ -113,7 +113,8 @@ class RafflePrize < ApplicationRecord
   def send_winner_email
     return unless winner_email.present?
     
-    RaffleMailer.winner_email(self).deliver_later
+    # Call mailer directly (Resend sends immediately)
+    RaffleMailer.winner_email(self)
   rescue => e
     Rails.logger.error "Failed to send raffle winner email: #{e.message}"
   end
