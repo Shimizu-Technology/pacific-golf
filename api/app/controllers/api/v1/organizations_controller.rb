@@ -41,12 +41,31 @@ module Api
       end
 
       # GET /api/v1/organizations/:slug/tournaments/:tournament_slug
-      # Public endpoint - returns specific tournament
+      # Public endpoint - returns specific tournament with sponsors
       def tournament
         organization = Organization.find_by_slug!(params[:slug])
         tournament = organization.tournaments.find_by!(slug: params[:tournament_slug])
+        
+        # Get active sponsors grouped by tier
+        sponsors = tournament.sponsors.active.ordered.map do |s|
+          {
+            id: s.id,
+            name: s.name,
+            tier: s.tier,
+            tier_display: s.tier_display,
+            logo_url: s.logo_url,
+            website_url: s.website_url,
+            description: s.description,
+            hole_number: s.hole_number,
+            major: s.major?
+          }
+        end
 
-        render json: tournament, serializer: TournamentSerializer
+        # Render tournament with sponsors
+        tournament_data = TournamentSerializer.new(tournament).as_json
+        tournament_data[:sponsors] = sponsors
+        
+        render json: tournament_data
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'Tournament not found' }, status: :not_found
       end

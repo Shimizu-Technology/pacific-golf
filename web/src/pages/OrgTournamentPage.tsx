@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useOrganization } from '../components/OrganizationProvider';
-import { api, Tournament } from '../services/api';
+import { api, Tournament, Sponsor } from '../services/api';
 import { 
   Calendar, MapPin, Users, DollarSign, Clock, 
-  Trophy, Loader2, AlertCircle, ChevronLeft 
+  Trophy, Loader2, AlertCircle, ChevronLeft, Star, Building2, ExternalLink
 } from 'lucide-react';
 import { Button, Card } from '../components/ui';
 
@@ -269,6 +269,78 @@ export function OrgTournamentPage() {
         </div>
       </main>
 
+      {/* Sponsors Section */}
+      {tournament.sponsors && tournament.sponsors.length > 0 && (
+        <section className="max-w-4xl mx-auto px-4 py-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <Star className="text-yellow-500" />
+            Our Sponsors
+          </h2>
+          
+          {/* Major Sponsors (Title, Platinum, Gold) */}
+          {tournament.sponsors.filter(s => s.major).length > 0 && (
+            <div className="mb-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {tournament.sponsors
+                  .filter(s => s.major)
+                  .map(sponsor => (
+                    <SponsorCard key={sponsor.id} sponsor={sponsor} size="large" />
+                  ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Other Sponsors (Silver, Bronze) */}
+          {tournament.sponsors.filter(s => !s.major && s.tier !== 'hole').length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Supporting Sponsors</h3>
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {tournament.sponsors
+                  .filter(s => !s.major && s.tier !== 'hole')
+                  .map(sponsor => (
+                    <SponsorCard key={sponsor.id} sponsor={sponsor} size="small" />
+                  ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Hole Sponsors */}
+          {tournament.sponsors.filter(s => s.tier === 'hole').length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Hole Sponsors</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {tournament.sponsors
+                  .filter(s => s.tier === 'hole')
+                  .sort((a, b) => (a.hole_number || 0) - (b.hole_number || 0))
+                  .map(sponsor => (
+                    <div 
+                      key={sponsor.id}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-sm">
+                        {sponsor.hole_number}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{sponsor.name}</p>
+                        {sponsor.website_url && (
+                          <a 
+                            href={sponsor.website_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline"
+                          >
+                            Visit Website
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-8 px-4 mt-12">
         <div className="max-w-4xl mx-auto text-center">
@@ -279,4 +351,79 @@ export function OrgTournamentPage() {
       </footer>
     </div>
   );
+}
+
+// Sponsor Card Component
+function SponsorCard({ sponsor, size }: { sponsor: Sponsor; size: 'large' | 'small' }) {
+  const tierColors: Record<string, string> = {
+    title: 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-300',
+    platinum: 'bg-gradient-to-br from-slate-50 to-slate-100 border-slate-300',
+    gold: 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300',
+    silver: 'bg-gray-50 border-gray-200',
+    bronze: 'bg-orange-50 border-orange-200',
+  };
+
+  const tierBadgeColors: Record<string, string> = {
+    title: 'bg-yellow-500 text-white',
+    platinum: 'bg-slate-500 text-white',
+    gold: 'bg-amber-500 text-white',
+    silver: 'bg-gray-400 text-white',
+    bronze: 'bg-orange-400 text-white',
+  };
+
+  const content = (
+    <div 
+      className={`
+        relative p-4 rounded-xl border-2 transition-all hover:shadow-md
+        ${tierColors[sponsor.tier] || 'bg-white border-gray-200'}
+        ${size === 'large' ? 'min-h-[120px]' : 'min-h-[80px]'}
+      `}
+    >
+      {/* Tier Badge */}
+      <span className={`
+        absolute -top-2 -right-2 text-xs font-bold px-2 py-0.5 rounded-full
+        ${tierBadgeColors[sponsor.tier] || 'bg-gray-500 text-white'}
+      `}>
+        {sponsor.tier === 'title' ? '★ Title' : sponsor.tier.charAt(0).toUpperCase() + sponsor.tier.slice(1)}
+      </span>
+
+      {/* Logo or Name */}
+      {sponsor.logo_url ? (
+        <div className="flex items-center justify-center h-full">
+          <img 
+            src={sponsor.logo_url} 
+            alt={sponsor.name}
+            className={`max-w-full object-contain ${size === 'large' ? 'max-h-16' : 'max-h-10'}`}
+          />
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center h-full text-center">
+          <Building2 className={`text-gray-400 mb-1 ${size === 'large' ? 'w-8 h-8' : 'w-5 h-5'}`} />
+          <p className={`font-semibold text-gray-700 ${size === 'large' ? 'text-sm' : 'text-xs'}`}>
+            {sponsor.name}
+          </p>
+        </div>
+      )}
+
+      {/* Website Link Indicator */}
+      {sponsor.website_url && (
+        <ExternalLink className="absolute bottom-2 right-2 w-3 h-3 text-gray-400" />
+      )}
+    </div>
+  );
+
+  if (sponsor.website_url) {
+    return (
+      <a 
+        href={sponsor.website_url} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="block"
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return content;
 }

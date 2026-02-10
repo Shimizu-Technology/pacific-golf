@@ -20,6 +20,19 @@ export interface Organization {
   updated_at?: string;
 }
 
+// Sponsor types
+export interface Sponsor {
+  id: number;
+  name: string;
+  tier: 'title' | 'platinum' | 'gold' | 'silver' | 'bronze' | 'hole';
+  tier_display: string;
+  logo_url?: string;
+  website_url?: string;
+  description?: string;
+  hole_number?: number;
+  major: boolean;
+}
+
 // Types for API responses
 export interface Tournament {
   id: number;
@@ -96,6 +109,9 @@ export interface Tournament {
   shotgun_start?: boolean;
   tee_times_enabled?: boolean;
   tee_time_interval_minutes?: number;
+  
+  // Sponsors (public display)
+  sponsors?: Sponsor[];
 }
 
 export interface Golfer {
