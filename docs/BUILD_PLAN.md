@@ -387,15 +387,17 @@ This document outlines the phased development plan for Pacific Golf, transformin
 - [ ] Print stylesheets
 
 ### 8.5 Testing
+- [x] Model validation tests (Organization, Sponsor, RafflePrize)
+- [x] Fix test fixtures (Admin → User, add organizations)
+- [x] RafflePrize draw/reset/claim tests
 - [ ] API endpoint tests
-- [ ] Model validation tests
 - [ ] Leaderboard calculation tests
-- [ ] Raffle draw tests
 - [ ] E2E registration flow test
 - [ ] E2E scoring flow test
 
 ### 8.6 Documentation
-- [ ] API documentation
+- [x] API documentation (docs/API.md)
+- [x] README.md with full setup instructions
 - [ ] Admin user guide
 - [ ] Scorer user guide
 - [ ] Deployment guide
