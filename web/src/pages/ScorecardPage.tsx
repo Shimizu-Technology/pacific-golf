@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuthToken } from '../hooks/useAuthToken';
+import { useGolferAuth } from '../contexts/GolferAuthContext';
 import { 
   ArrowLeft, 
   Save, 
@@ -68,6 +69,7 @@ export const ScorecardPage: React.FC = () => {
   const groupId = searchParams.get('group');
   const tournamentIdParam = searchParams.get('tournament'); // For golfer flow
   const { getToken, isAuthenticated, authType, isGolferAuth } = useAuthToken();
+  const { tournament: golferTournament } = useGolferAuth();
 
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [scorecard, setScorecard] = useState<ScorecardData | null>(null);
@@ -129,15 +131,14 @@ export const ScorecardPage: React.FC = () => {
       const scorecardData = await scorecardRes.json();
       setScorecard(scorecardData);
       
-      // If in golfer flow, we need to fetch tournament details separately
-      if (tournamentIdParam && !tournament) {
-        const tournamentRes = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/tournaments/${tournamentId}`
-        );
-        if (tournamentRes.ok) {
-          const tournamentData = await tournamentRes.json();
-          setTournament(tournamentData.tournament || tournamentData);
-        }
+      // If in golfer flow, use tournament from auth context
+      if (tournamentIdParam && !tournament && golferTournament) {
+        // Convert golfer tournament info to Tournament format
+        setTournament({
+          id: golferTournament.id,
+          name: golferTournament.name,
+          team_size: golferTournament.team_size,
+        } as Tournament);
       }
 
       // Initialize local scores from fetched data
@@ -157,7 +158,7 @@ export const ScorecardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [orgSlug, tournamentSlug, tournamentIdParam, groupId, getToken]);
+  }, [orgSlug, tournamentSlug, tournamentIdParam, groupId, getToken, golferTournament]);
 
   useEffect(() => {
     fetchData();
