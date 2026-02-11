@@ -163,8 +163,17 @@ module Api
       def scorecard
         group = @tournament.groups.find(params[:group_id])
         golfers = group.golfers.includes(:scores)
+        is_team_scoring = @tournament.tournament_format == 'scramble'
 
-        # Get all scores for this group
+        # Get team scores for this group (for scramble format)
+        team_scores_by_hole = {}
+        if is_team_scoring
+          @tournament.scores
+            .where(group: group, score_type: 'team')
+            .each { |s| team_scores_by_hole[s.hole] = s }
+        end
+
+        # Get individual scores for this group
         scores_by_golfer = {}
         group.golfers.each do |golfer|
           scores_by_golfer[golfer.id] = golfer.scores
@@ -176,7 +185,7 @@ module Api
         holes = (1..(@tournament.total_holes || 18)).map do |hole_num|
           hole_par = (@tournament.hole_pars || {})[hole_num.to_s]&.to_i || 4
           
-          {
+          hole_data = {
             hole: hole_num,
             par: hole_par,
             scores: golfers.map do |golfer|
@@ -189,9 +198,39 @@ module Api
               }
             end
           }
+
+          # Add team score if scramble format
+          if is_team_scoring
+            team_score = team_scores_by_hole[hole_num]
+            hole_data[:team_score] = team_score ? {
+              strokes: team_score.strokes,
+              relative: team_score.relative_score
+            } : nil
+          end
+
+          hole_data
+        end
+
+        # Build totals
+        if is_team_scoring
+          team_scores = team_scores_by_hole.values
+          team_totals = {
+            team_name: golfers.map(&:name).join(' & '),
+            total_strokes: team_scores.sum(&:strokes),
+            total_relative: team_scores.sum { |s| s.relative_score || 0 },
+            holes_completed: team_scores.count
+          }
         end
 
         render json: {
+          tournament: {
+            id: @tournament.id,
+            name: @tournament.name,
+            tournament_format: @tournament.tournament_format,
+            team_size: @tournament.team_size,
+            total_holes: @tournament.total_holes || 18,
+            total_par: @tournament.total_par || 72
+          },
           group: {
             id: group.id,
             group_number: group.group_number,
@@ -199,6 +238,8 @@ module Api
           },
           golfers: golfers.map { |g| { id: g.id, name: g.name } },
           holes: holes,
+          is_team_scoring: is_team_scoring,
+          team_totals: is_team_scoring ? team_totals : nil,
           totals: golfers.map do |golfer|
             scores = scores_by_golfer[golfer.id]&.values || []
             {
