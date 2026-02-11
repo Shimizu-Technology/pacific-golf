@@ -2,7 +2,7 @@
 
 **Created:** February 11, 2026  
 **Updated:** February 11, 2026  
-**Status:** Phase 3 Complete ✅  
+**Status:** Phase 4 Complete ✅ (All Core Features Done!)  
 **Target Tournaments:** Make-A-Wish Guam (May 2026), Father Duenas Alumni, Rotary
 
 ---
@@ -236,30 +236,28 @@ end
 
 ---
 
-### Phase 4: Team Size Configuration
+### Phase 4: Team Size Configuration ✅ COMPLETE
 **Goal:** Make sure team_size flows through the entire system
 
-#### What Needs Updating
+**Completed:** February 11, 2026
 
-**1. Group Management Page**
-- Currently hardcoded to show 4 slots
-- Update to read `tournament.team_size`
-- Show 2 slots for scramble, 4 for foursomes
+#### Files Modified ✅
+- `web/src/pages/GroupManagementPage.tsx` - Dynamic team size from tournament
+- `web/src/pages/CreateTournamentPage.tsx` - Added max=4 constraint
 
-**2. Auto-Group Assignment**
-- Logic that creates groups should respect team_size
-- Create groups of 2 for Make-A-Wish, groups of 4 for GIAA
+#### Changes Made ✅
+1. **GroupManagementPage** now uses `useTournament()` hook
+2. Created `maxTeamSize = currentTournament?.team_size || 4`
+3. Replaced all 8 hardcoded `4`s with `maxTeamSize`
+4. Added team size indicator in header: "X groups • Y unassigned • 2-person teams"
 
-**3. Scorecard Display**
-- Show correct number of golfer rows
-- Team scoring for scramble (1 score per hole)
-- Individual scoring for stroke play (1 score per golfer per hole)
+#### What Works Now ✅
+- 2-person groups display correctly for Make-A-Wish scramble
+- 4-person groups display correctly for standard foursomes
+- Groups show "Complete" at the correct size
+- Drop zones hide when groups are full
 
-**4. Leaderboard Calculation**
-- Already handles team vs individual based on `tournament_format`
-- Verify it works correctly
-
-#### Tournament Settings to Verify
+#### Tournament Settings
 ```ruby
 # For Make-A-Wish (2-person scramble)
 tournament.team_size = 2
@@ -385,10 +383,10 @@ web/
 | Phase 1: Magic Link | 2-3 days | 🔴 High | ✅ Complete |
 | Phase 2: Golfer Dashboard | 1-2 days | 🔴 High | ✅ Complete |
 | Phase 3: Scorecard Auth | 1 day | 🔴 High | ✅ Complete |
-| Phase 4: Team Size Config | 1-2 days | 🟡 Medium | 🔄 Next |
-| Phase 5: WebSocket | 1 day | 🟢 Low | ⏳ Pending |
+| Phase 4: Team Size Config | 1-2 days | 🟡 Medium | ✅ Complete |
+| Phase 5: WebSocket | 1 day | 🟢 Low | ⏳ Optional |
 
-**Total:** ~1 week for core features
+**Total:** All core features complete! 🎉
 
 ---
 
