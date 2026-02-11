@@ -72,6 +72,59 @@ class Golfer < ApplicationRecord
     !cancelled?
   end
 
+  # Magic Link methods
+  MAGIC_LINK_EXPIRY = 24.hours
+
+  def generate_magic_link!
+    token = SecureRandom.urlsafe_base64(32)
+    update!(
+      magic_link_token: token,
+      magic_link_expires_at: Time.current + MAGIC_LINK_EXPIRY
+    )
+    token
+  end
+
+  def magic_link_valid?
+    magic_link_token.present? && 
+      magic_link_expires_at.present? && 
+      magic_link_expires_at > Time.current
+  end
+
+  def clear_magic_link!
+    update!(magic_link_token: nil, magic_link_expires_at: nil)
+  end
+
+  def magic_link_url
+    return nil unless magic_link_token.present?
+    frontend_url = ENV.fetch("FRONTEND_URL", "http://localhost:5173")
+    "#{frontend_url}/score/verify?token=#{magic_link_token}"
+  end
+
+  # Find golfer by magic link token (class method)
+  def self.find_by_magic_link(token)
+    return nil if token.blank?
+    
+    golfer = find_by(magic_link_token: token)
+    return nil unless golfer&.magic_link_valid?
+    
+    golfer
+  end
+
+  # Find golfers by email for active tournaments (class method)
+  def self.find_for_scoring_access(email)
+    return [] if email.blank?
+
+    # Find active tournaments (open, in_progress, or recently completed)
+    active_statuses = %w[open closed in_progress]
+    
+    joins(:tournament)
+      .where(email: email.downcase.strip)
+      .where(tournaments: { status: active_statuses })
+      .where.not(registration_status: "cancelled")
+      .includes(:tournament, :group)
+      .order("tournaments.event_date DESC")
+  end
+
   # Action methods
   def check_in!
     # Toggle check-in status

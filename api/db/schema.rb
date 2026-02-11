@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_10_004034) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_11_071000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +40,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004034) do
     t.string "email"
     t.bigint "group_id"
     t.integer "hole_number"
+    t.datetime "magic_link_expires_at"
+    t.string "magic_link_token"
     t.string "mobile"
     t.string "name"
     t.text "notes"
@@ -67,6 +69,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_10_004034) do
     t.datetime "updated_at", null: false
     t.datetime "waiver_accepted_at"
     t.index ["group_id"], name: "index_golfers_on_group_id"
+    t.index ["magic_link_token"], name: "index_golfers_on_magic_link_token", unique: true, where: "(magic_link_token IS NOT NULL)"
     t.index ["paid_at"], name: "index_golfers_on_paid_at"
     t.index ["payment_token"], name: "index_golfers_on_payment_token", unique: true
     t.index ["stripe_checkout_session_id"], name: "index_golfers_on_stripe_checkout_session_id", unique: true, where: "(stripe_checkout_session_id IS NOT NULL)"

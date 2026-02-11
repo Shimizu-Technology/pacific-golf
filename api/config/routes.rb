@@ -40,6 +40,12 @@ Rails.application.routes.draw do
       # Webhooks (public, authenticated via signature)
       post 'webhooks/stripe' => 'webhooks#stripe'
 
+      # Golfer Auth (public - for scoring access)
+      post 'golfer_auth/request_link' => 'golfer_auth#request_link'
+      get 'golfer_auth/verify' => 'golfer_auth#verify'
+      get 'golfer_auth/me' => 'golfer_auth#me'
+      post 'golfer_auth/refresh' => 'golfer_auth#refresh'
+
       # ===========================================
       # ADMIN ENDPOINTS (auth required)
       # ===========================================
