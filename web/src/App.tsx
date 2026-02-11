@@ -233,6 +233,16 @@ function App() {
             </GolferAuthProvider>
           }
         />
+        
+        {/* Golfer Scorecard Entry (uses golfer auth) */}
+        <Route
+          path="/golfer/scorecard"
+          element={
+            <GolferAuthProvider>
+              <ScorecardPage />
+            </GolferAuthProvider>
+          }
+        />
 
         {/* ===========================================
             LEGACY PUBLIC ROUTES (Backwards compatibility)

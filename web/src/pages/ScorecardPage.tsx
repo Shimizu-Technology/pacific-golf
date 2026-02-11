@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuthToken } from '../hooks/useAuthToken';
 import { 
   ArrowLeft, 
   Save, 
@@ -11,7 +11,8 @@ import {
   Plus,
   Minus,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  LogOut
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -63,8 +64,10 @@ interface Tournament {
 export const ScorecardPage: React.FC = () => {
   const { orgSlug, tournamentSlug } = useParams<{ orgSlug: string; tournamentSlug: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const groupId = searchParams.get('group');
-  const { getToken } = useAuth();
+  const tournamentIdParam = searchParams.get('tournament'); // For golfer flow
+  const { getToken, isAuthenticated, authType, isGolferAuth } = useAuthToken();
 
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [scorecard, setScorecard] = useState<ScorecardData | null>(null);
@@ -89,26 +92,53 @@ export const ScorecardPage: React.FC = () => {
     try {
       const token = await getToken();
       
-      // Get tournament
-      const tournamentRes = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/organizations/${orgSlug}/tournaments/${tournamentSlug}`
-      );
-      if (!tournamentRes.ok) throw new Error('Tournament not found');
-      const tournamentData = await tournamentRes.json();
-      // API returns tournament directly, not wrapped
-      const tournament = tournamentData.tournament || tournamentData;
-      setTournament(tournament);
+      let tournamentId: string | number;
+      
+      // Get tournament - support both admin flow (org/slug) and golfer flow (ID param)
+      if (tournamentIdParam) {
+        // Golfer flow - tournament ID in query param
+        tournamentId = tournamentIdParam;
+        // We'll get tournament details from scorecard response
+      } else if (orgSlug && tournamentSlug) {
+        // Admin flow - look up by org slug and tournament slug
+        const tournamentRes = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/v1/organizations/${orgSlug}/tournaments/${tournamentSlug}`
+        );
+        if (!tournamentRes.ok) throw new Error('Tournament not found');
+        const tournamentData = await tournamentRes.json();
+        const tournament = tournamentData.tournament || tournamentData;
+        setTournament(tournament);
+        tournamentId = tournament.id;
+      } else {
+        setError('Tournament not specified');
+        setLoading(false);
+        return;
+      }
 
       // Get scorecard
       const scorecardRes = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/tournaments/${tournament.id}/scores/scorecard?group_id=${groupId}`,
+        `${import.meta.env.VITE_API_URL}/api/v1/tournaments/${tournamentId}/scores/scorecard?group_id=${groupId}`,
         {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         }
       );
-      if (!scorecardRes.ok) throw new Error('Failed to load scorecard');
+      if (!scorecardRes.ok) {
+        const errorData = await scorecardRes.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to load scorecard');
+      }
       const scorecardData = await scorecardRes.json();
       setScorecard(scorecardData);
+      
+      // If in golfer flow, we need to fetch tournament details separately
+      if (tournamentIdParam && !tournament) {
+        const tournamentRes = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/v1/tournaments/${tournamentId}`
+        );
+        if (tournamentRes.ok) {
+          const tournamentData = await tournamentRes.json();
+          setTournament(tournamentData.tournament || tournamentData);
+        }
+      }
 
       // Initialize local scores from fetched data
       const initialScores: Record<string, number> = {};
@@ -127,7 +157,7 @@ export const ScorecardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [orgSlug, tournamentSlug, groupId, getToken]);
+  }, [orgSlug, tournamentSlug, tournamentIdParam, groupId, getToken]);
 
   useEffect(() => {
     fetchData();
@@ -246,6 +276,12 @@ export const ScorecardPage: React.FC = () => {
   const totalHoles = tournament.total_holes || 18;
   const currentHoleData = scorecard.holes.find(h => h.hole === currentHole);
 
+  // Determine back link based on auth type
+  const backLink = isGolferAuth 
+    ? '/golfer/dashboard' 
+    : `/${orgSlug}/admin/tournaments/${tournamentSlug}`;
+  const backLabel = isGolferAuth ? 'Dashboard' : 'Back';
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -254,11 +290,11 @@ export const ScorecardPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <Link
-                to={`/${orgSlug}/admin/tournaments/${tournamentSlug}`}
+                to={backLink}
                 className="inline-flex items-center gap-1 text-green-200 hover:text-white text-sm"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back
+                {backLabel}
               </Link>
               <h1 className="text-lg font-bold">
                 Group {scorecard.group.group_number}
@@ -271,6 +307,7 @@ export const ScorecardPage: React.FC = () => {
               <button
                 onClick={fetchData}
                 className="p-2 bg-green-600 rounded-lg hover:bg-green-500"
+                title="Refresh"
               >
                 <RefreshCw className="w-5 h-5" />
               </button>

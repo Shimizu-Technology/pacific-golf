@@ -3,9 +3,18 @@
 module Api
   module V1
     class ScoresController < BaseController
-      skip_before_action :authenticate_user!, only: [:index, :leaderboard]
+      include GolferOrAdminAuth
+
+      # Skip default admin auth - we use dual auth for most endpoints
+      skip_before_action :authenticate_user!
+      
       before_action :set_tournament
       before_action :set_score, only: [:update, :destroy, :verify]
+      
+      # Public endpoints (no auth)
+      # Auth required endpoints use authenticate_golfer_or_admin!
+      before_action :authenticate_golfer_or_admin!, only: [:create, :update, :destroy, :verify, :batch, :scorecard]
+      before_action :verify_group_access_for_golfer!, only: [:batch, :scorecard]
 
       # GET /api/v1/tournaments/:tournament_id/scores
       # Public - get all scores for a tournament
@@ -53,10 +62,10 @@ module Api
       end
 
       # POST /api/v1/tournaments/:tournament_id/scores
-      # Auth required - create a score
+      # Auth required (admin or golfer) - create a score
       def create
         @score = @tournament.scores.build(score_params)
-        @score.entered_by = current_user
+        @score.entered_by = score_entered_by
 
         # Auto-set group from golfer if not provided
         if @score.group_id.blank? && @score.golfer_id.present?
@@ -105,7 +114,7 @@ module Api
       end
 
       # POST /api/v1/tournaments/:tournament_id/scores/batch
-      # Auth required - create multiple scores at once (for full scorecard submission)
+      # Auth required (admin or golfer) - create multiple scores at once (for full scorecard submission)
       def batch
         scores_data = params[:scores] || []
         created_scores = []
@@ -119,7 +128,7 @@ module Api
               golfer_id: score_data[:golfer_id],
               group_id: score_data[:group_id],
               score_type: score_data[:score_type] || 'individual',
-              entered_by: current_user
+              entered_by: score_entered_by
             )
 
             # Auto-set group from golfer if not provided
@@ -204,6 +213,30 @@ module Api
       end
 
       private
+
+      # Verify golfer can only access their own group
+      def verify_group_access_for_golfer!
+        return true if admin_authenticated?
+        
+        if golfer_authenticated?
+          group_id = params[:group_id]&.to_i || params.dig(:scores, 0, :group_id)&.to_i
+          
+          if group_id && current_golfer.group_id != group_id
+            render json: { 
+              success: false, 
+              error: 'You can only enter scores for your own group' 
+            }, status: :forbidden
+            return false
+          end
+        end
+        
+        true
+      end
+
+      # Get the user/golfer who entered the score
+      def score_entered_by
+        admin_authenticated? ? current_user : nil
+      end
 
       def set_tournament
         @tournament = Tournament.find(params[:tournament_id])

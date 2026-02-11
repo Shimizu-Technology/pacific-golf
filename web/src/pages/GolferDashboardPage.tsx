@@ -179,7 +179,7 @@ export const GolferDashboardPage: React.FC = () => {
           {/* Enter Scores - Only show if group assigned and tournament in progress */}
           {group && (tournament.status === 'open' || tournament.status === 'in_progress') && (
             <Link
-              to={`/${orgSlug}/admin/tournaments/${tournamentSlug}/scorecard?group=${group.id}`}
+              to={`/golfer/scorecard?group=${group.id}&tournament=${tournament.id}`}
               className="flex items-center justify-between w-full bg-green-600 hover:bg-green-700 text-white p-4 rounded-xl font-semibold transition-colors"
             >
               <span className="flex items-center gap-3">
