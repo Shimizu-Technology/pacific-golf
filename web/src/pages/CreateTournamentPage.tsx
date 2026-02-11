@@ -452,6 +452,7 @@ export const CreateTournamentPage: React.FC = () => {
                     name="team_size"
                     type="number"
                     min={1}
+                    max={4}
                     value={formData.team_size}
                   />
                   

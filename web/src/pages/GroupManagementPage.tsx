@@ -23,6 +23,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Users, GripVertical, Trash2, RefreshCw, Plus, CheckCircle, ChevronDown, ChevronUp, X, UserPlus, Check, ArrowUp, ArrowDown, Search } from 'lucide-react';
 import { api, Golfer, Group } from '../services/api';
 import { useGolferChannel } from '../hooks/useGolferChannel';
+import { useTournament } from '../contexts/TournamentContext';
 
 interface DraggableGolferProps {
   golfer: Golfer;
@@ -106,6 +107,11 @@ const DroppableGroupZone: React.FC<DroppableGroupZoneProps> = ({ groupId, childr
 };
 
 export const GroupManagementPage: React.FC = () => {
+  const { currentTournament } = useTournament();
+  
+  // Team size from tournament config (default to 4 for standard foursomes)
+  const maxTeamSize = currentTournament?.team_size || 4;
+  
   const [unassigned, setUnassigned] = useState<Golfer[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -241,7 +247,7 @@ export const GroupManagementPage: React.FC = () => {
       if (!golfer) return;
 
       const group = groups.find(g => g.id === groupId);
-      if (!group || (group.golfers?.length || 0) >= 4) return;
+      if (!group || (group.golfers?.length || 0) >= maxTeamSize) return;
 
       try {
         setUnassigned(prev => prev.filter(g => g.id !== activeGolferId));
@@ -390,7 +396,7 @@ export const GroupManagementPage: React.FC = () => {
     const group = groups.find(g => g.id === bulkAddGroupId);
     if (!group) return;
     
-    const spotsAvailable = 4 - (group.golfers?.length || 0);
+    const spotsAvailable = maxTeamSize - (group.golfers?.length || 0);
     const playersToAdd = selectedPlayerIds.slice(0, spotsAvailable);
     
     setIsAddingBulk(true);
@@ -414,7 +420,7 @@ export const GroupManagementPage: React.FC = () => {
 
   // Get the group for bulk add modal
   const bulkAddGroup = bulkAddGroupId ? groups.find(g => g.id === bulkAddGroupId) : null;
-  const spotsAvailable = bulkAddGroup ? 4 - (bulkAddGroup.golfers?.length || 0) : 0;
+  const spotsAvailable = bulkAddGroup ? maxTeamSize - (bulkAddGroup.golfers?.length || 0) : 0;
 
   const activeGolfer = activeId 
     ? [...unassigned, ...groups.flatMap(g => g.golfers || [])].find(g => g.id.toString() === activeId) 
@@ -523,7 +529,7 @@ export const GroupManagementPage: React.FC = () => {
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Group Management</h1>
               <p className="text-xs lg:text-sm text-gray-500 mt-1">
-                {groups.length} group{groups.length !== 1 ? 's' : ''} • {unassigned.length} unassigned
+                {groups.length} group{groups.length !== 1 ? 's' : ''} • {unassigned.length} unassigned • {maxTeamSize}-person teams
                 {searchQuery && (
                   <span className="ml-2 text-brand-600">
                     • Showing {groupsByHole.reduce((acc, h) => acc + h.groups.length, 0)} matching
@@ -718,7 +724,7 @@ export const GroupManagementPage: React.FC = () => {
                     {holeGroups.map((group) => {
                       const isOverThisGroup = overGroupId === group.id;
                       const golferCount = group.golfers?.length || 0;
-                      const canDropHere = golferCount < 4;
+                      const canDropHere = golferCount < maxTeamSize;
                       const isNewGroup = newGroupId === group.id;
 
                       return (
@@ -729,7 +735,7 @@ export const GroupManagementPage: React.FC = () => {
                         >
                           <Card 
                             className={`p-3 lg:p-6 transition-all duration-500 ${
-                              golferCount === 4 
+                              golferCount === maxTeamSize 
                                 ? 'border-2 border-green-500' 
                                 : isNewGroup 
                                 ? 'border-2 border-brand-500 ring-4 ring-brand-100 animate-pulse' 
@@ -743,7 +749,7 @@ export const GroupManagementPage: React.FC = () => {
                                   <span className="text-xs font-normal text-gray-400">
                                     (Group #{group.group_number})
                                   </span>
-                                  {golferCount === 4 && (
+                                  {golferCount === maxTeamSize && (
                                     <span className="text-xs lg:text-sm font-normal text-green-600">
                                       (Complete)
                                     </span>
@@ -803,14 +809,14 @@ export const GroupManagementPage: React.FC = () => {
                                 );
                               })}
 
-                              {golferCount < 4 && (
+                              {golferCount < maxTeamSize && (
                                 <DroppableGroupZone 
                                   groupId={group.id} 
                                   isOver={isOverThisGroup}
                                   canDrop={canDropHere}
                                 >
                                   <p className="text-gray-500 text-xs lg:text-sm mb-1 lg:mb-2">
-                                    {4 - golferCount} spot{4 - golferCount !== 1 ? 's' : ''} remaining
+                                    {maxTeamSize - golferCount} spot{maxTeamSize - golferCount !== 1 ? 's' : ''} remaining
                                   </p>
                                   <p className="text-xs text-gray-400 mb-2 lg:mb-3 hidden lg:block">
                                     {isOverThisGroup && canDropHere 
