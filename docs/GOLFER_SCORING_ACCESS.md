@@ -2,7 +2,7 @@
 
 **Created:** February 11, 2026  
 **Updated:** February 11, 2026  
-**Status:** Phase 1 Complete ✅  
+**Status:** Phase 2 Complete ✅  
 **Target Tournaments:** Make-A-Wish Guam (May 2026), Father Duenas Alumni, Rotary
 
 ---
@@ -120,8 +120,23 @@ POST /api/v1/golfer_auth/refresh
 
 ---
 
-### Phase 2: Golfer Dashboard
+### Phase 2: Golfer Dashboard ✅ COMPLETE
 **Goal:** Give golfers a home base on tournament day
+
+**Completed:** February 11, 2026
+
+#### Files Created ✅
+- `web/src/contexts/GolferAuthContext.tsx` - Session management, localStorage, API calls
+- `web/src/pages/GolferLoginPage.tsx` - Email form for magic link request
+- `web/src/pages/GolferVerifyPage.tsx` - Magic link verification handler
+- `web/src/pages/GolferDashboardPage.tsx` - Golfer home with group/tournament info
+
+#### Routes Added ✅
+- `/score` - GolferLoginPage
+- `/score/verify` - GolferVerifyPage
+- `/golfer/dashboard` - GolferDashboardPage
+
+#### Original Plan
 
 #### New Page: `/golfer/dashboard`
 
@@ -346,8 +361,8 @@ web/
 | Phase | Effort | Priority | Status |
 |-------|--------|----------|--------|
 | Phase 1: Magic Link | 2-3 days | 🔴 High | ✅ Complete |
-| Phase 2: Golfer Dashboard | 1-2 days | 🔴 High | 🔄 Next |
-| Phase 3: Scorecard Auth | 1 day | 🔴 High | ⏳ Pending |
+| Phase 2: Golfer Dashboard | 1-2 days | 🔴 High | ✅ Complete |
+| Phase 3: Scorecard Auth | 1 day | 🔴 High | 🔄 Next |
 | Phase 4: Team Size Config | 1-2 days | 🟡 Medium | ⏳ Pending |
 | Phase 5: WebSocket | 1 day | 🟢 Low | ⏳ Pending |
 
