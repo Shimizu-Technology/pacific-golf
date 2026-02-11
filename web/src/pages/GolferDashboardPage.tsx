@@ -244,7 +244,16 @@ export const GolferDashboardPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="py-6 text-center text-sm text-gray-500">
-        <p>Powered by Pacific Golf 🏌️</p>
+        <p className="flex items-center justify-center gap-1.5">
+          Powered by Pacific Golf
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="5" r="3"/>
+            <path d="M12 8v8"/>
+            <path d="M8 21h8"/>
+            <path d="M12 16l4-4"/>
+            <path d="M16 12l2-6"/>
+          </svg>
+        </p>
       </footer>
     </div>
   );

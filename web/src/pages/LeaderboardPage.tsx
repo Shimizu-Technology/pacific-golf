@@ -141,16 +141,21 @@ export const LeaderboardPage: React.FC = () => {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <Trophy className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-white mb-2">Leaderboard Unavailable</h2>
-          <p className="text-gray-400 mb-4">{error || 'No data available'}</p>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Trophy className="w-10 h-10 text-gray-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-3">Leaderboard Unavailable</h2>
+          <p className="text-gray-400 mb-8 leading-relaxed">
+            {error || 'The leaderboard is currently unavailable. This could be because the tournament hasn\'t started yet or scores haven\'t been entered.'}
+          </p>
           <Link
             to={`/${orgSlug}/tournaments/${tournamentSlug}`}
-            className="text-green-500 hover:text-green-400"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all shadow-lg shadow-green-600/25"
           >
-            ← Back to Tournament
+            <ArrowLeft className="w-4 h-4" />
+            Back to Tournament
           </Link>
         </div>
       </div>

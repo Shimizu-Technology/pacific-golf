@@ -507,20 +507,23 @@ export const ScorecardPage: React.FC = () => {
                 </div>
 
                 {/* Quick Score Buttons */}
-                <div className="flex gap-2 mt-4 justify-center">
-                  {[currentHoleData.par - 2, currentHoleData.par - 1, currentHoleData.par, currentHoleData.par + 1, currentHoleData.par + 2, currentHoleData.par + 3].filter(v => v > 0).map(value => (
-                    <button
-                      key={value}
-                      onClick={() => setTeamScore(currentHole, value)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                        localScores[`team-${currentHole}`] === value
-                          ? getScoreColor(value, currentHoleData.par)
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {value}
-                    </button>
-                  ))}
+                <div className="mt-4">
+                  <p className="text-xs text-gray-500 text-center mb-2 uppercase tracking-wide font-medium">Quick Entry</p>
+                  <div className="flex gap-2 justify-center bg-gray-50 rounded-xl p-2">
+                    {[currentHoleData.par - 2, currentHoleData.par - 1, currentHoleData.par, currentHoleData.par + 1, currentHoleData.par + 2, currentHoleData.par + 3].filter(v => v > 0).map(value => (
+                      <button
+                        key={value}
+                        onClick={() => setTeamScore(currentHole, value)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          localScores[`team-${currentHole}`] === value
+                            ? getScoreColor(value, currentHoleData.par)
+                            : 'bg-white text-gray-600 hover:bg-gray-200 shadow-sm'
+                        }`}
+                      >
+                        {value}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -577,20 +580,22 @@ export const ScorecardPage: React.FC = () => {
                       </div>
 
                       {/* Quick Score Buttons */}
-                      <div className="flex gap-2 mt-3 justify-end">
-                        {[par - 2, par - 1, par, par + 1, par + 2, par + 3].filter(v => v > 0).map(value => (
-                          <button
-                            key={value}
-                            onClick={() => setScore(currentHole, golfer.id, value)}
-                            className={`px-3 py-1 rounded text-sm font-medium ${
-                              strokes === value
-                                ? getScoreColor(value, par)
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                          >
-                            {value}
-                          </button>
-                        ))}
+                      <div className="mt-3">
+                        <div className="flex gap-2 justify-end bg-gray-50 rounded-lg p-1.5">
+                          {[par - 2, par - 1, par, par + 1, par + 2, par + 3].filter(v => v > 0).map(value => (
+                            <button
+                              key={value}
+                              onClick={() => setScore(currentHole, golfer.id, value)}
+                              className={`px-3 py-1 rounded text-sm font-medium transition-all ${
+                                strokes === value
+                                  ? getScoreColor(value, par)
+                                  : 'bg-white text-gray-600 hover:bg-gray-200 shadow-sm'
+                              }`}
+                            >
+                              {value}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   );
