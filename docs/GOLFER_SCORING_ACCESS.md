@@ -1,7 +1,8 @@
 # Golfer Scoring Access - Implementation Plan
 
 **Created:** February 11, 2026  
-**Status:** Planning  
+**Updated:** February 11, 2026  
+**Status:** Phase 1 Complete ✅  
 **Target Tournaments:** Make-A-Wish Guam (May 2026), Father Duenas Alumni, Rotary
 
 ---
@@ -63,18 +64,20 @@ The **Golfer table IS the whitelist**. When someone registers for a tournament, 
 
 ## Implementation Phases
 
-### Phase 1: Magic Link System
+### Phase 1: Magic Link System ✅ COMPLETE
 **Goal:** Allow golfers to access the system without creating an account
 
-#### Database Changes
+**Completed:** February 11, 2026
+
+#### Database Changes ✅
 ```ruby
-# Migration: add_magic_link_fields_to_golfers
+# Migration: 20260211071000_add_magic_link_to_golfers.rb
 add_column :golfers, :magic_link_token, :string
 add_column :golfers, :magic_link_expires_at, :datetime
-add_index :golfers, :magic_link_token, unique: true
+add_index :golfers, :magic_link_token, unique: true, where: "magic_link_token IS NOT NULL"
 ```
 
-#### API Endpoints
+#### API Endpoints ✅
 ```
 POST /api/v1/golfer_auth/request_link
   - Body: { email: "golfer@example.com" }
@@ -86,28 +89,30 @@ POST /api/v1/golfer_auth/request_link
 GET /api/v1/golfer_auth/verify?token=xxxxx
   - Validates token and expiry
   - Returns golfer info + JWT for session
-  - Returns: { golfer: {...}, token: "jwt...", tournament: {...} }
+  - Clears magic link (one-time use)
+  - Returns: { success: true, token: "jwt...", golfer: {...}, tournament: {...}, group: {...} }
+
+GET /api/v1/golfer_auth/me
+  - Requires: Authorization: Bearer <session_token>
+  - Returns current golfer info
+
+POST /api/v1/golfer_auth/refresh
+  - Requires: Authorization: Bearer <session_token>
+  - Returns new session token
 ```
 
-#### Email Template
-```
-Subject: Your Pacific Golf Scoring Access
+#### Files Created ✅
+- `api/db/migrate/20260211071000_add_magic_link_to_golfers.rb`
+- `api/app/controllers/api/v1/golfer_auth_controller.rb`
+- `api/app/services/golfer_auth.rb` - JWT generation/verification
+- `api/app/views/golfer_mailer/scoring_access_email.html.erb`
 
-Hi {golfer_name},
+#### Tests ✅ (52 tests, 107 assertions)
+- `api/test/models/golfer_magic_link_test.rb` - 24 tests
+- `api/test/services/golfer_auth_test.rb` - 11 tests
+- `api/test/controllers/api/v1/golfer_auth_controller_test.rb` - 17 tests
 
-Here's your access link for {tournament_name}:
-
-{magic_link_url}
-
-This link expires in 24 hours.
-
-Your group: {group_number}
-Starting hole: {hole_number}
-
-See you on the course!
-```
-
-#### Frontend Pages
+#### Frontend Pages (TODO - Phase 2)
 - `/score` - Landing page with two options:
   - "Sign in with account" → Clerk login
   - "Quick access" → Enter email, get magic link
@@ -338,13 +343,13 @@ web/
 
 ## Timeline Estimate
 
-| Phase | Effort | Priority |
-|-------|--------|----------|
-| Phase 1: Magic Link | 2-3 days | 🔴 High |
-| Phase 2: Golfer Dashboard | 1-2 days | 🔴 High |
-| Phase 3: Scorecard Auth | 1 day | 🔴 High |
-| Phase 4: Team Size Config | 1-2 days | 🟡 Medium |
-| Phase 5: WebSocket | 1 day | 🟢 Low |
+| Phase | Effort | Priority | Status |
+|-------|--------|----------|--------|
+| Phase 1: Magic Link | 2-3 days | 🔴 High | ✅ Complete |
+| Phase 2: Golfer Dashboard | 1-2 days | 🔴 High | 🔄 Next |
+| Phase 3: Scorecard Auth | 1 day | 🔴 High | ⏳ Pending |
+| Phase 4: Team Size Config | 1-2 days | 🟡 Medium | ⏳ Pending |
+| Phase 5: WebSocket | 1 day | 🟢 Low | ⏳ Pending |
 
 **Total:** ~1 week for core features
 
