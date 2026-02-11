@@ -30,6 +30,9 @@ import { OrgTournamentAdmin } from './pages/OrgTournamentAdmin';
 import { OrgCheckInPage } from './pages/OrgCheckInPage';
 import { CreateTournamentPage } from './pages/CreateTournamentPage';
 import { LeaderboardPage, ScorecardPage, RaffleBoardPage, RaffleManagementPage, SponsorManagementPage, GolferLoginPage, GolferVerifyPage, GolferDashboardPage } from './pages';
+import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
+import { CreateOrganizationPage } from './pages/CreateOrganizationPage';
+import { EditOrganizationPage } from './pages/EditOrganizationPage';
 import { GolferAuthProvider } from './contexts';
 
 // Wrapper component for admin routes with tournament context
@@ -115,6 +118,40 @@ function App() {
             <OrgRouteWrapper>
               <RaffleBoardPage />
             </OrgRouteWrapper>
+          }
+        />
+
+        {/* ===========================================
+            SUPER ADMIN ROUTES (Platform Management)
+            =========================================== */}
+        
+        {/* Super Admin Dashboard */}
+        <Route
+          path="/super-admin"
+          element={
+            <ProtectedRoute>
+              <SuperAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Create Organization */}
+        <Route
+          path="/super-admin/organizations/new"
+          element={
+            <ProtectedRoute>
+              <CreateOrganizationPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Organization */}
+        <Route
+          path="/super-admin/organizations/:id"
+          element={
+            <ProtectedRoute>
+              <EditOrganizationPage />
+            </ProtectedRoute>
           }
         />
 
