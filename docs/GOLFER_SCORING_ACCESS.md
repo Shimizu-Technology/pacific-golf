@@ -2,7 +2,7 @@
 
 **Created:** February 11, 2026  
 **Updated:** February 11, 2026  
-**Status:** Phase 2 Complete ✅  
+**Status:** Phase 3 Complete ✅  
 **Target Tournaments:** Make-A-Wish Guam (May 2026), Father Duenas Alumni, Rotary
 
 ---
@@ -179,8 +179,30 @@ POST /api/v1/golfer_auth/refresh
 
 ---
 
-### Phase 3: Update Scorecard for Golfer Access
+### Phase 3: Update Scorecard for Golfer Access ✅ COMPLETE
 **Goal:** Allow golfers to enter scores, not just admins
+
+**Completed:** February 11, 2026
+
+#### Files Created/Modified ✅
+- `api/app/controllers/concerns/golfer_or_admin_auth.rb` - Dual auth concern
+- `api/app/controllers/api/v1/scores_controller.rb` - Updated for dual auth
+- `api/app/models/golfer.rb` - Added `has_many :scores`
+- `web/src/hooks/useAuthToken.ts` - Unified auth token hook
+- `web/src/pages/ScorecardPage.tsx` - Updated for dual auth
+- `web/src/pages/GolferDashboardPage.tsx` - Link to golfer scorecard
+- `web/src/App.tsx` - Added `/golfer/scorecard` route
+
+#### Security Features ✅
+- Golfers can ONLY access their own group's scorecard
+- Golfers can ONLY submit scores for their own group
+- Attempting to access other groups returns 403 Forbidden
+- Admin auth still works for all endpoints
+
+#### Tests ✅ (8 new tests, 60 total for feature)
+- `api/test/controllers/api/v1/scores_controller_golfer_auth_test.rb`
+
+#### Original Plan
 
 #### Changes to ScorecardPage.tsx
 - Accept both Clerk token AND magic link JWT
@@ -362,8 +384,8 @@ web/
 |-------|--------|----------|--------|
 | Phase 1: Magic Link | 2-3 days | 🔴 High | ✅ Complete |
 | Phase 2: Golfer Dashboard | 1-2 days | 🔴 High | ✅ Complete |
-| Phase 3: Scorecard Auth | 1 day | 🔴 High | 🔄 Next |
-| Phase 4: Team Size Config | 1-2 days | 🟡 Medium | ⏳ Pending |
+| Phase 3: Scorecard Auth | 1 day | 🔴 High | ✅ Complete |
+| Phase 4: Team Size Config | 1-2 days | 🟡 Medium | 🔄 Next |
 | Phase 5: WebSocket | 1 day | 🟢 Low | ⏳ Pending |
 
 **Total:** ~1 week for core features
