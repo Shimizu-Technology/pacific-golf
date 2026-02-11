@@ -29,7 +29,8 @@ import { OrgAdminDashboard } from './pages/OrgAdminDashboard';
 import { OrgTournamentAdmin } from './pages/OrgTournamentAdmin';
 import { OrgCheckInPage } from './pages/OrgCheckInPage';
 import { CreateTournamentPage } from './pages/CreateTournamentPage';
-import { LeaderboardPage, ScorecardPage, RaffleBoardPage, RaffleManagementPage, SponsorManagementPage } from './pages';
+import { LeaderboardPage, ScorecardPage, RaffleBoardPage, RaffleManagementPage, SponsorManagementPage, GolferLoginPage, GolferVerifyPage, GolferDashboardPage } from './pages';
+import { GolferAuthProvider } from './contexts';
 
 // Wrapper component for admin routes with tournament context
 function AdminRouteWrapper({ children }: { children: React.ReactNode }) {
@@ -202,6 +203,34 @@ function App() {
                 <SponsorManagementPage />
               </OrganizationProvider>
             </ProtectedRoute>
+          }
+        />
+
+        {/* ===========================================
+            GOLFER SCORING ACCESS ROUTES (Public)
+            =========================================== */}
+        <Route
+          path="/score"
+          element={
+            <GolferAuthProvider>
+              <GolferLoginPage />
+            </GolferAuthProvider>
+          }
+        />
+        <Route
+          path="/score/verify"
+          element={
+            <GolferAuthProvider>
+              <GolferVerifyPage />
+            </GolferAuthProvider>
+          }
+        />
+        <Route
+          path="/golfer/dashboard"
+          element={
+            <GolferAuthProvider>
+              <GolferDashboardPage />
+            </GolferAuthProvider>
           }
         />
 

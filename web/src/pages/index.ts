@@ -22,3 +22,8 @@ export { ScorecardPage } from './ScorecardPage';
 export { RaffleBoardPage } from './RaffleBoardPage';
 export { RaffleManagementPage } from './RaffleManagementPage';
 export { SponsorManagementPage } from './SponsorManagementPage';
+
+// Golfer Scoring Access Pages
+export { GolferLoginPage } from './GolferLoginPage';
+export { GolferVerifyPage } from './GolferVerifyPage';
+export { GolferDashboardPage } from './GolferDashboardPage';
