@@ -3,7 +3,7 @@
 namespace :demo do
   desc "Seed Make-A-Wish Guam demo data (org, tournament, sponsors, golfers, scores)"
   task seed_maw: :environment do
-    puts "🏌️ Seeding Make-A-Wish Guam & CNMI demo data..."
+    puts "Seeding Make-A-Wish Guam & CNMI demo data..."
 
     # =========================================================================
     # Organization
@@ -16,7 +16,7 @@ namespace :demo do
       o.contact_phone = '671-649-9474'
       o.website_url = 'https://wish.org/guamcnmi'
     end
-    puts "  ✓ Organization: #{org.name} (#{org.slug})"
+    puts "  - Organization: #{org.name} (#{org.slug})"
 
     # =========================================================================
     # Tournament
@@ -47,7 +47,7 @@ namespace :demo do
       t.contact_phone = '671-649-9474'
       t.format_name = 'Scramble (4-Person Teams)'
     end
-    puts "  ✓ Tournament: #{tournament.name}"
+    puts "  - Tournament: #{tournament.name}"
 
     # =========================================================================
     # Sponsors
@@ -71,7 +71,7 @@ namespace :demo do
         sp.website_url = s[:website_url]
       end
     end
-    puts "  ✓ #{sponsors_data.length} sponsors created"
+    puts "  - #{sponsors_data.length} sponsors created"
 
     # Hole Sponsors
     hole_sponsors_data = [
@@ -90,7 +90,7 @@ namespace :demo do
         sp.hole_number = s[:hole_number]
       end
     end
-    puts "  ✓ #{hole_sponsors_data.length} hole sponsors created"
+    puts "  - #{hole_sponsors_data.length} hole sponsors created"
 
     # =========================================================================
     # Golfers (24 confirmed registrations)
@@ -121,7 +121,7 @@ namespace :demo do
         g.waiver_accepted_at = Time.current
       end
     end
-    puts "  ✓ #{golfers_data.length} golfers registered"
+    puts "  - #{golfers_data.length} golfers registered"
 
     # =========================================================================
     # Groups & Scores (6 teams of 4, scramble format)
@@ -171,9 +171,9 @@ namespace :demo do
         end
       end
     end
-    puts "  ✓ 6 groups with scores created"
+    puts "  - 6 groups with scores created"
 
-    puts "\n✅ Make-A-Wish demo data seeded successfully!"
+    puts "\nMake-A-Wish demo data seeded successfully!"
     puts "   Visit: /:orgSlug → /make-a-wish-guam"
   end
 end
