@@ -106,7 +106,8 @@ module Api
       # POST /api/v1/tournaments/:tournament_id/scores/:id/verify
       # Auth required - verify a score
       def verify
-        @score.verify!(current_user)
+        verifier = admin_authenticated? ? current_user : @current_golfer
+        @score.verify!(verifier)
         render json: {
           score: score_response(@score),
           message: 'Score verified'
@@ -135,6 +136,15 @@ module Api
             if score.group_id.blank? && score.golfer_id.present?
               golfer = Golfer.find_by(id: score.golfer_id)
               score.group = golfer&.group
+            end
+
+            # Validate golfer belongs to the group (prevent cross-group score injection)
+            if golfer_authenticated? && score_data[:golfer_id].present?
+              target_golfer = Golfer.find_by(id: score_data[:golfer_id])
+              unless target_golfer&.group_id == score.group_id
+                errors << { hole: score_data[:hole], errors: ['Golfer not in this group'] }
+                next
+              end
             end
 
             if score.save

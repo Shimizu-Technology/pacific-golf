@@ -394,12 +394,16 @@ export const ScorecardPage: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 py-2">
           <div className="flex gap-1 overflow-x-auto pb-2">
             {Array.from({ length: totalHoles }, (_, i) => i + 1).map(hole => {
-              const hasScore = scorecard.golfers.every(
-                g => localScores[`${hole}-${g.id}`] !== undefined
-              );
-              const isDirty = scorecard.golfers.some(
-                g => dirtyScores.has(`${hole}-${g.id}`)
-              );
+              const hasScore = scorecard.is_team_scoring
+                ? localScores[`team-${hole}`] !== undefined
+                : scorecard.golfers.every(
+                    g => localScores[`${hole}-${g.id}`] !== undefined
+                  );
+              const isDirty = scorecard.is_team_scoring
+                ? dirtyScores.has(`team-${hole}`)
+                : scorecard.golfers.some(
+                    g => dirtyScores.has(`${hole}-${g.id}`)
+                  );
               
               return (
                 <button
