@@ -92,7 +92,7 @@ function ScrollReveal({
   delay?: number;
 }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-80px' });
+  const isInView = useInView(ref, { once: true, margin: '0px' });
 
   return (
     <motion.div
@@ -200,7 +200,7 @@ export function OrganizationLandingPage() {
           </>
         )}
 
-        <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 py-20 sm:py-32 text-center">
+        <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 py-16 sm:py-24 text-center">
           {organization.logo_url && (
             <motion.div
               initial={{ opacity: 0, scale: 0.92 }}
@@ -243,7 +243,7 @@ export function OrganizationLandingPage() {
       {/* ================================================================= */}
       {/* TOURNAMENTS                                                        */}
       {/* ================================================================= */}
-      <main className="max-w-5xl mx-auto px-6 lg:px-8 py-20 sm:py-28">
+      <main className="max-w-5xl mx-auto px-6 lg:px-8 py-12 sm:py-16">
         <ScrollReveal>
           <div className="flex items-center gap-3 mb-10">
             <Trophy className="w-5 h-5" style={{ color: primaryColor }} strokeWidth={2} />
@@ -283,7 +283,7 @@ export function OrganizationLandingPage() {
       {/* CONTACT                                                            */}
       {/* ================================================================= */}
       {(organization.contact_email || organization.contact_phone || organization.website_url) && (
-        <section className="max-w-5xl mx-auto px-6 lg:px-8 pb-20 sm:pb-28">
+        <section className="max-w-5xl mx-auto px-6 lg:px-8 pb-16 sm:pb-20">
           <ScrollReveal>
             <h3 className="text-xl font-semibold tracking-tight mb-8">Get in Touch</h3>
           </ScrollReveal>
@@ -396,7 +396,7 @@ function TournamentList({
   primaryLight: string;
 }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-60px' });
+  const isInView = useInView(ref, { once: true, margin: '0px' });
 
   return (
     <motion.div
@@ -508,25 +508,33 @@ function TournamentCard({ tournament, orgSlug, primaryColor, primaryLight }: Tou
         )}
 
         {/* CTA */}
-        <div className="mt-6">
+        <div className="mt-6 flex items-center gap-3">
           {tournament.can_register ? (
-            <Link
-              to={`/${orgSlug}/tournaments/${tournament.slug}/register`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-              style={{
-                backgroundColor: primaryColor,
-                boxShadow: `0 2px 8px ${hexToRgba(primaryColor, 0.25)}`,
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 20px ${hexToRgba(primaryColor, 0.35)}`;
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = `0 2px 8px ${hexToRgba(primaryColor, 0.25)}`;
-              }}
-            >
-              Register Now
-              <ChevronRight className="w-4 h-4" strokeWidth={2} />
-            </Link>
+            <>
+              <Link
+                to={`/${orgSlug}/tournaments/${tournament.slug}/register`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                style={{
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 2px 8px ${hexToRgba(primaryColor, 0.25)}`,
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 20px ${hexToRgba(primaryColor, 0.35)}`;
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.boxShadow = `0 2px 8px ${hexToRgba(primaryColor, 0.25)}`;
+                }}
+              >
+                Register Now
+                <ChevronRight className="w-4 h-4" strokeWidth={2} />
+              </Link>
+              <Link
+                to={`/${orgSlug}/tournaments/${tournament.slug}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-stone-500 hover:text-stone-700 transition-colors duration-200"
+              >
+                View Details
+              </Link>
+            </>
           ) : (
             <Link
               to={`/${orgSlug}/tournaments/${tournament.slug}`}
