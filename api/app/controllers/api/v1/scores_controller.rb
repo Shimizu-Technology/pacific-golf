@@ -15,6 +15,7 @@ module Api
       # Auth required endpoints use authenticate_golfer_or_admin!
       before_action :authenticate_golfer_or_admin!, only: [:create, :update, :destroy, :verify, :batch, :scorecard]
       before_action :verify_group_access_for_golfer!, only: [:batch, :scorecard]
+      before_action :verify_golfer_owns_score!, only: [:update, :destroy, :verify]
 
       # GET /api/v1/tournaments/:tournament_id/scores
       # Public - get all scores for a tournament
@@ -281,6 +282,21 @@ module Api
           end
         end
         
+        true
+      end
+
+      # Verify golfer can only modify scores from their own group
+      def verify_golfer_owns_score!
+        return true if admin_authenticated?
+
+        if golfer_authenticated? && @score.group_id != current_golfer.group_id
+          render json: {
+            success: false,
+            error: 'You can only modify scores for your own group'
+          }, status: :forbidden
+          return false
+        end
+
         true
       end
 
