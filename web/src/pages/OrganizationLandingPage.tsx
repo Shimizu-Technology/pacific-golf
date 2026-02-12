@@ -167,7 +167,6 @@ export function OrganizationLandingPage() {
   }
 
   const primaryColor = organization.primary_color || '#1e3a2f';
-  const primaryLight = adjustColor(primaryColor, 0.35);
   const primaryDark = adjustColor(primaryColor, -0.15);
 
   return (
@@ -274,7 +273,6 @@ export function OrganizationLandingPage() {
             tournaments={tournaments}
             orgSlug={orgSlug!}
             primaryColor={primaryColor}
-            primaryLight={primaryLight}
           />
         )}
       </main>
@@ -388,12 +386,10 @@ function TournamentList({
   tournaments,
   orgSlug,
   primaryColor,
-  primaryLight,
 }: {
   tournaments: Tournament[];
   orgSlug: string;
   primaryColor: string;
-  primaryLight: string;
 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '0px' });
@@ -412,7 +408,6 @@ function TournamentList({
             tournament={tournament}
             orgSlug={orgSlug}
             primaryColor={primaryColor}
-            primaryLight={primaryLight}
           />
         </motion.div>
       ))}
@@ -428,7 +423,6 @@ interface TournamentCardProps {
   tournament: Tournament;
   orgSlug: string;
   primaryColor: string;
-  primaryLight: string;
 }
 
 const statusConfig: Record<string, { label: string; dot: string }> = {
@@ -439,7 +433,7 @@ const statusConfig: Record<string, { label: string; dot: string }> = {
   draft: { label: 'Coming Soon', dot: 'bg-sky-400' },
 };
 
-function TournamentCard({ tournament, orgSlug, primaryColor, primaryLight }: TournamentCardProps) {
+function TournamentCard({ tournament, orgSlug, primaryColor }: TournamentCardProps) {
   const status = statusConfig[tournament.status] || {
     label: tournament.status,
     dot: 'bg-stone-400',
