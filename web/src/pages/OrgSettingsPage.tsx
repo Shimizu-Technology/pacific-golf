@@ -14,8 +14,22 @@ import {
   Globe,
   FileText,
   Settings,
+  Users,
+  UserPlus,
+  Shield,
+  Trash2,
+  Crown,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+
+interface OrgMember {
+  id: string;
+  user_id: number;
+  name: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
 
 interface FormData {
   name: string;
@@ -47,6 +61,9 @@ export const OrgSettingsPage: React.FC = () => {
   const [formData, setFormData] = useState<FormData | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [members, setMembers] = useState<OrgMember[]>([]);
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [addingMember, setAddingMember] = useState(false);
 
   useEffect(() => {
     if (organization) {
@@ -63,6 +80,77 @@ export const OrgSettingsPage: React.FC = () => {
       });
     }
   }, [organization]);
+
+  // Fetch members
+  const fetchMembers = async () => {
+    if (!organization?.slug) return;
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/members`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setMembers(data.members || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch members:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
+  }, [organization?.slug]);
+
+  const handleAddMember = async () => {
+    if (!newMemberEmail.trim() || !organization?.slug) return;
+    setAddingMember(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/members`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: newMemberEmail.trim(), role: 'admin' }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setMembers(prev => [...prev, data.member]);
+        setNewMemberEmail('');
+        toast.success('Admin added successfully');
+      } else {
+        toast.error(data.error || 'Failed to add admin');
+      }
+    } catch (err) {
+      toast.error('Failed to add admin');
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!organization?.slug) return;
+    if (!confirm('Are you sure you want to remove this admin?')) return;
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/members/${memberId}`,
+        { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.ok) {
+        setMembers(prev => prev.filter(m => m.id !== memberId));
+        toast.success('Admin removed');
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to remove admin');
+      }
+    } catch (err) {
+      toast.error('Failed to remove admin');
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -374,6 +462,89 @@ export const OrgSettingsPage: React.FC = () => {
             </button>
           </div>
         </form>
+
+        {/* Admin Management Section */}
+        <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-green-50 rounded-lg">
+              <Users className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Organization Admins</h2>
+              <p className="text-sm text-gray-500">Manage who can administer this organization</p>
+            </div>
+          </div>
+
+          {/* Add admin */}
+          <div className="flex gap-3 mb-6">
+            <input
+              type="email"
+              value={newMemberEmail}
+              onChange={(e) => setNewMemberEmail(e.target.value)}
+              placeholder="Enter email address..."
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+              onKeyDown={(e) => e.key === 'Enter' && handleAddMember()}
+            />
+            <button
+              onClick={handleAddMember}
+              disabled={addingMember || !newMemberEmail.trim()}
+              className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-xl font-medium transition-colors"
+            >
+              {addingMember ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <UserPlus className="w-4 h-4" />
+              )}
+              Add Admin
+            </button>
+          </div>
+
+          {/* Member list */}
+          <div className="space-y-3">
+            {members.length === 0 ? (
+              <p className="text-gray-500 text-sm text-center py-4">No admins configured yet.</p>
+            ) : (
+              members.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white rounded-lg border border-gray-200">
+                      {member.role === 'admin' ? (
+                        <Crown className="w-4 h-4 text-amber-500" />
+                      ) : (
+                        <Shield className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{member.name}</p>
+                      <p className="text-sm text-gray-500">{member.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                      member.role === 'admin'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {member.role}
+                    </span>
+                    {members.length > 1 && (
+                      <button
+                        onClick={() => handleRemoveMember(member.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Remove admin"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );
