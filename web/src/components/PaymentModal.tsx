@@ -24,6 +24,7 @@ interface PaymentModalProps {
   stripePublicKey: string;
   employeeNumber?: string;
   isEmployee?: boolean;
+  tournamentId?: string;
 }
 
 export function PaymentModal({
@@ -35,6 +36,7 @@ export function PaymentModal({
   stripePublicKey,
   employeeNumber,
   isEmployee,
+  tournamentId,
 }: PaymentModalProps) {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export function PaymentModal({
     
     try {
       console.log('[PaymentModal] Creating embedded checkout session...', { isEmployee, employeeNumber });
-      const response = await api.createEmbeddedCheckout(golferData, employeeNumber);
+      const response = await api.createEmbeddedCheckout(golferData, employeeNumber, tournamentId);
       
       if (response.error) {
         console.error('[PaymentModal] Error from API:', response.error);
@@ -74,7 +76,7 @@ export function PaymentModal({
       setIsLoading(false);
       return '';
     }
-  }, [golferData, employeeNumber, isEmployee]);
+  }, [golferData, employeeNumber, isEmployee, tournamentId]);
 
   // Handle checkout completion - navigate to success page
   const handleComplete = useCallback(() => {

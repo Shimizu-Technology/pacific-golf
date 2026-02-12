@@ -83,7 +83,11 @@ module Api
       # Create a checkout session for embedded checkout (golfer not created yet)
       def create_embedded
         setting = Setting.instance
-        tournament = Tournament.current
+        tournament = if params[:tournament_id].present?
+          Tournament.find_by(id: params[:tournament_id])
+        else
+          Tournament.current
+        end
 
         unless tournament&.can_register?
           render json: { error: "Registration is currently closed." }, status: :unprocessable_entity
