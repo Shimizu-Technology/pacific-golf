@@ -5,6 +5,7 @@ import { Search, CheckCircle, DollarSign, User, RefreshCw, X, UserCheck, CreditC
 import toast from 'react-hot-toast';
 import { api, Golfer, GolferStats, ActivityLog } from '../services/api';
 import { useGolferChannel } from '../hooks/useGolferChannel';
+import { useTournament } from '../contexts/TournamentContext';
 
 interface PaymentInfo {
   method: 'cash' | 'check' | 'credit';
@@ -472,6 +473,7 @@ const PlayerDetailPanel: React.FC<{
 };
 
 export const CheckInPage: React.FC = () => {
+  const { currentTournament } = useTournament();
   const [searchTerm, setSearchTerm] = useState('');
   const [lastNameFilter, setLastNameFilter] = useState<'all' | 'a-j' | 'k-z'>('all');
   const [selectedGolfer, setSelectedGolfer] = useState<Golfer | null>(null);
@@ -516,8 +518,10 @@ export const CheckInPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (currentTournament) {
+      fetchData();
+    }
+  }, [currentTournament?.id]);
 
   // Real-time updates via ActionCable
   const handleGolferUpdated = useCallback((updatedGolfer: Golfer) => {
