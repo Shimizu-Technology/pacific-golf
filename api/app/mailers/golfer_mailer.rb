@@ -9,6 +9,8 @@ class GolferMailer < ApplicationMailer
     @setting = Setting.instance
     @tournament = golfer.tournament
     @entry_fee = calculate_entry_fee(golfer)
+    @is_employee = golfer.is_employee
+    set_org_branding
 
     subject = @is_confirmed ?
       "Your Golf Tournament Registration is Confirmed!" :
@@ -23,6 +25,7 @@ class GolferMailer < ApplicationMailer
     @setting = Setting.instance
     @tournament = golfer.tournament
     @entry_fee = calculate_entry_fee(golfer)
+    set_org_branding
 
     mail(
       to: golfer.email,
@@ -37,8 +40,10 @@ class GolferMailer < ApplicationMailer
     @is_confirmed = @status == "confirmed"
     @setting = Setting.instance
     @tournament = golfer.tournament
+    @is_employee = golfer.is_employee
     # For Stripe payments, use the actual amount paid
     @entry_fee = (golfer.payment_amount_cents || calculate_entry_fee_cents(golfer)).to_f / 100
+    set_org_branding
 
     subject = @is_confirmed ?
       "Registration Confirmed & Payment Received!" :
@@ -53,6 +58,7 @@ class GolferMailer < ApplicationMailer
     @setting = Setting.instance
     @tournament = golfer.tournament
     @entry_fee = calculate_entry_fee(golfer)
+    set_org_branding
 
     mail(
       to: golfer.email,
@@ -66,6 +72,7 @@ class GolferMailer < ApplicationMailer
     @setting = Setting.instance
     @tournament = golfer.tournament
     @refund_amount = golfer.refund_amount_cents.to_f / 100
+    set_org_branding
 
     mail(
       to: golfer.email,
@@ -78,6 +85,7 @@ class GolferMailer < ApplicationMailer
     @golfer = golfer
     @setting = Setting.instance
     @tournament = golfer.tournament
+    set_org_branding
 
     mail(
       to: golfer.email,
@@ -92,6 +100,7 @@ class GolferMailer < ApplicationMailer
     @magic_link = golfer.magic_link_url
     @group = golfer.group
     @hole_position = golfer.hole_position_label
+    set_org_branding
 
     mail(
       to: golfer.email,
@@ -106,6 +115,7 @@ class GolferMailer < ApplicationMailer
     @tournament = golfer.tournament
     @entry_fee = calculate_entry_fee(golfer)
     @payment_link = golfer.payment_link_url
+    set_org_branding
 
     mail(
       to: golfer.email,

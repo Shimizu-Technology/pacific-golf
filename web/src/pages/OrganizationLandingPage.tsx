@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useOrganization } from '../components/OrganizationProvider';
 import { api, Tournament } from '../services/api';
-import { motion, useInView } from 'framer-motion';
+import { motion, MotionConfig, useInView } from 'framer-motion';
 import {
   Calendar,
   MapPin,
@@ -155,6 +155,7 @@ export function OrganizationLandingPage() {
   const primaryDark = adjustColor(primaryColor, -0.15);
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="min-h-screen bg-stone-50 text-stone-900">
       {/* ================================================================= */}
       {/* HERO                                                               */}
@@ -526,6 +527,7 @@ function TournamentCard({ tournament, orgSlug, primaryColor }: TournamentCardPro
         </div>
       </div>
     </div>
+    </MotionConfig>
   );
 }
 
