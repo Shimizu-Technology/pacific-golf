@@ -100,7 +100,10 @@ export const OrgSettingsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchMembers();
+    if (organization?.slug) {
+      fetchMembers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organization?.slug]);
 
   const handleAddMember = async () => {
@@ -530,11 +533,11 @@ export const OrgSettingsPage: React.FC = () => {
                     }`}>
                       {member.role}
                     </span>
-                    {members.length > 1 && (
+                    {!(member.role === 'admin' && members.filter(m => m.role === 'admin').length <= 1) && (
                       <button
                         onClick={() => handleRemoveMember(member.id)}
                         className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Remove admin"
+                        title="Remove member"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

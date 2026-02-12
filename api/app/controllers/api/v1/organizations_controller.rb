@@ -329,6 +329,9 @@ module Api
       # GET /api/v1/admin/organizations/:slug/members
       def members
         org = Organization.find_by!(slug: params[:slug])
+        require_org_admin!(org)
+        return if performed?
+
         memberships = org.organization_memberships.includes(:user).order(created_at: :asc)
 
         render json: {
@@ -339,6 +342,9 @@ module Api
       # POST /api/v1/admin/organizations/:slug/members
       def add_member
         org = Organization.find_by!(slug: params[:slug])
+        require_org_admin!(org)
+        return if performed?
+
         email = params[:email]&.strip&.downcase
 
         unless email.present?
@@ -364,6 +370,9 @@ module Api
       # PATCH /api/v1/admin/organizations/:slug/members/:member_id
       def update_member
         org = Organization.find_by!(slug: params[:slug])
+        require_org_admin!(org)
+        return if performed?
+
         membership = org.organization_memberships.find(params[:member_id])
 
         unless %w[admin member].include?(params[:role])
@@ -382,6 +391,9 @@ module Api
       # DELETE /api/v1/admin/organizations/:slug/members/:member_id
       def remove_member
         org = Organization.find_by!(slug: params[:slug])
+        require_org_admin!(org)
+        return if performed?
+
         membership = org.organization_memberships.find(params[:member_id])
 
         # Don't let the last admin remove themselves
