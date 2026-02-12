@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion, MotionConfig } from 'framer-motion';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useAuthToken } from '../hooks/useAuthToken';
 import {
@@ -14,6 +15,22 @@ import {
   Shield,
   ExternalLink,
 } from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Animation variants
+// ---------------------------------------------------------------------------
+
+const ease = [0.22, 1, 0.36, 1] as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+};
 
 interface Organization {
   id: string;
@@ -114,9 +131,15 @@ export const SuperAdminDashboard: React.FC = () => {
   const totalAdmins = organizations.reduce((sum, org) => sum + org.admin_count, 0);
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <header className="bg-gradient-to-r from-slate-900 to-slate-800 text-white">
+      <motion.header
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, ease }}
+        className="bg-gradient-to-r from-slate-900 to-slate-800 text-white"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -139,12 +162,17 @@ export const SuperAdminDashboard: React.FC = () => {
             </Link>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-6">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+        >
+          <motion.div variants={fadeUp} className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-blue-100 rounded-xl">
                 <Building2 className="w-6 h-6 text-blue-600" />
@@ -154,8 +182,8 @@ export const SuperAdminDashboard: React.FC = () => {
                 <p className="text-2xl font-bold text-gray-900">{organizations.length}</p>
               </div>
             </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          </motion.div>
+          <motion.div variants={fadeUp} className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-green-100 rounded-xl">
                 <Trophy className="w-6 h-6 text-green-600" />
@@ -165,8 +193,8 @@ export const SuperAdminDashboard: React.FC = () => {
                 <p className="text-2xl font-bold text-gray-900">{totalTournaments}</p>
               </div>
             </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          </motion.div>
+          <motion.div variants={fadeUp} className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-purple-100 rounded-xl">
                 <Users className="w-6 h-6 text-purple-600" />
@@ -176,11 +204,16 @@ export const SuperAdminDashboard: React.FC = () => {
                 <p className="text-2xl font-bold text-gray-900">{totalAdmins}</p>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Organizations List */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.25, ease }}
+          className="bg-white rounded-xl shadow-sm overflow-hidden"
+        >
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Organizations</h2>
           </div>
@@ -200,9 +233,12 @@ export const SuperAdminDashboard: React.FC = () => {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {organizations.map((org) => (
-                <div
+              {organizations.map((org, index) => (
+                <motion.div
                   key={org.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.3 + index * 0.05, ease }}
                   className="p-6 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center justify-between">
@@ -283,14 +319,19 @@ export const SuperAdminDashboard: React.FC = () => {
                       {org.subscription_status}
                     </span>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Quick Actions */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4, ease }}
+          className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
           <Link
             to="/super-admin/organizations/new"
             className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-all group"
@@ -306,9 +347,10 @@ export const SuperAdminDashboard: React.FC = () => {
               <ChevronRight className="w-5 h-5 text-gray-400 ml-auto" />
             </div>
           </Link>
-        </div>
+        </motion.div>
       </main>
     </div>
+    </MotionConfig>
   );
 };
 

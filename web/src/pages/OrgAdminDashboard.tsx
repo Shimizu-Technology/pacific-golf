@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion, MotionConfig } from 'framer-motion';
 import { PageTransition } from '../components/ui';
 import { useOrganization } from '../components/OrganizationProvider';
 import { useAuthToken } from '../hooks/useAuthToken';
+import { hexToRgba } from '../utils/colors';
 import { 
   Users, 
   DollarSign, 
@@ -14,6 +16,22 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Animation variants
+// ---------------------------------------------------------------------------
+
+const ease = [0.22, 1, 0.36, 1] as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+};
 
 interface TournamentSummary {
   id: string;
@@ -138,13 +156,19 @@ export const OrgAdminDashboard: React.FC = () => {
     }).format(cents / 100);
   };
 
+  const primaryColor = organization.primary_color || '#1e40af';
+
   return (
+    <MotionConfig reducedMotion="user">
     <PageTransition>
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header 
+      <motion.header
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, ease }}
         className="text-white py-8 px-4"
-        style={{ backgroundColor: organization.primary_color || '#1e40af' }}
+        style={{ backgroundColor: primaryColor }}
       >
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
@@ -161,25 +185,30 @@ export const OrgAdminDashboard: React.FC = () => {
             </Link>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-xl shadow-sm p-6">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
+          >
+            <motion.div variants={fadeUp} className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-brand-100 rounded-lg">
-                  <Trophy className="w-6 h-6 text-brand-600" />
+                <div className="p-3 rounded-lg" style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}>
+                  <Trophy className="w-6 h-6" style={{ color: primaryColor }} />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Total Tournaments</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.total_tournaments}</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <motion.div variants={fadeUp} className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-green-100 rounded-lg">
                   <Calendar className="w-6 h-6 text-green-600" />
@@ -189,9 +218,9 @@ export const OrgAdminDashboard: React.FC = () => {
                   <p className="text-2xl font-bold text-gray-900">{stats.active_tournaments}</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <motion.div variants={fadeUp} className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-purple-100 rounded-lg">
                   <Users className="w-6 h-6 text-purple-600" />
@@ -201,9 +230,9 @@ export const OrgAdminDashboard: React.FC = () => {
                   <p className="text-2xl font-bold text-gray-900">{stats.total_registrations}</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <motion.div variants={fadeUp} className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-yellow-100 rounded-lg">
                   <DollarSign className="w-6 h-6 text-yellow-600" />
@@ -213,17 +242,23 @@ export const OrgAdminDashboard: React.FC = () => {
                   <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.total_revenue)}</p>
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {/* Tournaments Section */}
-        <div className="bg-white rounded-xl shadow-sm">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3, ease }}
+          className="bg-white rounded-xl shadow-sm"
+        >
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Tournaments</h2>
             <button
               onClick={() => navigate(`/${organization.slug}/admin/tournaments/new`)}
-              className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition"
+              className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition"
+              style={{ backgroundColor: primaryColor }}
             >
               <Plus className="w-4 h-4" />
               <span>New Tournament</span>
@@ -237,7 +272,8 @@ export const OrgAdminDashboard: React.FC = () => {
               <p className="text-gray-500 mb-6">Create your first tournament to get started.</p>
               <button
                 onClick={() => navigate(`/${organization.slug}/admin/tournaments/new`)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition"
+                className="inline-flex items-center gap-2 px-4 py-2 text-white rounded-lg transition"
+                style={{ backgroundColor: primaryColor }}
               >
                 <Plus className="w-4 h-4" />
                 <span>Create Tournament</span>
@@ -245,46 +281,53 @@ export const OrgAdminDashboard: React.FC = () => {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {tournaments.map((tournament) => (
-                <Link
+              {tournaments.map((tournament, index) => (
+                <motion.div
                   key={tournament.id}
-                  to={`/${organization.slug}/admin/tournaments/${tournament.slug}`}
-                  className="flex items-center justify-between p-6 hover:bg-gray-50 transition"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.4 + index * 0.05, ease }}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gray-100 rounded-lg">
-                      <Trophy className="w-6 h-6 text-gray-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{tournament.name}</h3>
-                      <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {formatDate(tournament.date)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          {tournament.registration_count}
-                          {tournament.capacity && ` / ${tournament.capacity}`}
-                        </span>
+                  <Link
+                    to={`/${organization.slug}/admin/tournaments/${tournament.slug}`}
+                    className="flex items-center justify-between p-6 hover:bg-gray-50 transition"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg" style={{ backgroundColor: hexToRgba(primaryColor, 0.08) }}>
+                        <Trophy className="w-6 h-6" style={{ color: primaryColor }} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{tournament.name}</h3>
+                        <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {formatDate(tournament.date)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            {tournament.registration_count}
+                            {tournament.capacity && ` / ${tournament.capacity}`}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-4">
-                    {getStatusBadge(tournament.status)}
-                    <span className="font-medium text-gray-900">
-                      {formatCurrency(tournament.revenue)}
-                    </span>
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
-                  </div>
-                </Link>
+                    <div className="flex items-center gap-4">
+                      {getStatusBadge(tournament.status)}
+                      <span className="font-medium text-gray-900">
+                        {formatCurrency(tournament.revenue)}
+                      </span>
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                    </div>
+                  </Link>
+                </motion.div>
               ))}
             </div>
           )}
-        </div>
+        </motion.div>
       </main>
     </div>
     </PageTransition>
+    </MotionConfig>
   );
 };
