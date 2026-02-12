@@ -5,7 +5,7 @@ import { api, Tournament, Sponsor } from '../services/api';
 import { motion, useInView } from 'framer-motion';
 import { 
   Calendar, MapPin, Users, DollarSign, Clock, 
-  Trophy, AlertCircle, ChevronLeft, Star, Building2, ExternalLink, Check, Flag
+  Trophy, AlertCircle, ChevronLeft, Star, Building2, ExternalLink, Check
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
