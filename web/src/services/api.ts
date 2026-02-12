@@ -515,9 +515,8 @@ class ApiClient {
       notes?: string;
     };
     waiver_accepted: boolean;
-    is_employee?: boolean;
-    employee_number?: string;
-  }): Promise<{ golfer: Golfer; message: string; employee_discount_applied?: boolean }> {
+    tournament_id?: string;
+  }): Promise<{ golfer: Golfer; message: string }> {
     return this.request('/api/v1/golfers', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -839,12 +838,13 @@ class ApiClient {
     mobile?: string;
     company?: string;
     address?: string;
-  }, employeeNumber?: string): Promise<EmbeddedCheckoutSession> {
+  }, employeeNumber?: string, tournamentId?: string): Promise<EmbeddedCheckoutSession> {
     return this.request('/api/v1/checkout/embedded', {
       method: 'POST',
       body: JSON.stringify({ 
         golfer: golferData,
         employee_number: employeeNumber,
+        tournament_id: tournamentId,
       }),
     }, false);
   }

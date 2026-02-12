@@ -22,8 +22,7 @@ interface PaymentModalProps {
   };
   entryFee: number; // in dollars
   stripePublicKey: string;
-  employeeNumber?: string;
-  isEmployee?: boolean;
+  tournamentId?: string;
 }
 
 export function PaymentModal({
@@ -33,8 +32,7 @@ export function PaymentModal({
   golferData,
   entryFee,
   stripePublicKey,
-  employeeNumber,
-  isEmployee,
+  tournamentId,
 }: PaymentModalProps) {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -52,8 +50,8 @@ export function PaymentModal({
     setIsLoading(true);
     
     try {
-      console.log('[PaymentModal] Creating embedded checkout session...', { isEmployee, employeeNumber });
-      const response = await api.createEmbeddedCheckout(golferData, employeeNumber);
+      console.log('[PaymentModal] Creating embedded checkout session...');
+      const response = await api.createEmbeddedCheckout(golferData, undefined, tournamentId);
       
       if (response.error) {
         console.error('[PaymentModal] Error from API:', response.error);
@@ -74,7 +72,7 @@ export function PaymentModal({
       setIsLoading(false);
       return '';
     }
-  }, [golferData, employeeNumber, isEmployee]);
+  }, [golferData, tournamentId]);
 
   // Handle checkout completion - navigate to success page
   const handleComplete = useCallback(() => {
@@ -110,23 +108,16 @@ export function PaymentModal({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${isEmployee ? 'bg-green-50' : 'bg-brand-50'}`}>
-                <CreditCard className={`w-5 h-5 ${isEmployee ? 'text-green-600' : 'text-brand-600'}`} />
+              <div className="p-2 rounded-lg bg-brand-50">
+                <CreditCard className="w-5 h-5 text-brand-600" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
                   Complete Payment
                 </h2>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-gray-500">
-                    Entry Fee: ${entryFee.toFixed(2)}
-                  </p>
-                  {isEmployee && (
-                    <span className="inline-flex items-center px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                      Employee Rate
-                    </span>
-                  )}
-                </div>
+                <p className="text-sm text-gray-500">
+                  Entry Fee: ${entryFee.toFixed(2)}
+                </p>
               </div>
             </div>
             <button

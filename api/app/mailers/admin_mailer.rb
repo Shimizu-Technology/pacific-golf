@@ -6,17 +6,12 @@ class AdminMailer < ApplicationMailer
     @golfer = golfer
     @setting = Setting.instance
     @tournament = golfer.tournament
-    @is_employee = golfer.is_employee
     @entry_fee = calculate_entry_fee(golfer)
     admin_emails = @setting.admin_emails
 
     return unless admin_emails.any?
 
-    subject = @is_employee ? 
-      "New Employee Registration: #{golfer.name}" :
-      "New Golf Tournament Registration: #{golfer.name}"
-
-    mail(to: admin_emails, subject: subject)
+    mail(to: admin_emails, subject: "New Golf Tournament Registration: #{golfer.name}")
   end
 
   # Notify admin of payment received (for manual payments marked by admin - rarely used)
@@ -24,7 +19,6 @@ class AdminMailer < ApplicationMailer
     @golfer = golfer
     @setting = Setting.instance
     @tournament = golfer.tournament
-    @is_employee = golfer.is_employee
     @entry_fee = calculate_entry_fee(golfer)
     admin_emails = @setting.admin_emails
 
@@ -41,17 +35,12 @@ class AdminMailer < ApplicationMailer
     @golfer = golfer
     @setting = Setting.instance
     @tournament = golfer.tournament
-    @is_employee = golfer.is_employee
     @entry_fee = (@golfer.payment_amount_cents || calculate_entry_fee_cents(golfer)).to_f / 100
     admin_emails = @setting.admin_emails
 
     return unless admin_emails.any?
 
-    subject = @is_employee ?
-      "New Employee Registration & Payment: #{golfer.name}" :
-      "New Registration & Payment: #{golfer.name}"
-
-    mail(to: admin_emails, subject: subject)
+    mail(to: admin_emails, subject: "New Registration & Payment: #{golfer.name}")
   end
 
   # Notify admin when a golfer is registered with a payment link pending
@@ -59,18 +48,13 @@ class AdminMailer < ApplicationMailer
     @golfer = golfer
     @setting = Setting.instance
     @tournament = golfer.tournament
-    @is_employee = golfer.is_employee
     @entry_fee = calculate_entry_fee(golfer)
     @payment_link = golfer.payment_link_url
     admin_emails = @setting.admin_emails
 
     return unless admin_emails.any?
 
-    subject = @is_employee ?
-      "New Employee Registration - Awaiting Payment: #{golfer.name}" :
-      "New Registration - Awaiting Payment: #{golfer.name}"
-
-    mail(to: admin_emails, subject: subject)
+    mail(to: admin_emails, subject: "New Registration - Awaiting Payment: #{golfer.name}")
   end
 
   private
@@ -81,11 +65,6 @@ class AdminMailer < ApplicationMailer
 
   def calculate_entry_fee_cents(golfer)
     tournament = golfer.tournament
-    if golfer.is_employee
-      tournament&.employee_entry_fee || 5000
-    else
-      tournament&.entry_fee || 12500
-    end
+    tournament&.entry_fee || 12500
   end
 end
-

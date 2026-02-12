@@ -3,11 +3,8 @@ import { Toaster } from 'react-hot-toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import {
   LandingPage,
-  RegistrationPage,
-  RegistrationSuccessPage,
   PaymentSuccessPage,
   PaymentCancelPage,
-  PaymentLinkPage,
   AdminLoginPage,
   AdminDashboard,
   GroupManagementPage,
@@ -300,12 +297,8 @@ function App() {
             LEGACY PUBLIC ROUTES (Backwards compatibility)
             =========================================== */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/register" element={<RegistrationPage />} />
-        <Route path="/registration/success" element={<RegistrationSuccessPage />} />
         <Route path="/payment/success" element={<PaymentSuccessPage />} />
         <Route path="/payment/cancel" element={<PaymentCancelPage />} />
-        <Route path="/pay/:token" element={<PaymentLinkPage />} />
-        <Route path="/pay/:token/success" element={<PaymentLinkPage />} />
 
         {/* ===========================================
             ADMIN ROUTES

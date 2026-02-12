@@ -52,7 +52,7 @@ export const GolferDashboardPage: React.FC = () => {
   }
 
   const orgSlug = tournament.organization?.slug || 'default';
-  const tournamentSlug = tournament.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const tournamentSlug = tournament.slug || tournament.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
   return (
     <div className="min-h-screen bg-gray-100">

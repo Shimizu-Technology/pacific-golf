@@ -63,8 +63,12 @@ module Api
       # Public registration endpoint
       # Uses database locking to prevent race conditions
       def create
-        # Find the current open tournament
-        tournament = Tournament.current
+        # Find specific tournament by ID, or fall back to current open tournament
+        tournament = if params[:tournament_id].present?
+          Tournament.find_by(id: params[:tournament_id])
+        else
+          Tournament.current
+        end
         
         unless tournament
           render json: { errors: ["No tournament is currently open for registration."] }, status: :unprocessable_entity

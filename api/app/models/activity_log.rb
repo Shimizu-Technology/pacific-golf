@@ -33,11 +33,6 @@ class ActivityLog < ApplicationRecord
     tournament_created
     tournament_updated
     tournament_archived
-    employee_number_created
-    employee_numbers_bulk_created
-    employee_number_updated
-    employee_number_deleted
-    employee_number_released
     employee_status_changed
     bulk_employee_update
     bulk_payment_links_sent

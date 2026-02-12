@@ -326,7 +326,97 @@ module Api
         render json: { error: 'Golfer not found' }, status: :not_found
       end
 
+      # GET /api/v1/admin/organizations/:slug/members
+      def members
+        org = Organization.find_by!(slug: params[:slug])
+        require_org_admin!(org)
+        return if performed?
+
+        memberships = org.organization_memberships.includes(:user).order(created_at: :asc)
+
+        render json: {
+          members: memberships.map { |m| member_response(m) }
+        }
+      end
+
+      # POST /api/v1/admin/organizations/:slug/members
+      def add_member
+        org = Organization.find_by!(slug: params[:slug])
+        require_org_admin!(org)
+        return if performed?
+
+        email = params[:email]&.strip&.downcase
+
+        unless email.present?
+          return render json: { error: "Email is required" }, status: :unprocessable_entity
+        end
+
+        user = User.find_by(email: email)
+        unless user
+          return render json: { error: "No user found with that email. They must create an account first." }, status: :not_found
+        end
+
+        existing = org.organization_memberships.find_by(user: user)
+        if existing
+          return render json: { error: "This user is already a member of this organization." }, status: :unprocessable_entity
+        end
+
+        role = params[:role] || 'admin'
+        membership = org.organization_memberships.create!(user: user, role: role)
+
+        render json: { member: member_response(membership) }, status: :created
+      end
+
+      # PATCH /api/v1/admin/organizations/:slug/members/:member_id
+      def update_member
+        org = Organization.find_by!(slug: params[:slug])
+        require_org_admin!(org)
+        return if performed?
+
+        membership = org.organization_memberships.find(params[:member_id])
+
+        unless %w[admin member].include?(params[:role])
+          return render json: { error: "Invalid role" }, status: :unprocessable_entity
+        end
+
+        # Don't let the last admin demote themselves
+        if membership.admin? && params[:role] == 'member' && org.organization_memberships.admins.count <= 1
+          return render json: { error: "Cannot demote the last admin" }, status: :unprocessable_entity
+        end
+
+        membership.update!(role: params[:role])
+        render json: { member: member_response(membership) }
+      end
+
+      # DELETE /api/v1/admin/organizations/:slug/members/:member_id
+      def remove_member
+        org = Organization.find_by!(slug: params[:slug])
+        require_org_admin!(org)
+        return if performed?
+
+        membership = org.organization_memberships.find(params[:member_id])
+
+        # Don't let the last admin remove themselves
+        if membership.admin? && org.organization_memberships.admins.count <= 1
+          return render json: { error: "Cannot remove the last admin" }, status: :unprocessable_entity
+        end
+
+        membership.destroy!
+        render json: { success: true }
+      end
+
       private
+
+      def member_response(membership)
+        {
+          id: membership.id,
+          user_id: membership.user_id,
+          name: membership.user.name || membership.user.email,
+          email: membership.user.email,
+          role: membership.role,
+          created_at: membership.created_at
+        }
+      end
 
       def golfer_response(golfer)
         golfer.as_json(

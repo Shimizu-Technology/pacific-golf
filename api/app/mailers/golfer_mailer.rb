@@ -8,7 +8,6 @@ class GolferMailer < ApplicationMailer
     @is_confirmed = @status == "confirmed"
     @setting = Setting.instance
     @tournament = golfer.tournament
-    @is_employee = golfer.is_employee
     @entry_fee = calculate_entry_fee(golfer)
 
     subject = @is_confirmed ?
@@ -23,7 +22,6 @@ class GolferMailer < ApplicationMailer
     @golfer = golfer
     @setting = Setting.instance
     @tournament = golfer.tournament
-    @is_employee = golfer.is_employee
     @entry_fee = calculate_entry_fee(golfer)
 
     mail(
@@ -39,7 +37,6 @@ class GolferMailer < ApplicationMailer
     @is_confirmed = @status == "confirmed"
     @setting = Setting.instance
     @tournament = golfer.tournament
-    @is_employee = golfer.is_employee
     # For Stripe payments, use the actual amount paid
     @entry_fee = (golfer.payment_amount_cents || calculate_entry_fee_cents(golfer)).to_f / 100
 
@@ -55,7 +52,6 @@ class GolferMailer < ApplicationMailer
     @golfer = golfer
     @setting = Setting.instance
     @tournament = golfer.tournament
-    @is_employee = golfer.is_employee
     @entry_fee = calculate_entry_fee(golfer)
 
     mail(
@@ -108,7 +104,6 @@ class GolferMailer < ApplicationMailer
     @golfer = golfer
     @setting = Setting.instance
     @tournament = golfer.tournament
-    @is_employee = golfer.is_employee
     @entry_fee = calculate_entry_fee(golfer)
     @payment_link = golfer.payment_link_url
 
@@ -120,17 +115,13 @@ class GolferMailer < ApplicationMailer
 
   private
 
-  # Calculate entry fee based on employee status
+  # Calculate entry fee
   def calculate_entry_fee(golfer)
     calculate_entry_fee_cents(golfer).to_f / 100
   end
 
   def calculate_entry_fee_cents(golfer)
     tournament = golfer.tournament
-    if golfer.is_employee
-      tournament&.employee_entry_fee || 5000
-    else
-      tournament&.entry_fee || 12500
-    end
+    tournament&.entry_fee || 12500
   end
 end

@@ -159,6 +159,7 @@ export const OrgRegistrationPage: React.FC = () => {
           notes: formData.handicap ? `Handicap: ${formData.handicap}` : undefined,
         },
         waiver_accepted: formData.waiverAccepted,
+        tournament_id: tournament.id,
       });
 
       // Navigate to success page
@@ -502,6 +503,7 @@ export const OrgRegistrationPage: React.FC = () => {
         }}
         entryFee={entryFee}
         stripePublicKey={import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY}
+        tournamentId={tournament?.id}
       />
 
       {/* Footer */}

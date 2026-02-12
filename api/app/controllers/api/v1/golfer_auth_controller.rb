@@ -154,6 +154,7 @@ module Api
         {
           id: tournament.id,
           name: tournament.name,
+          slug: tournament.slug,
           year: tournament.year,
           status: tournament.status,
           event_date: tournament.event_date,
