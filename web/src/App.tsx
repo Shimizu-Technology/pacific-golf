@@ -29,7 +29,12 @@ import { OrgAdminDashboard } from './pages/OrgAdminDashboard';
 import { OrgTournamentAdmin } from './pages/OrgTournamentAdmin';
 import { OrgCheckInPage } from './pages/OrgCheckInPage';
 import { CreateTournamentPage } from './pages/CreateTournamentPage';
-import { LeaderboardPage, ScorecardPage, RaffleBoardPage, RaffleManagementPage, SponsorManagementPage } from './pages';
+import { LeaderboardPage, ScorecardPage, RaffleBoardPage, RaffleManagementPage, SponsorManagementPage, GolferLoginPage, GolferVerifyPage, GolferDashboardPage } from './pages';
+import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
+import { CreateOrganizationPage } from './pages/CreateOrganizationPage';
+import { EditOrganizationPage } from './pages/EditOrganizationPage';
+import { OrgSettingsPage } from './pages/OrgSettingsPage';
+import { GolferAuthProvider } from './contexts';
 
 // Wrapper component for admin routes with tournament context
 function AdminRouteWrapper({ children }: { children: React.ReactNode }) {
@@ -58,7 +63,43 @@ function App() {
         <Toaster position="top-right" />
         <Routes>
         {/* ===========================================
+            SUPER ADMIN ROUTES (Platform Management)
+            Must be BEFORE /:orgSlug catch-all routes!
+            =========================================== */}
+        
+        {/* Super Admin Dashboard */}
+        <Route
+          path="/super-admin"
+          element={
+            <ProtectedRoute>
+              <SuperAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Create Organization */}
+        <Route
+          path="/super-admin/organizations/new"
+          element={
+            <ProtectedRoute>
+              <CreateOrganizationPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Organization */}
+        <Route
+          path="/super-admin/organizations/:id"
+          element={
+            <ProtectedRoute>
+              <EditOrganizationPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ===========================================
             ORGANIZATION-SCOPED PUBLIC ROUTES (Multi-tenant)
+            NOTE: /:orgSlug is a catch-all - keep it AFTER specific routes!
             =========================================== */}
         
         {/* Organization landing page - shows all tournaments */}
@@ -133,6 +174,18 @@ function App() {
           }
         />
 
+        {/* Organization Settings */}
+        <Route
+          path="/:orgSlug/admin/settings"
+          element={
+            <ProtectedRoute>
+              <OrganizationProvider>
+                <OrgSettingsPage />
+              </OrganizationProvider>
+            </ProtectedRoute>
+          }
+        />
+
         {/* Create New Tournament */}
         <Route
           path="/:orgSlug/admin/tournaments/new"
@@ -202,6 +255,44 @@ function App() {
                 <SponsorManagementPage />
               </OrganizationProvider>
             </ProtectedRoute>
+          }
+        />
+
+        {/* ===========================================
+            GOLFER SCORING ACCESS ROUTES (Public)
+            =========================================== */}
+        <Route
+          path="/score"
+          element={
+            <GolferAuthProvider>
+              <GolferLoginPage />
+            </GolferAuthProvider>
+          }
+        />
+        <Route
+          path="/score/verify"
+          element={
+            <GolferAuthProvider>
+              <GolferVerifyPage />
+            </GolferAuthProvider>
+          }
+        />
+        <Route
+          path="/golfer/dashboard"
+          element={
+            <GolferAuthProvider>
+              <GolferDashboardPage />
+            </GolferAuthProvider>
+          }
+        />
+        
+        {/* Golfer Scorecard Entry (uses golfer auth) */}
+        <Route
+          path="/golfer/scorecard"
+          element={
+            <GolferAuthProvider>
+              <ScorecardPage />
+            </GolferAuthProvider>
           }
         />
 

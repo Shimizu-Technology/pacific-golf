@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuthToken } from '../hooks/useAuthToken';
 import { useOrganization } from '../components/OrganizationProvider';
 import {
   ArrowLeft,
@@ -109,7 +109,7 @@ const defaultFormData: TournamentFormData = {
 export const CreateTournamentPage: React.FC = () => {
   const navigate = useNavigate();
   const { organization } = useOrganization();
-  const { getToken } = useAuth();
+  const { getToken } = useAuthToken();
   
   const [formData, setFormData] = useState<TournamentFormData>(defaultFormData);
   const [saving, setSaving] = useState(false);
@@ -452,6 +452,7 @@ export const CreateTournamentPage: React.FC = () => {
                     name="team_size"
                     type="number"
                     min={1}
+                    max={4}
                     value={formData.team_size}
                   />
                   

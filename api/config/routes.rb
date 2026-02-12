@@ -40,9 +40,25 @@ Rails.application.routes.draw do
       # Webhooks (public, authenticated via signature)
       post 'webhooks/stripe' => 'webhooks#stripe'
 
+      # Golfer Auth (public - for scoring access)
+      post 'golfer_auth/request_link' => 'golfer_auth#request_link'
+      get 'golfer_auth/verify' => 'golfer_auth#verify'
+      get 'golfer_auth/me' => 'golfer_auth#me'
+      post 'golfer_auth/refresh' => 'golfer_auth#refresh'
+
+      # ===========================================
+      # DEV-ONLY ENDPOINTS (development mode only)
+      # ===========================================
+      post 'dev/login' => 'dev_auth#login'
+      get 'dev/users' => 'dev_auth#users'
+
       # ===========================================
       # ADMIN ENDPOINTS (auth required)
       # ===========================================
+
+      # Admin uploads
+      post 'admin/uploads' => 'admin/uploads#create'
+      post 'admin/uploads/presigned' => 'admin/uploads#presigned'
 
       # Admin organizations
       get 'admin/organizations' => 'organizations#index'

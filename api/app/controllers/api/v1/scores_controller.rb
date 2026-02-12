@@ -3,9 +3,19 @@
 module Api
   module V1
     class ScoresController < BaseController
-      skip_before_action :authenticate_user!, only: [:index, :leaderboard]
+      include GolferOrAdminAuth
+
+      # Skip default admin auth - we use dual auth for most endpoints
+      skip_before_action :authenticate_user!
+      
       before_action :set_tournament
       before_action :set_score, only: [:update, :destroy, :verify]
+      
+      # Public endpoints (no auth)
+      # Auth required endpoints use authenticate_golfer_or_admin!
+      before_action :authenticate_golfer_or_admin!, only: [:create, :update, :destroy, :verify, :batch, :scorecard]
+      before_action :verify_group_access_for_golfer!, only: [:batch, :scorecard]
+      before_action :verify_golfer_owns_score!, only: [:update, :destroy, :verify]
 
       # GET /api/v1/tournaments/:tournament_id/scores
       # Public - get all scores for a tournament
@@ -53,10 +63,10 @@ module Api
       end
 
       # POST /api/v1/tournaments/:tournament_id/scores
-      # Auth required - create a score
+      # Auth required (admin or golfer) - create a score
       def create
         @score = @tournament.scores.build(score_params)
-        @score.entered_by = current_user
+        @score.entered_by = score_entered_by
 
         # Auto-set group from golfer if not provided
         if @score.group_id.blank? && @score.golfer_id.present?
@@ -97,7 +107,8 @@ module Api
       # POST /api/v1/tournaments/:tournament_id/scores/:id/verify
       # Auth required - verify a score
       def verify
-        @score.verify!(current_user)
+        verifier = admin_authenticated? ? current_user : @current_golfer
+        @score.verify!(verifier)
         render json: {
           score: score_response(@score),
           message: 'Score verified'
@@ -105,7 +116,7 @@ module Api
       end
 
       # POST /api/v1/tournaments/:tournament_id/scores/batch
-      # Auth required - create multiple scores at once (for full scorecard submission)
+      # Auth required (admin or golfer) - create multiple scores at once (for full scorecard submission)
       def batch
         scores_data = params[:scores] || []
         created_scores = []
@@ -119,13 +130,22 @@ module Api
               golfer_id: score_data[:golfer_id],
               group_id: score_data[:group_id],
               score_type: score_data[:score_type] || 'individual',
-              entered_by: current_user
+              entered_by: score_entered_by
             )
 
             # Auto-set group from golfer if not provided
             if score.group_id.blank? && score.golfer_id.present?
               golfer = Golfer.find_by(id: score.golfer_id)
               score.group = golfer&.group
+            end
+
+            # Validate golfer belongs to the group (prevent cross-group score injection)
+            if golfer_authenticated? && score_data[:golfer_id].present?
+              target_golfer = Golfer.find_by(id: score_data[:golfer_id])
+              unless target_golfer&.group_id == score.group_id
+                errors << { hole: score_data[:hole], errors: ['Golfer not in this group'] }
+                next
+              end
             end
 
             if score.save
@@ -154,8 +174,17 @@ module Api
       def scorecard
         group = @tournament.groups.find(params[:group_id])
         golfers = group.golfers.includes(:scores)
+        is_team_scoring = @tournament.tournament_format == 'scramble'
 
-        # Get all scores for this group
+        # Get team scores for this group (for scramble format)
+        team_scores_by_hole = {}
+        if is_team_scoring
+          @tournament.scores
+            .where(group: group, score_type: 'team')
+            .each { |s| team_scores_by_hole[s.hole] = s }
+        end
+
+        # Get individual scores for this group
         scores_by_golfer = {}
         group.golfers.each do |golfer|
           scores_by_golfer[golfer.id] = golfer.scores
@@ -167,7 +196,7 @@ module Api
         holes = (1..(@tournament.total_holes || 18)).map do |hole_num|
           hole_par = (@tournament.hole_pars || {})[hole_num.to_s]&.to_i || 4
           
-          {
+          hole_data = {
             hole: hole_num,
             par: hole_par,
             scores: golfers.map do |golfer|
@@ -180,9 +209,39 @@ module Api
               }
             end
           }
+
+          # Add team score if scramble format
+          if is_team_scoring
+            team_score = team_scores_by_hole[hole_num]
+            hole_data[:team_score] = team_score ? {
+              strokes: team_score.strokes,
+              relative: team_score.relative_score
+            } : nil
+          end
+
+          hole_data
+        end
+
+        # Build totals
+        if is_team_scoring
+          team_scores = team_scores_by_hole.values
+          team_totals = {
+            team_name: golfers.map(&:name).join(' & '),
+            total_strokes: team_scores.sum(&:strokes),
+            total_relative: team_scores.sum { |s| s.relative_score || 0 },
+            holes_completed: team_scores.count
+          }
         end
 
         render json: {
+          tournament: {
+            id: @tournament.id,
+            name: @tournament.name,
+            tournament_format: @tournament.tournament_format,
+            team_size: @tournament.team_size,
+            total_holes: @tournament.total_holes || 18,
+            total_par: @tournament.total_par || 72
+          },
           group: {
             id: group.id,
             group_number: group.group_number,
@@ -190,6 +249,8 @@ module Api
           },
           golfers: golfers.map { |g| { id: g.id, name: g.name } },
           holes: holes,
+          is_team_scoring: is_team_scoring,
+          team_totals: is_team_scoring ? team_totals : nil,
           totals: golfers.map do |golfer|
             scores = scores_by_golfer[golfer.id]&.values || []
             {
@@ -204,6 +265,45 @@ module Api
       end
 
       private
+
+      # Verify golfer can only access their own group
+      def verify_group_access_for_golfer!
+        return true if admin_authenticated?
+        
+        if golfer_authenticated?
+          group_id = params[:group_id]&.to_i || params.dig(:scores, 0, :group_id)&.to_i
+          
+          if group_id && current_golfer.group_id != group_id
+            render json: { 
+              success: false, 
+              error: 'You can only enter scores for your own group' 
+            }, status: :forbidden
+            return false
+          end
+        end
+        
+        true
+      end
+
+      # Verify golfer can only modify scores from their own group
+      def verify_golfer_owns_score!
+        return true if admin_authenticated?
+
+        if golfer_authenticated? && @score.group_id != current_golfer.group_id
+          render json: {
+            success: false,
+            error: 'You can only modify scores for your own group'
+          }, status: :forbidden
+          return false
+        end
+
+        true
+      end
+
+      # Get the user/golfer who entered the score
+      def score_entered_by
+        admin_authenticated? ? current_user : nil
+      end
 
       def set_tournament
         @tournament = Tournament.find(params[:tournament_id])

@@ -338,21 +338,23 @@ export const RegistrationPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="mb-6 sm:mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-8 sm:mb-12">
+          <div className="flex items-center justify-between max-w-md mx-auto">
             {[1, 2, 3, 4].map((stepNumber) => (
               <React.Fragment key={stepNumber}>
                 <div className="flex flex-col items-center">
                   <div
-                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base ${
+                    className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base shadow-sm transition-all duration-200 ${
                       step >= stepNumber
-                        ? 'bg-[#1e3a5f] text-white'
-                        : 'bg-gray-300 text-gray-600'
+                        ? 'bg-[#1e3a5f] text-white shadow-[#1e3a5f]/25'
+                        : 'bg-gray-200 text-gray-500'
                     }`}
                   >
                     {stepNumber}
                   </div>
-                  <span className="text-[10px] sm:text-xs mt-1 text-gray-600">
+                  <span className={`text-[10px] sm:text-xs mt-2 font-medium ${
+                    step >= stepNumber ? 'text-[#1e3a5f]' : 'text-gray-500'
+                  }`}>
                     {stepNumber === 1 && 'Contact'}
                     {stepNumber === 2 && 'Details'}
                     {stepNumber === 3 && 'Waiver'}
@@ -361,8 +363,8 @@ export const RegistrationPage: React.FC = () => {
                 </div>
                 {stepNumber < 4 && (
                   <div
-                    className={`flex-1 h-0.5 sm:h-1 mx-1 sm:mx-2 ${
-                      step > stepNumber ? 'bg-[#1e3a5f]' : 'bg-gray-300'
+                    className={`flex-1 h-1 mx-2 sm:mx-3 rounded-full transition-colors duration-200 ${
+                      step > stepNumber ? 'bg-[#1e3a5f]' : 'bg-gray-200'
                     }`}
                   />
                 )}
@@ -374,8 +376,8 @@ export const RegistrationPage: React.FC = () => {
         <Card>
           <form onSubmit={handleSubmit}>
             {step === 1 && (
-              <div className="space-y-4">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
+              <div className="space-y-5">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
                   Contact Information
                 </h2>
                 <Input
@@ -422,8 +424,8 @@ export const RegistrationPage: React.FC = () => {
             )}
 
             {step === 2 && (
-              <div className="space-y-4">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
+              <div className="space-y-5">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
                   Additional Details
                 </h2>
                 <Input

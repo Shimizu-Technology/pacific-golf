@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuthToken } from '../hooks/useAuthToken';
 import { useOrganization } from '../components/OrganizationProvider';
 import { 
   Users, 
@@ -66,7 +66,7 @@ interface Stats {
 export const OrgTournamentAdmin: React.FC = () => {
   const { tournamentSlug } = useParams<{ tournamentSlug: string }>();
   const { organization, isLoading: orgLoading } = useOrganization();
-  const { getToken } = useAuth();
+  const { getToken } = useAuthToken();
   
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [golfers, setGolfers] = useState<Golfer[]>([]);

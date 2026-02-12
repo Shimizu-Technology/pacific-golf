@@ -73,7 +73,9 @@ export const LandingPage: React.FC = () => {
             className="text-2xl sm:text-3xl md:text-4xl text-[#1e3a5f]/80 mb-2 md:mb-3"
             style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic' }}
           >
-            {registrationStatus?.tournament_edition || '5th'} Annual
+            {(registrationStatus?.tournament_edition || '5th Annual').toLowerCase().includes('annual') 
+              ? registrationStatus?.tournament_edition 
+              : `${registrationStatus?.tournament_edition || '5th'} Annual`}
           </p>
           
           {/* Tournament name with Ed's golfer silhouette */}

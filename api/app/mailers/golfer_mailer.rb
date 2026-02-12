@@ -89,6 +89,20 @@ class GolferMailer < ApplicationMailer
     )
   end
 
+  # Send scoring access magic link email
+  def scoring_access_email(golfer)
+    @golfer = golfer
+    @tournament = golfer.tournament
+    @magic_link = golfer.magic_link_url
+    @group = golfer.group
+    @hole_position = golfer.hole_position_label
+
+    mail(
+      to: golfer.email,
+      subject: "Your Scoring Access - #{@tournament&.name || 'Golf Tournament'}"
+    )
+  end
+
   # Send payment link email
   def payment_link_email(golfer)
     @golfer = golfer

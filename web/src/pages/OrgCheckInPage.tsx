@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuthToken } from '../hooks/useAuthToken';
 import { useOrganization } from '../components/OrganizationProvider';
 import {
   Search,
@@ -41,7 +41,7 @@ interface Stats {
 export const OrgCheckInPage: React.FC = () => {
   const { tournamentSlug } = useParams<{ tournamentSlug: string }>();
   const { organization } = useOrganization();
-  const { getToken } = useAuth();
+  const { getToken } = useAuthToken();
 
   const [golfers, setGolfers] = useState<Golfer[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);

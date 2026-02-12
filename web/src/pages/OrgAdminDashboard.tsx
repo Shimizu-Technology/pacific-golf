@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
 import { PageTransition } from '../components/ui';
 import { useOrganization } from '../components/OrganizationProvider';
+import { useAuthToken } from '../hooks/useAuthToken';
 import { 
   Users, 
   DollarSign, 
@@ -35,7 +35,7 @@ interface OrgStats {
 
 export const OrgAdminDashboard: React.FC = () => {
   const { organization, isLoading: orgLoading } = useOrganization();
-  const { getToken } = useAuth();
+  const { getToken } = useAuthToken();
   const navigate = useNavigate();
   const [tournaments, setTournaments] = useState<TournamentSummary[]>([]);
   const [stats, setStats] = useState<OrgStats | null>(null);

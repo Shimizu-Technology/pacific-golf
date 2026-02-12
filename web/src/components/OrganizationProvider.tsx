@@ -68,14 +68,18 @@ export function OrganizationProvider({
   // Show error state
   if (error && !organization) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md mx-auto px-4">
-          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Organization Not Found</h1>
-          <p className="text-gray-600 mb-6">{error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center max-w-md mx-auto px-6">
+          <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-10 h-10 text-red-500" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Organization Not Found</h1>
+          <p className="text-gray-500 mb-8 leading-relaxed">
+            We couldn't find the organization you're looking for. It may have been moved or the URL might be incorrect.
+          </p>
           <button
             onClick={() => navigate('/')}
-            className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
+            className="px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all shadow-lg shadow-green-600/25 hover:shadow-green-600/40"
           >
             Go Home
           </button>
