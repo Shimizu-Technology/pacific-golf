@@ -4,6 +4,23 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { ShieldX, Home, LogOut } from 'lucide-react';
 
+// Dev auth helpers
+const DEV_TOKEN_KEY = 'pacific_golf_dev_token';
+const isDev = import.meta.env.DEV;
+
+export function getDevToken(): string | null {
+  if (!isDev) return null;
+  return localStorage.getItem(DEV_TOKEN_KEY);
+}
+
+export function setDevToken(token: string): void {
+  localStorage.setItem(DEV_TOKEN_KEY, token);
+}
+
+export function clearDevToken(): void {
+  localStorage.removeItem(DEV_TOKEN_KEY);
+}
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
@@ -16,22 +33,48 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const navigate = useNavigate();
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
   const authSetupRef = useRef(false);
+  const devToken = getDevToken();
 
-  // Set up API auth token getter - use the giaa-tournament JWT template
+  // Set up API auth token getter
   useEffect(() => {
-    api.setAuthTokenGetter(async () => {
-      try {
-        return await getToken({ template: 'giaa-tournament' });
-      } catch (error) {
-        console.error('Failed to get auth token:', error);
-        return null;
-      }
-    });
-    authSetupRef.current = true;
-  }, [getToken]);
+    if (devToken) {
+      // Dev mode: use the dev token directly
+      api.setAuthTokenGetter(async () => devToken);
+      authSetupRef.current = true;
+    } else {
+      // Production: use Clerk's JWT template
+      api.setAuthTokenGetter(async () => {
+        try {
+          return await getToken({ template: 'giaa-tournament' });
+        } catch (error) {
+          console.error('Failed to get auth token:', error);
+          return null;
+        }
+      });
+      authSetupRef.current = true;
+    }
+  }, [getToken, devToken]);
 
   useEffect(() => {
     const verifyAdminAccess = async () => {
+      // Dev token bypass
+      if (devToken) {
+        // Wait for auth setup
+        while (!authSetupRef.current) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        try {
+          const admin = await api.getCurrentAdmin();
+          console.log('Dev auth verified:', admin.email);
+          setAuthStatus('authorized');
+        } catch (error) {
+          console.error('Dev auth failed:', error);
+          clearDevToken();
+          setAuthStatus('not-signed-in');
+        }
+        return;
+      }
+
       if (!isLoaded) return;
       
       if (!isSignedIn) {
@@ -78,7 +121,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     };
 
     verifyAdminAccess();
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, devToken]);
 
   // Show loading state while checking
   if (authStatus === 'loading' || !isLoaded) {

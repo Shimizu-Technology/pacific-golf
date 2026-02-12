@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { useOrganization } from '../components/OrganizationProvider';
 import { useAuthToken } from '../hooks/useAuthToken';
-import { useCurrentUser } from '../hooks/useCurrentUser';
 import { ImageUpload } from '../components/ImageUpload';
 import {
   ArrowLeft,
   Building2,
   Loader2,
   Save,
-  AlertCircle,
   Palette,
   Mail,
   Phone,
   Globe,
   FileText,
+  Settings,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -29,19 +29,6 @@ interface FormData {
   banner_url: string;
 }
 
-const defaultFormData: FormData = {
-  name: '',
-  slug: '',
-  description: '',
-  primary_color: '#16a34a',
-  contact_email: '',
-  contact_phone: '',
-  website_url: '',
-  logo_url: '',
-  banner_url: '',
-};
-
-// Preset brand colors
 const colorPresets = [
   { name: 'Green', value: '#16a34a' },
   { name: 'Blue', value: '#2563eb' },
@@ -53,70 +40,59 @@ const colorPresets = [
   { name: 'Pink', value: '#db2777' },
 ];
 
-export const CreateOrganizationPage: React.FC = () => {
-  const navigate = useNavigate();
+export const OrgSettingsPage: React.FC = () => {
+  const { orgSlug } = useParams<{ orgSlug: string }>();
+  const { organization } = useOrganization();
   const { getToken } = useAuthToken();
-  const { loading: userLoading, isSuperAdmin } = useCurrentUser();
-  const [formData, setFormData] = useState<FormData>(defaultFormData);
+  const [formData, setFormData] = useState<FormData | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
   useEffect(() => {
-    if (!userLoading && !isSuperAdmin) {
-      navigate('/');
+    if (organization) {
+      setFormData({
+        name: organization.name || '',
+        slug: organization.slug || '',
+        description: organization.description || '',
+        primary_color: organization.primary_color || '#16a34a',
+        contact_email: organization.contact_email || '',
+        contact_phone: organization.contact_phone || '',
+        website_url: organization.website_url || '',
+        logo_url: organization.logo_url || '',
+        banner_url: organization.banner_url || '',
+      });
     }
-  }, [userLoading, isSuperAdmin, navigate]);
-
-  // Auto-generate slug from name
-  useEffect(() => {
-    if (formData.name && !formData.slug) {
-      const slug = formData.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
-      setFormData(prev => ({ ...prev, slug }));
-    }
-  }, [formData.name]);
+  }, [organization]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    
-    // Special handling for slug - only allow lowercase, numbers, hyphens
+
     if (name === 'slug') {
       const cleanSlug = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-      setFormData(prev => ({ ...prev, [name]: cleanSlug }));
+      setFormData(prev => prev ? { ...prev, [name]: cleanSlug } : null);
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData(prev => prev ? { ...prev, [name]: value } : null);
     }
-    
-    // Clear error when field is edited
+
     if (errors[name as keyof FormData]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
   };
 
   const validate = (): boolean => {
+    if (!formData) return false;
     const newErrors: Partial<Record<keyof FormData, string>> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Organization name is required';
-    }
-
-    if (!formData.slug.trim()) {
-      newErrors.slug = 'URL slug is required';
-    } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
+    if (!formData.name.trim()) newErrors.name = 'Organization name is required';
+    if (!formData.slug.trim()) newErrors.slug = 'URL slug is required';
+    else if (!/^[a-z0-9-]+$/.test(formData.slug))
       newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
-    }
-
-    if (formData.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_email)) {
+    if (formData.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_email))
       newErrors.contact_email = 'Invalid email format';
-    }
-
-    if (formData.website_url && !formData.website_url.startsWith('http')) {
+    if (formData.website_url && !formData.website_url.startsWith('http'))
       newErrors.website_url = 'Website URL must start with http:// or https://';
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -124,20 +100,18 @@ export const CreateOrganizationPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validate()) {
+    if (!validate() || !formData || !organization) {
       toast.error('Please fix the errors before submitting');
       return;
     }
 
     setSaving(true);
-
     try {
       const token = await getToken();
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations`,
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.id}`,
         {
-          method: 'POST',
+          method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -148,33 +122,23 @@ export const CreateOrganizationPage: React.FC = () => {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.errors?.join(', ') || 'Failed to create organization');
+        throw new Error(data.errors?.join(', ') || 'Failed to update organization');
       }
 
-      const org = await response.json();
-      toast.success('Organization created successfully!');
-      
-      // Navigate to the super admin dashboard to see the new org
-      setTimeout(() => {
-        navigate('/super-admin');
-      }, 1000);
+      toast.success('Organization settings saved!');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create organization');
+      toast.error(err instanceof Error ? err.message : 'Failed to save settings');
     } finally {
       setSaving(false);
     }
   };
 
-  if (userLoading) {
+  if (!organization || !formData) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-green-600" />
       </div>
     );
-  }
-
-  if (!isSuperAdmin) {
-    return null;
   }
 
   return (
@@ -185,19 +149,33 @@ export const CreateOrganizationPage: React.FC = () => {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Link
-            to="/super-admin"
+            to={`/${orgSlug}/admin`}
             className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-green-100 rounded-xl">
-              <Building2 className="w-6 h-6 text-green-600" />
-            </div>
+            {organization.logo_url ? (
+              <img
+                src={organization.logo_url}
+                alt={organization.name}
+                className="w-14 h-14 rounded-xl object-contain bg-gray-100"
+              />
+            ) : (
+              <div
+                className="w-14 h-14 rounded-xl flex items-center justify-center text-white text-xl font-bold"
+                style={{ backgroundColor: organization.primary_color || '#16a34a' }}
+              >
+                {organization.name?.charAt(0) || 'O'}
+              </div>
+            )}
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Create Organization</h1>
-              <p className="text-gray-500">Set up a new golf organization</p>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Settings className="w-6 h-6 text-gray-400" />
+                Organization Settings
+              </h1>
+              <p className="text-gray-500">{organization.name}</p>
             </div>
           </div>
         </div>
@@ -208,7 +186,6 @@ export const CreateOrganizationPage: React.FC = () => {
           {/* Basic Info */}
           <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Basic Information</h2>
-            
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -219,14 +196,11 @@ export const CreateOrganizationPage: React.FC = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="e.g., Make-A-Wish Guam"
                   className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.name ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-                )}
+                {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
               </div>
 
               <div>
@@ -242,19 +216,12 @@ export const CreateOrganizationPage: React.FC = () => {
                     name="slug"
                     value={formData.slug}
                     onChange={handleChange}
-                    placeholder="make-a-wish-guam"
                     className={`flex-1 px-4 py-3 border rounded-r-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
                       errors.slug ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
                 </div>
-                {errors.slug ? (
-                  <p className="mt-1 text-sm text-red-600">{errors.slug}</p>
-                ) : (
-                  <p className="mt-1 text-sm text-gray-500">
-                    This will be the URL for your organization's tournaments
-                  </p>
-                )}
+                {errors.slug && <p className="mt-1 text-sm text-red-600">{errors.slug}</p>}
               </div>
 
               <div>
@@ -267,7 +234,6 @@ export const CreateOrganizationPage: React.FC = () => {
                   value={formData.description}
                   onChange={handleChange}
                   rows={3}
-                  placeholder="Brief description of your organization..."
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
@@ -280,18 +246,15 @@ export const CreateOrganizationPage: React.FC = () => {
               <Palette className="w-5 h-5 inline mr-2" />
               Branding
             </h2>
-            
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Brand Color
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Brand Color</label>
                 <div className="flex items-center gap-4 flex-wrap">
                   {colorPresets.map((color) => (
                     <button
                       key={color.value}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, primary_color: color.value }))}
+                      onClick={() => setFormData(prev => prev ? { ...prev, primary_color: color.value } : null)}
                       className={`w-10 h-10 rounded-xl border-2 transition-all ${
                         formData.primary_color === color.value
                           ? 'border-gray-900 scale-110'
@@ -305,7 +268,7 @@ export const CreateOrganizationPage: React.FC = () => {
                     <input
                       type="color"
                       value={formData.primary_color}
-                      onChange={(e) => setFormData(prev => ({ ...prev, primary_color: e.target.value }))}
+                      onChange={(e) => setFormData(prev => prev ? { ...prev, primary_color: e.target.value } : null)}
                       className="w-10 h-10 rounded-xl cursor-pointer"
                     />
                     <span className="text-sm text-gray-500">{formData.primary_color}</span>
@@ -316,7 +279,7 @@ export const CreateOrganizationPage: React.FC = () => {
               <ImageUpload
                 label="Logo"
                 value={formData.logo_url}
-                onChange={(url) => setFormData(prev => ({ ...prev, logo_url: url }))}
+                onChange={(url) => setFormData(prev => prev ? { ...prev, logo_url: url } : null)}
                 getToken={getToken}
                 placeholder="Upload logo (PNG or SVG recommended)"
                 helpText="Square image works best. Max 5MB."
@@ -325,106 +288,61 @@ export const CreateOrganizationPage: React.FC = () => {
               <ImageUpload
                 label="Banner Image"
                 value={formData.banner_url}
-                onChange={(url) => setFormData(prev => ({ ...prev, banner_url: url }))}
+                onChange={(url) => setFormData(prev => prev ? { ...prev, banner_url: url } : null)}
                 getToken={getToken}
                 placeholder="Upload banner image"
                 helpText="Wide image (e.g. 1200×400) works best. Max 5MB."
               />
-
-              {/* Preview */}
-              {(formData.name || formData.logo_url) && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-sm font-medium text-gray-500 mb-3">Preview</p>
-                  <div className="flex items-center gap-4">
-                    {formData.logo_url ? (
-                      <img
-                        src={formData.logo_url}
-                        alt="Logo preview"
-                        className="w-12 h-12 rounded-xl object-contain bg-white"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold"
-                        style={{ backgroundColor: formData.primary_color }}
-                      >
-                        {formData.name ? formData.name.charAt(0) : '?'}
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
-                        {formData.name || 'Organization Name'}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        /{formData.slug || 'slug'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
           {/* Contact Info */}
           <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Contact Information</h2>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Mail className="w-4 h-4 inline mr-1" />
-                  Contact Email
+                  <Mail className="w-4 h-4 inline mr-1" /> Contact Email
                 </label>
                 <input
                   type="email"
                   name="contact_email"
                   value={formData.contact_email}
                   onChange={handleChange}
-                  placeholder="events@example.org"
                   className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.contact_email ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
-                {errors.contact_email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.contact_email}</p>
-                )}
+                {errors.contact_email && <p className="mt-1 text-sm text-red-600">{errors.contact_email}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Phone className="w-4 h-4 inline mr-1" />
-                  Contact Phone
+                  <Phone className="w-4 h-4 inline mr-1" /> Contact Phone
                 </label>
                 <input
                   type="tel"
                   name="contact_phone"
                   value={formData.contact_phone}
                   onChange={handleChange}
-                  placeholder="671-555-0123"
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Globe className="w-4 h-4 inline mr-1" />
-                  Website
+                  <Globe className="w-4 h-4 inline mr-1" /> Website
                 </label>
                 <input
                   type="url"
                   name="website_url"
                   value={formData.website_url}
                   onChange={handleChange}
-                  placeholder="https://example.org"
                   className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.website_url ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
-                {errors.website_url && (
-                  <p className="mt-1 text-sm text-red-600">{errors.website_url}</p>
-                )}
+                {errors.website_url && <p className="mt-1 text-sm text-red-600">{errors.website_url}</p>}
               </div>
             </div>
           </div>
@@ -432,7 +350,7 @@ export const CreateOrganizationPage: React.FC = () => {
           {/* Submit */}
           <div className="flex items-center justify-between">
             <Link
-              to="/super-admin"
+              to={`/${orgSlug}/admin`}
               className="px-6 py-3 text-gray-700 hover:text-gray-900"
             >
               Cancel
@@ -445,12 +363,12 @@ export const CreateOrganizationPage: React.FC = () => {
               {saving ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Creating...
+                  Saving...
                 </>
               ) : (
                 <>
                   <Save className="w-5 h-5" />
-                  Create Organization
+                  Save Settings
                 </>
               )}
             </button>
@@ -461,4 +379,4 @@ export const CreateOrganizationPage: React.FC = () => {
   );
 };
 
-export default CreateOrganizationPage;
+export default OrgSettingsPage;

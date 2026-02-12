@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuthToken } from '../hooks/useAuthToken';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { ImageUpload } from '../components/ImageUpload';
 import {
   ArrowLeft,
   Building2,
@@ -53,7 +54,7 @@ const colorPresets = [
 export const EditOrganizationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getToken } = useAuth();
+  const { getToken } = useAuthToken();
   const { loading: userLoading, isSuperAdmin } = useCurrentUser();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [formData, setFormData] = useState<FormData | null>(null);
@@ -403,33 +404,23 @@ export const EditOrganizationPage: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Logo URL
-                </label>
-                <input
-                  type="url"
-                  name="logo_url"
-                  value={formData.logo_url}
-                  onChange={handleChange}
-                  placeholder="https://example.com/logo.png"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
+              <ImageUpload
+                label="Logo"
+                value={formData.logo_url}
+                onChange={(url) => setFormData(prev => ({ ...prev, logo_url: url }))}
+                getToken={getToken}
+                placeholder="Upload logo (PNG or SVG recommended)"
+                helpText="Square image works best. Max 5MB."
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Banner URL
-                </label>
-                <input
-                  type="url"
-                  name="banner_url"
-                  value={formData.banner_url}
-                  onChange={handleChange}
-                  placeholder="https://example.com/banner.jpg"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
+              <ImageUpload
+                label="Banner Image"
+                value={formData.banner_url}
+                onChange={(url) => setFormData(prev => ({ ...prev, banner_url: url }))}
+                getToken={getToken}
+                placeholder="Upload banner image"
+                helpText="Wide image (e.g. 1200×400) works best. Max 5MB."
+              />
             </div>
           </div>
 

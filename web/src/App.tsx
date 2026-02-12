@@ -33,6 +33,7 @@ import { LeaderboardPage, ScorecardPage, RaffleBoardPage, RaffleManagementPage, 
 import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
 import { CreateOrganizationPage } from './pages/CreateOrganizationPage';
 import { EditOrganizationPage } from './pages/EditOrganizationPage';
+import { OrgSettingsPage } from './pages/OrgSettingsPage';
 import { GolferAuthProvider } from './contexts';
 
 // Wrapper component for admin routes with tournament context
@@ -62,7 +63,43 @@ function App() {
         <Toaster position="top-right" />
         <Routes>
         {/* ===========================================
+            SUPER ADMIN ROUTES (Platform Management)
+            Must be BEFORE /:orgSlug catch-all routes!
+            =========================================== */}
+        
+        {/* Super Admin Dashboard */}
+        <Route
+          path="/super-admin"
+          element={
+            <ProtectedRoute>
+              <SuperAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Create Organization */}
+        <Route
+          path="/super-admin/organizations/new"
+          element={
+            <ProtectedRoute>
+              <CreateOrganizationPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Organization */}
+        <Route
+          path="/super-admin/organizations/:id"
+          element={
+            <ProtectedRoute>
+              <EditOrganizationPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ===========================================
             ORGANIZATION-SCOPED PUBLIC ROUTES (Multi-tenant)
+            NOTE: /:orgSlug is a catch-all - keep it AFTER specific routes!
             =========================================== */}
         
         {/* Organization landing page - shows all tournaments */}
@@ -122,40 +159,6 @@ function App() {
         />
 
         {/* ===========================================
-            SUPER ADMIN ROUTES (Platform Management)
-            =========================================== */}
-        
-        {/* Super Admin Dashboard */}
-        <Route
-          path="/super-admin"
-          element={
-            <ProtectedRoute>
-              <SuperAdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Create Organization */}
-        <Route
-          path="/super-admin/organizations/new"
-          element={
-            <ProtectedRoute>
-              <CreateOrganizationPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Edit Organization */}
-        <Route
-          path="/super-admin/organizations/:id"
-          element={
-            <ProtectedRoute>
-              <EditOrganizationPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ===========================================
             ORG-SCOPED ADMIN ROUTES (Multi-tenant)
             =========================================== */}
         
@@ -166,6 +169,18 @@ function App() {
             <ProtectedRoute>
               <OrganizationProvider>
                 <OrgAdminDashboard />
+              </OrganizationProvider>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Organization Settings */}
+        <Route
+          path="/:orgSlug/admin/settings"
+          element={
+            <ProtectedRoute>
+              <OrganizationProvider>
+                <OrgSettingsPage />
               </OrganizationProvider>
             </ProtectedRoute>
           }

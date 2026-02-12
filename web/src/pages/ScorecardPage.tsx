@@ -334,10 +334,10 @@ export const ScorecardPage: React.FC = () => {
   const currentHoleData = scorecard.holes.find(h => h.hole === currentHole);
 
   // Determine back link based on auth type
-  const backLink = isGolferAuth 
+  const backLink = (isGolferAuth || !orgSlug)
     ? '/golfer/dashboard' 
     : `/${orgSlug}/admin/tournaments/${tournamentSlug}`;
-  const backLabel = isGolferAuth ? 'Dashboard' : 'Back';
+  const backLabel = (isGolferAuth || !orgSlug) ? 'Dashboard' : 'Back';
 
   return (
     <div className="min-h-screen bg-gray-100">

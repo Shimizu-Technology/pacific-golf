@@ -1,11 +1,17 @@
 import { useAuth } from '@clerk/clerk-react';
-import { useGolferAuth } from '../contexts/GolferAuthContext';
-import { useCallback } from 'react';
+import { useContext, useCallback } from 'react';
+import { getDevToken } from '../components/ProtectedRoute';
+
+// Import context directly to avoid throwing when outside provider
+import { GolferAuthContext } from '../contexts/GolferAuthContext';
 
 /**
  * Hook that provides an auth token from either:
- * 1. Clerk (for admin users)
- * 2. Golfer session (for golfers accessing their scorecard)
+ * 1. Dev token (for local development without Clerk)
+ * 2. Clerk (for admin users)
+ * 3. Golfer session (for golfers accessing their scorecard)
+ * 
+ * Safe to use outside GolferAuthProvider (golfer auth will just be unavailable).
  * 
  * Usage:
  * const { getToken, isAuthenticated, authType } = useAuthToken();
@@ -13,14 +19,27 @@ import { useCallback } from 'react';
  */
 export function useAuthToken() {
   const { getToken: getClerkToken, isSignedIn: isClerkSignedIn } = useAuth();
-  const { isAuthenticated: isGolferAuthenticated, token: golferToken } = useGolferAuth();
+  
+  // Safe access to golfer auth - returns null if outside GolferAuthProvider
+  const golferContext = useContext(GolferAuthContext);
+  const isGolferAuthenticated = golferContext?.isAuthenticated ?? false;
+  const golferToken = golferContext?.token ?? null;
+
+  // Dev token check
+  const devToken = getDevToken();
+  const isDevAuth = !!devToken;
 
   // Determine auth type and status
-  const authType = isClerkSignedIn ? 'clerk' : isGolferAuthenticated ? 'golfer' : null;
-  const isAuthenticated = isClerkSignedIn || isGolferAuthenticated;
+  const authType = isDevAuth ? 'dev' : isClerkSignedIn ? 'clerk' : isGolferAuthenticated ? 'golfer' : null;
+  const isAuthenticated = isDevAuth || isClerkSignedIn || isGolferAuthenticated;
 
   // Get token from available auth source
   const getToken = useCallback(async (): Promise<string | null> => {
+    // Dev token bypass (local development)
+    if (devToken) {
+      return devToken;
+    }
+
     // Prefer Clerk auth if available (admin)
     if (isClerkSignedIn) {
       try {
@@ -38,14 +57,14 @@ export function useAuthToken() {
     }
 
     return null;
-  }, [isClerkSignedIn, getClerkToken, isGolferAuthenticated, golferToken]);
+  }, [devToken, isClerkSignedIn, getClerkToken, isGolferAuthenticated, golferToken]);
 
   return {
     getToken,
     isAuthenticated,
     authType,
-    isClerkAuth: isClerkSignedIn,
-    isGolferAuth: isGolferAuthenticated && !isClerkSignedIn,
+    isClerkAuth: isDevAuth || isClerkSignedIn,
+    isGolferAuth: isGolferAuthenticated && !isClerkSignedIn && !isDevAuth,
   };
 }
 

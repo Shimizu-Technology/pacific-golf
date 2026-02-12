@@ -62,7 +62,7 @@ interface GolferAuthContextType extends GolferAuthState {
   getAuthHeader: () => { Authorization: string } | {};
 }
 
-const GolferAuthContext = createContext<GolferAuthContextType | null>(null);
+export const GolferAuthContext = createContext<GolferAuthContextType | null>(null);
 
 const STORAGE_KEY = 'pacific_golf_golfer_session';
 

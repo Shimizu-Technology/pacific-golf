@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useAuthToken } from '../hooks/useAuthToken';
 import {
   Building2,
   Plus,
@@ -33,7 +33,7 @@ interface Organization {
 
 export const SuperAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { getToken } = useAuth();
+  const { getToken } = useAuthToken();
   const { user, loading: userLoading, isSuperAdmin } = useCurrentUser();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);

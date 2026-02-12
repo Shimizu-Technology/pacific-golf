@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
+import { getDevToken } from '../components/ProtectedRoute';
 
 interface CurrentUser {
   id: string;
@@ -20,6 +21,35 @@ export function useCurrentUser() {
 
   useEffect(() => {
     async function fetchUser() {
+      const devToken = getDevToken();
+
+      // Dev token bypass: use dev token directly
+      if (devToken) {
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_API_URL}/api/v1/admins/me`,
+            {
+              headers: {
+                'Authorization': `Bearer ${devToken}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch user');
+          }
+
+          const data = await response.json();
+          setUser(data);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch user');
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
       if (!isLoaded) return;
       
       if (!isSignedIn) {
