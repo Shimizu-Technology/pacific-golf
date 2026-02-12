@@ -52,6 +52,11 @@ class Golfer < ApplicationRecord
   after_commit :send_confirmation_email, on: :create, if: :should_send_immediate_emails?
   after_commit :notify_admin, on: :create, if: :should_send_immediate_emails?
 
+  # Employee features have been removed - provide safe defaults for any remaining references
+  def is_employee
+    false
+  end
+
   # Status check methods
   def checked_in?
     checked_in_at.present?

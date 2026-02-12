@@ -1,12 +1,10 @@
 module Api
   module V1
     class PaymentLinksController < ApplicationController
-      # Skip authentication - these are public endpoints
       skip_before_action :authenticate_user!, raise: false
       skip_before_action :verify_authenticity_token, raise: false
 
       # GET /api/v1/payment_links/:token
-      # Get payment info for a golfer by token
       def show
         golfer = Golfer.find_by(payment_token: params[:token])
         
@@ -19,10 +17,7 @@ module Api
           render json: { 
             error: "This payment has already been completed",
             already_paid: true,
-            golfer: {
-              name: golfer.name,
-              email: golfer.email
-            }
+            golfer: { name: golfer.name, email: golfer.email }
           }, status: :unprocessable_entity
           return
         end
@@ -33,8 +28,7 @@ module Api
         end
 
         tournament = golfer.tournament
-        setting = Setting.instance
-        entry_fee = golfer.is_employee ? tournament.employee_entry_fee : tournament.entry_fee
+        entry_fee = tournament&.entry_fee || 12500
 
         render json: {
           golfer: {
@@ -43,7 +37,6 @@ module Api
             email: golfer.email,
             phone: golfer.phone,
             company: golfer.company,
-            is_employee: golfer.is_employee,
             registration_status: golfer.registration_status
           },
           tournament: {
@@ -53,14 +46,11 @@ module Api
             location_name: tournament.location_name
           },
           entry_fee_cents: entry_fee,
-          entry_fee_dollars: entry_fee / 100.0,
-          contact_name: setting.contact_name,
-          contact_phone: setting.contact_phone
+          entry_fee_dollars: entry_fee / 100.0
         }
       end
 
       # POST /api/v1/payment_links/:token/checkout
-      # Create a Stripe checkout session for the golfer
       def create_checkout
         golfer = Golfer.find_by(payment_token: params[:token])
         
@@ -82,7 +72,6 @@ module Api
         setting = Setting.instance
         tournament = golfer.tournament
         
-        # Handle test mode
         if setting.test_mode?
           return handle_test_mode(golfer, tournament)
         end
@@ -94,8 +83,7 @@ module Api
 
         Stripe.api_key = setting.stripe_secret_key
         frontend_url = ENV.fetch("FRONTEND_URL", "http://localhost:5173")
-        entry_fee = golfer.is_employee ? tournament.employee_entry_fee : tournament.entry_fee
-        fee_description = golfer.is_employee ? "Employee Rate" : "Standard Rate"
+        entry_fee = tournament&.entry_fee || 12500
 
         begin
           session = Stripe::Checkout::Session.create({
@@ -106,7 +94,7 @@ module Api
                 currency: "usd",
                 product_data: {
                   name: "#{tournament.name} Entry Fee",
-                  description: "Golf Tournament Registration - #{golfer.name} (#{fee_description})",
+                  description: "Golf Tournament Registration - #{golfer.name}",
                 },
                 unit_amount: entry_fee,
               },
@@ -118,12 +106,10 @@ module Api
             metadata: {
               golfer_id: golfer.id.to_s,
               tournament_id: tournament.id.to_s,
-              payment_token: params[:token],
-              is_employee: golfer.is_employee.to_s
+              payment_token: params[:token]
             }
           })
 
-          # Store the session ID on the golfer
           golfer.update!(stripe_checkout_session_id: session.id)
 
           render json: {
@@ -139,29 +125,22 @@ module Api
       private
 
       def handle_test_mode(golfer, tournament)
-        entry_fee = golfer.is_employee ? tournament.employee_entry_fee : tournament.entry_fee
+        entry_fee = tournament&.entry_fee || 12500
         test_session_id = "test_paylink_#{SecureRandom.hex(16)}"
         test_payment_intent_id = "test_pi_paylink_#{SecureRandom.hex(8)}"
         emails_sent = false
 
-        # Use database transaction with row locking to prevent race conditions
         ActiveRecord::Base.transaction do
-          # Lock the golfer row to prevent concurrent updates
           golfer.lock!
           
-          # Check if already paid AFTER acquiring lock
           if golfer.payment_status == "paid"
-            # Already paid - just return success without sending emails again
             render json: {
-              test_mode: true,
-              success: true,
-              message: "Payment already completed",
-              already_paid: true
+              test_mode: true, success: true,
+              message: "Payment already completed", already_paid: true
             }
             return
           end
 
-          # In test mode, simulate immediate payment success
           golfer.update!(
             payment_status: "paid",
             payment_type: "stripe",
@@ -172,34 +151,26 @@ module Api
             payment_notes: "Paid via payment link (test mode) on #{Time.current.in_time_zone('Pacific/Guam').strftime('%B %d, %Y at %I:%M %p')} (Guam Time)"
           )
 
-          # Log the payment activity
           ActivityLog.log(
             admin: nil,
             action: 'payment_completed',
             target: golfer,
-            details: "Payment of $#{format('%.2f', entry_fee / 100.0)} completed via payment link#{golfer.is_employee ? ' (Employee Rate)' : ''}",
+            details: "Payment of $#{format('%.2f', entry_fee / 100.0)} completed via payment link",
             tournament: tournament
           )
 
           emails_sent = true
         end
 
-        # Store test session info
-        Rails.cache.write(
-          test_session_id,
-          { golfer_id: golfer.id, amount: entry_fee },
-          expires_in: 1.hour
-        )
+        Rails.cache.write(test_session_id, { golfer_id: golfer.id, amount: entry_fee }, expires_in: 1.hour)
 
-        # Send confirmation emails ONLY if we just processed the payment (outside transaction)
         if emails_sent
           GolferMailer.confirmation_with_payment_email(golfer).deliver_later rescue nil
           AdminMailer.notify_new_registration_with_payment(golfer).deliver_later(wait: 2.seconds) rescue nil
         end
 
         render json: {
-          test_mode: true,
-          success: true,
+          test_mode: true, success: true,
           message: "Payment simulated successfully (test mode)",
           session_id: test_session_id
         }
@@ -207,4 +178,3 @@ module Api
     end
   end
 end
-
