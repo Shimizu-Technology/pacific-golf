@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion, AnimatePresence, useInView } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig, useInView } from 'framer-motion';
 import {
   Trophy,
   RefreshCw,
@@ -345,6 +345,7 @@ export const LeaderboardPage: React.FC = () => {
   const { tournament, scoring_type, leaderboard } = data;
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="min-h-screen bg-gray-900">
       {/* Header with org-color gradient */}
       <motion.header
@@ -516,5 +517,6 @@ export const LeaderboardPage: React.FC = () => {
         </div>
       </footer>
     </div>
+    </MotionConfig>
   );
 };

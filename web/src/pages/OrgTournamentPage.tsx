@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useOrganization } from '../components/OrganizationProvider';
 import { api, Tournament, Sponsor } from '../services/api';
-import { motion, useInView } from 'framer-motion';
+import { motion, MotionConfig, useInView } from 'framer-motion';
 import { 
   Calendar, MapPin, Users, DollarSign, Clock, 
   Trophy, AlertCircle, ChevronLeft, Star, Building2, ExternalLink, Check
@@ -158,6 +158,7 @@ export function OrgTournamentPage() {
   const status = statusConfig[tournament.status] || { label: tournament.status, dot: 'bg-stone-400' };
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="min-h-screen bg-stone-50 text-stone-900">
       {/* ================================================================= */}
       {/* HERO                                                               */}
@@ -525,6 +526,7 @@ export function OrgTournamentPage() {
         </div>
       </footer>
     </div>
+    </MotionConfig>
   );
 }
 
