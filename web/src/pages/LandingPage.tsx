@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useUser, UserButton } from '@clerk/clerk-react';
 import { ArrowLeft, Calendar, MapPin, Users, LayoutDashboard, Phone, ChevronRight } from 'lucide-react';
+import { api } from '../services/api';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -9,7 +10,6 @@ export const LandingPage: React.FC = () => {
   const { user } = useUser();
   const legacyRegisterUrl = (import.meta.env.VITE_LEGACY_REGISTER_URL || '').trim();
   const hasLegacyRegistration = legacyRegisterUrl.length > 0;
-  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const openLegacyRegistration = () => {
     if (!hasLegacyRegistration) return;
@@ -23,25 +23,15 @@ export const LandingPage: React.FC = () => {
     }
 
     try {
-      const token = await getToken({ template: 'giaa-tournament' });
-      if (!token) {
-        navigate('/admin/dashboard');
-        return;
-      }
-
-      const response = await fetch(`${apiBaseUrl}/api/v1/admin/organizations`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      api.setAuthTokenGetter(async () => {
+        try {
+          return await getToken({ template: 'giaa-tournament' });
+        } catch {
+          return null;
         }
       });
 
-      if (!response.ok) {
-        navigate('/admin/dashboard');
-        return;
-      }
-
-      const organizations = (await response.json()) as Array<{ slug?: string }>;
+      const organizations = await api.getMyOrganizations();
 
       if (Array.isArray(organizations) && organizations.length === 1 && organizations[0]?.slug) {
         navigate(`/${organizations[0].slug}/admin`);
@@ -141,7 +131,7 @@ export const LandingPage: React.FC = () => {
             
             <div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[#1e3a5f] tracking-tight">
-                EDWARD A.P.MUNA II
+                EDWARD A.P. MUNA II
               </h2>
               <p className="text-lg sm:text-xl md:text-2xl font-bold text-[#c9a227] tracking-widest mt-1 md:mt-2">
                 MEMORIAL GOLF TOURNAMENT

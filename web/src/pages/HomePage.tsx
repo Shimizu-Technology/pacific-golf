@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import {
   ArrowRight,
   Building2,
@@ -17,6 +18,7 @@ import { SignedInAdminBar } from '../components/SignedInAdminBar';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { isLoaded, isSignedIn } = useAuth();
   const [orgSlug, setOrgSlug] = useState('');
   const cleanedSlug = useMemo(
     () => orgSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''),
@@ -56,13 +58,15 @@ export const HomePage: React.FC = () => {
               >
                 Legacy View
               </Link>
-              <Link
-                to="/super-admin"
-                className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2 font-medium text-white transition-colors hover:bg-stone-700"
-              >
-                <LayoutDashboard size={16} />
-                Admin Dashboard
-              </Link>
+              {isLoaded && isSignedIn && (
+                <Link
+                  to="/super-admin"
+                  className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2 font-medium text-white transition-colors hover:bg-stone-700"
+                >
+                  <LayoutDashboard size={16} />
+                  Admin Dashboard
+                </Link>
+              )}
             </div>
           </header>
 
