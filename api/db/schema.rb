@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_12_072336) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_16_101000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -301,7 +301,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_12_072336) do
     t.string "location_name"
     t.integer "max_capacity", default: 160
     t.string "name", null: false
-    t.uuid "organization_id"
+    t.uuid "organization_id", null: false
     t.text "payment_instructions"
     t.boolean "raffle_auto_draw", default: false
     t.text "raffle_description"

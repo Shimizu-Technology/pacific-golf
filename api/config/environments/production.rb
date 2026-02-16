@@ -22,10 +22,10 @@ Rails.application.configure do
   config.active_storage.service = :amazon
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  # config.assume_ssl = true
+  config.assume_ssl = ENV.fetch("ASSUME_SSL", "true") == "true"
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
+  config.force_ssl = ENV.fetch("FORCE_SSL", "true") == "true"
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
@@ -54,7 +54,8 @@ Rails.application.configure do
   # config.action_mailer.raise_delivery_errors = false
 
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
+  frontend_host = ENV.fetch("FRONTEND_URL", "https://example.com").sub(%r{\Ahttps?://}, "").split("/").first
+  config.action_mailer.default_url_options = { host: frontend_host }
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
   # config.action_mailer.smtp_settings = {
@@ -84,10 +85,9 @@ Rails.application.configure do
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
-  # ActionCable configuration for real-time updates
-  # Allow connections from the production frontend
-  config.action_cable.allowed_request_origins = [
-    ENV.fetch("FRONTEND_URL", "https://giaa-tournament.vercel.app"),
-    %r{https://.*\.vercel\.app}
-  ]
+  # ActionCable configuration for real-time updates.
+  # Keep origins explicit and env-driven in production.
+  allowed_frontend_origins = [ENV["FRONTEND_URL"], ENV["FRONTEND_URL_ALT"]].compact.uniq
+  allowed_frontend_origins = ["https://example.com"] if allowed_frontend_origins.empty?
+  config.action_cable.allowed_request_origins = allowed_frontend_origins
 end

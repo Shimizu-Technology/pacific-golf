@@ -2,6 +2,12 @@ module Api
   module V1
     class GolfersController < BaseController
       skip_before_action :authenticate_user!, only: [:create, :registration_status]
+      before_action :authorize_collection_tournament_access!, only: [:index, :stats, :bulk_send_payment_links]
+      before_action :authorize_golfer_access!, only: [
+        :show, :update, :destroy, :cancel, :refund, :mark_refunded,
+        :check_in, :undo_check_in, :payment_details, :promote, :demote,
+        :send_payment_link, :update_payment_status
+      ]
 
       # GET /api/v1/golfers
       def index
@@ -780,6 +786,18 @@ module Api
 
       private
 
+      def authorize_collection_tournament_access!
+        tournament = find_tournament
+        return render_tournament_required unless tournament
+
+        require_tournament_admin!(tournament)
+      end
+
+      def authorize_golfer_access!
+        golfer = Golfer.find(params[:id])
+        require_tournament_admin!(golfer.tournament)
+      end
+
       def find_tournament
         if params[:tournament_id].present?
           Tournament.find(params[:tournament_id])
@@ -809,7 +827,7 @@ module Api
       end
 
       def broadcast_golfer_update(golfer, action: "updated")
-        ActionCable.server.broadcast("golfers_channel", {
+        ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
           action: action,
           golfer: GolferSerializer.new(golfer).as_json
         })

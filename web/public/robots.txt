@@ -11,5 +11,6 @@ Allow: /
 Allow: /register
 
 # Sitemap
-Sitemap: https://giaa-tournament.com/sitemap.xml
+# Update to your live domain or Netlify URL before launch.
+Sitemap: https://YOUR_NETLIFY_SUBDOMAIN.netlify.app/sitemap.xml
 

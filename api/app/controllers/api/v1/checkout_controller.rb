@@ -291,7 +291,7 @@ module Api
             AdminMailer.notify_new_registration_with_payment(golfer).deliver_later(wait: 2.seconds)
 
             begin
-              ActionCable.server.broadcast("golfers_channel", {
+              ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
                 action: "payment_confirmed",
                 golfer: GolferSerializer.new(golfer).as_json
               })
@@ -494,7 +494,7 @@ module Api
         end
 
         begin
-          ActionCable.server.broadcast("golfers_channel", {
+          ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
             action: "payment_confirmed",
             golfer: GolferSerializer.new(golfer).as_json
           })
