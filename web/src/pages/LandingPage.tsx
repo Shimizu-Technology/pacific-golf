@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useUser, UserButton } from '@clerk/clerk-react';
-import { ArrowLeft, Calendar, MapPin, Users, LayoutDashboard, Phone, ChevronRight } from 'lucide-react';
-import { api } from '../services/api';
+import { ArrowLeft, Calendar, Check, MapPin, Users, LayoutDashboard, Phone, ChevronRight } from 'lucide-react';
+import { resolveBestDashboardPath } from '../utils/dashboardRouting';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -28,30 +28,8 @@ export const LandingPage: React.FC = () => {
       navigate('/admin/login');
       return;
     }
-
-    try {
-      const token = await getToken({ template: 'giaa-tournament' });
-      if (!token) {
-        navigate('/admin/dashboard');
-        return;
-      }
-
-      const organizations = await api.getMyOrganizationsWithToken(token);
-
-      if (Array.isArray(organizations) && organizations.length === 1 && organizations[0]?.slug) {
-        navigate(`/${organizations[0].slug}/admin`);
-        return;
-      }
-
-      if (Array.isArray(organizations) && organizations.length > 1) {
-        navigate('/super-admin');
-        return;
-      }
-
-      navigate('/admin/dashboard');
-    } catch {
-      navigate('/admin/dashboard');
-    }
+    const path = await resolveBestDashboardPath(getToken);
+    navigate(path);
   };
 
   return (
@@ -219,7 +197,8 @@ export const LandingPage: React.FC = () => {
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700">
                       {['Green Fee', 'Ditty Bag', 'Drinks & Food'].map((item, index) => (
                         <span key={index} className="flex items-center gap-1">
-                          <span className="text-[#059669]">✓</span> {item.trim()}
+                          <Check className="w-4 h-4 text-[#059669]" />
+                          {item.trim()}
                         </span>
                       ))}
                     </div>

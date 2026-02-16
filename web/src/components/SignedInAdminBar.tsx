@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useUser, UserButton } from '@clerk/clerk-react';
 import { LayoutDashboard } from 'lucide-react';
-import { api } from '../services/api';
+import { resolveBestDashboardPath } from '../utils/dashboardRouting';
 
 interface SignedInAdminBarProps {
   dashboardPath?: string;
@@ -18,33 +18,8 @@ export const SignedInAdminBar: React.FC<SignedInAdminBarProps> = ({ dashboardPat
   const displayName = user?.firstName || user?.emailAddresses[0]?.emailAddress || 'User';
 
   const goToBestDashboard = async () => {
-    if (dashboardPath) {
-      navigate(dashboardPath);
-      return;
-    }
-
-    try {
-      const token = await getToken({ template: 'giaa-tournament' });
-      if (!token) {
-        navigate('/admin/dashboard');
-        return;
-      }
-
-      const organizations = await api.getMyOrganizationsWithToken(token);
-      if (Array.isArray(organizations) && organizations.length === 1 && organizations[0]?.slug) {
-        navigate(`/${organizations[0].slug}/admin`);
-        return;
-      }
-
-      if (Array.isArray(organizations) && organizations.length > 1) {
-        navigate('/super-admin');
-        return;
-      }
-
-      navigate('/admin/dashboard');
-    } catch {
-      navigate('/admin/dashboard');
-    }
+    const path = await resolveBestDashboardPath(getToken, dashboardPath);
+    navigate(path);
   };
 
   return (
