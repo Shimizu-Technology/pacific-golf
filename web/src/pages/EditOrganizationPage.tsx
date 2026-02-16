@@ -407,7 +407,7 @@ export const EditOrganizationPage: React.FC = () => {
               <ImageUpload
                 label="Logo"
                 value={formData.logo_url}
-                onChange={(url) => setFormData(prev => ({ ...prev, logo_url: url }))}
+                onChange={(url) => setFormData(prev => (prev ? { ...prev, logo_url: url } : prev))}
                 getToken={getToken}
                 placeholder="Upload logo (PNG or SVG recommended)"
                 helpText="Square image works best. Max 5MB."
@@ -416,7 +416,7 @@ export const EditOrganizationPage: React.FC = () => {
               <ImageUpload
                 label="Banner Image"
                 value={formData.banner_url}
-                onChange={(url) => setFormData(prev => ({ ...prev, banner_url: url }))}
+                onChange={(url) => setFormData(prev => (prev ? { ...prev, banner_url: url } : prev))}
                 getToken={getToken}
                 placeholder="Upload banner image"
                 helpText="Wide image (e.g. 1200×400) works best. Max 5MB."

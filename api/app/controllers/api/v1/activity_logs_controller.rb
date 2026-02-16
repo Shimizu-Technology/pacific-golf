@@ -3,7 +3,7 @@ module Api
     class ActivityLogsController < BaseController
       # GET /api/v1/activity_logs
       def index
-        logs = ActivityLog.recent.includes(:admin, :tournament)
+        logs = ActivityLog.recent.includes(:user, :tournament)
 
         # Filter by tournament
         if params[:tournament_id].present?
@@ -63,7 +63,7 @@ module Api
           .where(target_type: 'Golfer', target_id: golfer.id)
           .or(ActivityLog.where("metadata->>'golfer_name' = ?", golfer.name))
           .recent
-          .includes(:admin)
+          .includes(:user)
           .limit(20)
 
         render json: {
@@ -90,8 +90,8 @@ module Api
         
         # Activity by admin (top 10)
         by_admin = base_scope
-          .joins(:admin)
-          .group('admins.name')
+          .joins(:user)
+          .group('users.name')
           .order('count_all DESC')
           .limit(10)
           .count

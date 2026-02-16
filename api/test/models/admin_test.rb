@@ -47,7 +47,7 @@ class AdminTest < ActiveSupport::TestCase
       clerk_id: admin.clerk_id,
       email: "different@email.com"
     )
-    assert_equal admin, found
+    assert_equal admin.id, found.id
   end
 
   test "find_by_clerk_or_email finds by email when clerk_id not found" do
@@ -56,7 +56,7 @@ class AdminTest < ActiveSupport::TestCase
       clerk_id: "non-existent-clerk-id",
       email: admin.email
     )
-    assert_equal admin, found
+    assert_equal admin.id, found.id
   end
 
   test "find_by_clerk_or_email returns nil when neither found" do
@@ -73,7 +73,7 @@ class AdminTest < ActiveSupport::TestCase
       clerk_id: "new-clerk-id",
       email: admin.email
     )
-    assert_equal admin, found
+    assert_equal admin.id, found.id
   end
 
   # ==================

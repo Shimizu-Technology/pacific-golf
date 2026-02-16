@@ -18,6 +18,7 @@ export interface GolferInfo {
 export interface TournamentInfo {
   id: number;
   name: string;
+  slug?: string;
   year: number;
   status: string;
   event_date: string | null;

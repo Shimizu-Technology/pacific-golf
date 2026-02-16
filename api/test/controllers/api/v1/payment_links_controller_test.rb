@@ -35,17 +35,16 @@ class Api::V1::PaymentLinksControllerTest < ActionDispatch::IntegrationTest
     assert json["already_paid"]
   end
 
-  test "show returns employee rate for employee golfers" do
+  test "show returns tournament entry fee" do
     golfer = golfers(:confirmed_unpaid)
-    golfer.update!(is_employee: true)
     golfer.generate_payment_token!
     tournament = golfer.tournament
-    
+
     get "/api/v1/payment_links/#{golfer.payment_token}"
     assert_response :success
-    
+
     json = JSON.parse(response.body)
-    assert_equal tournament.employee_entry_fee, json["entry_fee_cents"]
+    assert_equal tournament.entry_fee, json["entry_fee_cents"]
   end
 
   # ==================

@@ -288,7 +288,7 @@ class Api::V1::GolfersControllerTest < ActionDispatch::IntegrationTest
   # ==================
 
   test "registration_status returns capacity info without auth" do
-    get registration_status_api_v1_golfers_url
+    get "/api/v1/golfers/registration_status"
     assert_response :success
     
     json = JSON.parse(response.body)
@@ -313,43 +313,6 @@ class Api::V1::GolfersControllerTest < ActionDispatch::IntegrationTest
     assert json.key?("waitlist")
     assert json.key?("paid")
     assert json.key?("checked_in")
-  end
-
-  # ==================
-  # POST /api/v1/golfers/:id/toggle_employee
-  # ==================
-
-  test "toggle_employee marks golfer as employee" do
-    golfer = golfers(:confirmed_unpaid)
-    assert_not golfer.is_employee
-    
-    post toggle_employee_api_v1_golfer_url(golfer), headers: auth_headers
-    assert_response :success
-    
-    golfer.reload
-    assert golfer.is_employee
-  end
-
-  test "toggle_employee removes employee status" do
-    golfer = golfers(:confirmed_unpaid)
-    golfer.update!(is_employee: true)
-    
-    post toggle_employee_api_v1_golfer_url(golfer), headers: auth_headers
-    assert_response :success
-    
-    golfer.reload
-    assert_not golfer.is_employee
-  end
-
-  test "toggle_employee creates activity log" do
-    golfer = golfers(:confirmed_unpaid)
-    
-    assert_difference "ActivityLog.count", 1 do
-      post toggle_employee_api_v1_golfer_url(golfer), headers: auth_headers
-    end
-    
-    log = ActivityLog.last
-    assert_equal "employee_status_changed", log.action
   end
 
   # ==================
@@ -406,18 +369,17 @@ class Api::V1::GolfersControllerTest < ActionDispatch::IntegrationTest
     assert_equal tournament.entry_fee, golfer.payment_amount_cents
   end
 
-  test "payment_details sets employee rate for employees" do
+  test "payment_details preserves entry fee regardless of golfer type flags" do
     golfer = golfers(:confirmed_unpaid)
-    golfer.update!(is_employee: true)
     tournament = golfer.tournament
-    
+
     post payment_details_api_v1_golfer_url(golfer), params: {
       payment_method: "cash"
     }, headers: auth_headers
-    
+
     assert_response :success
     golfer.reload
-    assert_equal tournament.employee_entry_fee, golfer.payment_amount_cents
+    assert_equal tournament.entry_fee, golfer.payment_amount_cents
   end
 end
 

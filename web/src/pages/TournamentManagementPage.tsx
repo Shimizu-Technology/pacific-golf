@@ -282,9 +282,9 @@ export const TournamentManagementPage = () => {
                     >
                       <UserCheck size={14} className="mr-1" /> 
                       Employee Numbers
-                      {tournament.employee_numbers_count > 0 && (
+                      {(tournament.employee_numbers_count ?? 0) > 0 && (
                         <span className="ml-1 px-1.5 py-0.5 text-xs bg-brand-100 text-brand-700 rounded-full">
-                          {tournament.employee_numbers_count}
+                          {tournament.employee_numbers_count ?? 0}
                         </span>
                       )}
                     </Button>
@@ -845,7 +845,7 @@ const EmployeeNumbersModal = ({ isOpen, onClose, tournament }: EmployeeNumbersMo
         {/* Employee Fee Info */}
         <div className="p-3 bg-brand-50 rounded-lg text-sm">
           <p className="text-brand-800">
-            <strong>Employee Rate:</strong> ${tournament.employee_entry_fee_dollars.toFixed(2)} 
+            <strong>Employee Rate:</strong> ${(tournament.employee_entry_fee_dollars ?? 0).toFixed(2)} 
             <span className="text-brand-600 ml-2">(vs ${tournament.entry_fee_dollars.toFixed(2)} regular)</span>
           </p>
         </div>

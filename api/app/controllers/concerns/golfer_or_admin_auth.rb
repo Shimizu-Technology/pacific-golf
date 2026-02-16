@@ -52,7 +52,6 @@ module GolferOrAdminAuth
       return false
     end
 
-    Rails.logger.info "Authenticated as golfer: #{@current_golfer.email}"
     true
   end
 
@@ -69,7 +68,6 @@ module GolferOrAdminAuth
     return false unless @current_user
 
     Current.user = @current_user
-    Rails.logger.info "Authenticated as admin: #{@current_user.email}"
     true
   end
 

@@ -11,6 +11,22 @@ module ActiveSupport
     fixtures :all
 
     # Add more helper methods to be used by all tests here...
+    def admins(*fixture_names)
+      mapped_names = fixture_names.map do |name|
+        case name.to_s
+        when "admin_one" then :user_one
+        when "admin_two" then :super_admin
+        when "admin_no_clerk" then :user_no_clerk
+        else
+          name
+        end
+      end
+
+      records = users(*mapped_names)
+      return Admin.find(records.id) unless records.is_a?(Array)
+
+      records.map { |record| Admin.find(record.id) }
+    end
   end
 end
 

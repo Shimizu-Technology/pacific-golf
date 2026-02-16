@@ -22,7 +22,7 @@ interface PaymentModalProps {
   };
   entryFee: number; // in dollars
   stripePublicKey: string;
-  tournamentId?: string;
+  tournamentId?: string | number;
 }
 
 export function PaymentModal({

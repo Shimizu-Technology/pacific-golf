@@ -95,14 +95,13 @@ class GolferMailerTest < ActionMailer::TestCase
     assert_match "Pay Now", mail.body.encoded
   end
 
-  test "payment_link_email shows employee rate for employees" do
+  test "payment_link_email shows standard entry fee details" do
     unpaid_golfer = golfers(:confirmed_unpaid)
-    unpaid_golfer.update!(is_employee: true)
     unpaid_golfer.generate_payment_token!
-    
+
     mail = GolferMailer.payment_link_email(unpaid_golfer)
-    
+
     assert_equal [unpaid_golfer.email], mail.to
-    assert_match "Employee Rate", mail.body.encoded
+    assert_match "$125.00", mail.body.encoded
   end
 end

@@ -6,6 +6,7 @@ module Api
       skip_before_action :authenticate_user!, only: [:index, :show, :by_hole]
       before_action :set_tournament
       before_action :set_sponsor, only: [:show, :update, :destroy]
+      before_action :authorize_tournament_admin!, only: [:create, :update, :destroy, :reorder]
 
       # GET /api/v1/tournaments/:tournament_id/sponsors
       # Public - get all sponsors grouped by tier
@@ -98,6 +99,10 @@ module Api
 
       def set_tournament
         @tournament = Tournament.find(params[:tournament_id])
+      end
+
+      def authorize_tournament_admin!
+        require_tournament_admin!(@tournament)
       end
 
       def set_sponsor

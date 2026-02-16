@@ -1,6 +1,5 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { Button } from './Button';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,6 +7,7 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -16,8 +16,17 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
   footer,
+  size = 'lg',
 }) => {
   if (!isOpen) return null;
+
+  const sizeClass = {
+    sm: 'max-w-md',
+    md: 'max-w-lg',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl',
+    full: 'max-w-6xl',
+  }[size];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -25,7 +34,7 @@ export const Modal: React.FC<ModalProps> = ({
         className="fixed inset-0 bg-black bg-opacity-50"
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden mx-4">
+      <div className={`relative bg-white rounded-lg shadow-xl w-full max-h-[90vh] overflow-hidden mx-4 ${sizeClass}`}>
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
           <button

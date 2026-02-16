@@ -1,6 +1,12 @@
 import React from 'react';
 
-export const LiabilityWaiver: React.FC = () => {
+interface LiabilityWaiverProps {
+  organizationName?: string;
+}
+
+export const LiabilityWaiver: React.FC<LiabilityWaiverProps> = ({ organizationName }) => {
+  const orgLabel = organizationName || 'the tournament organizer';
+
   return (
     <div className="bg-brand-50 border-2 border-brand-800 rounded-lg p-6">
       <h3 className="text-xl font-bold text-brand-800 mb-4 uppercase text-center">
@@ -17,9 +23,8 @@ export const LiabilityWaiver: React.FC = () => {
           including, but not limited to, falls, contact with other participants,
           traffic, effects of the weather and conditions of the venue. By
           signing this form for myself and those on whose behalf I have
-          registered, I waive and release the Government of Guam, the A.B. Won
-          Pat International Airport Authority, Guam (GIAA) and its officers,
-          employees and their agents, the event planners/coordinators,
+          registered, I waive and release {orgLabel} and its officers,
+          employees, agents, event planners/coordinators,
           contributors and sponsors from any and all claims or liabilities that
           may arise from my participation in this event. I understand that I
           should not enter this event unless I am medically able. I agree to
