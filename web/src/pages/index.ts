@@ -1,3 +1,4 @@
+export { HomePage } from './HomePage';
 export { LandingPage } from './LandingPage';
 export { PaymentSuccessPage } from './PaymentSuccessPage';
 export { PaymentCancelPage } from './PaymentCancelPage';

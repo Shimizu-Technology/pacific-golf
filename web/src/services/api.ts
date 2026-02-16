@@ -415,6 +415,37 @@ export class ApiClient {
     return response.json();
   }
 
+  private async requestWithToken<T>(
+    endpoint: string,
+    token: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Request failed' }));
+      const errorMessage =
+        error.errors?.[0] ||
+        error.error ||
+        error.message ||
+        'Request failed';
+      throw new Error(errorMessage);
+    }
+
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    return response.json();
+  }
+
   // Tournament endpoints
   async getTournaments(params?: { status?: string }): Promise<Tournament[]> {
     const searchParams = new URLSearchParams();
@@ -490,6 +521,10 @@ export class ApiClient {
 
   async getMyOrganizations(): Promise<Organization[]> {
     return this.request('/api/v1/admin/organizations');
+  }
+
+  async getMyOrganizationsWithToken(token: string): Promise<Organization[]> {
+    return this.requestWithToken('/api/v1/admin/organizations', token);
   }
 
   async createOrganization(data: Partial<Organization>): Promise<Organization> {

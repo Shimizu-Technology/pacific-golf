@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import {
+  HomePage,
   LandingPage,
   PaymentSuccessPage,
   PaymentCancelPage,
@@ -296,7 +297,8 @@ function App() {
         {/* ===========================================
             LEGACY PUBLIC ROUTES (Backwards compatibility)
             =========================================== */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/legacy" element={<LandingPage />} />
         <Route path="/payment/success" element={<PaymentSuccessPage />} />
         <Route path="/payment/cancel" element={<PaymentCancelPage />} />
 

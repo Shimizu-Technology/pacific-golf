@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useOrganization } from '../components/OrganizationProvider';
+import { SignedInAdminBar } from '../components/SignedInAdminBar';
 import { api, Tournament } from '../services/api';
 import { motion, MotionConfig, useInView } from 'framer-motion';
 import {
@@ -157,6 +158,7 @@ export function OrganizationLandingPage() {
   return (
     <MotionConfig reducedMotion="user">
     <div className="min-h-screen bg-stone-50 text-stone-900">
+      <SignedInAdminBar dashboardPath={`/${orgSlug}/admin`} />
       {/* ================================================================= */}
       {/* HERO                                                               */}
       {/* ================================================================= */}
