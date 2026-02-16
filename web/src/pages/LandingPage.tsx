@@ -5,14 +5,58 @@ import { ArrowLeft, Calendar, MapPin, Users, LayoutDashboard, Phone, ChevronRigh
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded, getToken } = useAuth();
   const { user } = useUser();
   const legacyRegisterUrl = (import.meta.env.VITE_LEGACY_REGISTER_URL || '').trim();
   const hasLegacyRegistration = legacyRegisterUrl.length > 0;
+  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const openLegacyRegistration = () => {
     if (!hasLegacyRegistration) return;
     window.location.assign(legacyRegisterUrl);
+  };
+
+  const goToBestDashboard = async () => {
+    if (!isSignedIn) {
+      navigate('/admin/login');
+      return;
+    }
+
+    try {
+      const token = await getToken({ template: 'giaa-tournament' });
+      if (!token) {
+        navigate('/admin/dashboard');
+        return;
+      }
+
+      const response = await fetch(`${apiBaseUrl}/api/v1/admin/organizations`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        navigate('/admin/dashboard');
+        return;
+      }
+
+      const organizations = (await response.json()) as Array<{ slug?: string }>;
+
+      if (Array.isArray(organizations) && organizations.length === 1 && organizations[0]?.slug) {
+        navigate(`/${organizations[0].slug}/admin`);
+        return;
+      }
+
+      if (Array.isArray(organizations) && organizations.length > 1) {
+        navigate('/super-admin');
+        return;
+      }
+
+      navigate('/admin/dashboard');
+    } catch {
+      navigate('/admin/dashboard');
+    }
   };
 
   return (
@@ -40,7 +84,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
               <button
-                onClick={() => navigate('/admin/dashboard')}
+                onClick={goToBestDashboard}
                 className="text-xs md:text-sm hover:underline whitespace-nowrap"
               >
                 Go to Dashboard →
@@ -219,7 +263,7 @@ export const LandingPage: React.FC = () => {
                 {isLoaded && isSignedIn && (
                   <button
                     type="button"
-                    onClick={() => navigate('/admin/dashboard')}
+                    onClick={goToBestDashboard}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[#1e3a5f] bg-transparent px-7 py-3.5 text-base font-semibold text-[#1e3a5f] transition-colors hover:bg-[#1e3a5f] hover:text-white"
                   >
                     Dashboard
