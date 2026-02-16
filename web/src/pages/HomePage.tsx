@@ -69,6 +69,29 @@ export const HomePage: React.FC = () => {
               )}
             </div>
           </header>
+          <div className="mb-8 flex flex-wrap items-center gap-2 text-sm md:hidden">
+            <Link
+              to="/legacy"
+              className="rounded-full border border-stone-300 bg-white px-3 py-1.5 text-stone-700 transition-colors hover:bg-stone-100"
+            >
+              Legacy View
+            </Link>
+            <Link
+              to="/admin/login"
+              className="rounded-full border border-stone-300 bg-white px-3 py-1.5 text-stone-700 transition-colors hover:bg-stone-100"
+            >
+              Staff Login
+            </Link>
+            {isLoaded && isSignedIn && (
+              <Link
+                to="/super-admin"
+                className="inline-flex items-center gap-1 rounded-full bg-stone-900 px-3 py-1.5 font-medium text-white transition-colors hover:bg-stone-700"
+              >
+                <LayoutDashboard size={14} />
+                Admin
+              </Link>
+            )}
+          </div>
 
           <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
             <div className="lg:col-span-7">

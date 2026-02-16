@@ -196,9 +196,9 @@ export const LandingPage: React.FC = () => {
                     Limited to 144 Players
                   </p>
                   <div className="mt-2">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                      4 spots left
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                      Check availability
                     </span>
                   </div>
                 </div>
@@ -271,9 +271,7 @@ export const LandingPage: React.FC = () => {
             <Phone size={16} className="text-[#1e3a5f]" />
             <span className="text-sm text-gray-600">For more information:</span>
             <span className="font-bold text-[#1e3a5f]">Tournament Committee</span>
-            <a href="tel:+16715550121" className="text-[#c9a227] font-semibold hover:underline">
-              671-555-0121
-            </a>
+            <span className="text-[#c9a227] font-semibold">Contact organizer</span>
           </div>
           
           {/* Mobile: Styled like other cards */}
@@ -285,13 +283,9 @@ export const LandingPage: React.FC = () => {
               <h4 className="font-bold text-[#1e3a5f] text-sm">Contact</h4>
             </div>
             <p className="text-gray-900 font-semibold text-base mb-1">Tournament Committee</p>
-            <a 
-              href="tel:+16715550121"
-              className="inline-flex items-center gap-2 text-[#c9a227] font-semibold text-lg hover:underline"
-            >
-              <span>Call</span>
-              <span>671-555-0121</span>
-            </a>
+            <p className="inline-flex items-center gap-2 text-[#c9a227] font-semibold text-lg">
+              Contact organizer
+            </p>
           </div>
 
           {/* Staff Login Link - Subtle but findable */}
