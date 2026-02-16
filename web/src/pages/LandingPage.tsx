@@ -13,7 +13,14 @@ export const LandingPage: React.FC = () => {
 
   const openLegacyRegistration = () => {
     if (!hasLegacyRegistration) return;
-    window.location.assign(legacyRegisterUrl);
+    try {
+      const url = new URL(legacyRegisterUrl);
+      if (url.protocol === 'https:' || url.protocol === 'http:') {
+        window.location.assign(url.href);
+      }
+    } catch {
+      // Invalid legacy URL - do not navigate.
+    }
   };
 
   const goToBestDashboard = async () => {
@@ -23,15 +30,13 @@ export const LandingPage: React.FC = () => {
     }
 
     try {
-      api.setAuthTokenGetter(async () => {
-        try {
-          return await getToken({ template: 'giaa-tournament' });
-        } catch {
-          return null;
-        }
-      });
+      const token = await getToken({ template: 'giaa-tournament' });
+      if (!token) {
+        navigate('/admin/dashboard');
+        return;
+      }
 
-      const organizations = await api.getMyOrganizations();
+      const organizations = await api.getMyOrganizationsWithToken(token);
 
       if (Array.isArray(organizations) && organizations.length === 1 && organizations[0]?.slug) {
         navigate(`/${organizations[0].slug}/admin`);

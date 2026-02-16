@@ -32,7 +32,7 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
-      <SignedInAdminBar dashboardPath="/super-admin" />
+      <SignedInAdminBar />
 
       <main className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
