@@ -29,11 +29,6 @@ module Authenticated
     clerk_id = decoded['sub']
     email = decoded['email'] || decoded['primary_email_address']
 
-    # Debug logging
-    Rails.logger.info '=== User Auth Debug ==='
-    Rails.logger.info "Clerk ID: #{clerk_id}"
-    Rails.logger.info "Email from token: #{email.inspect}"
-
     unless clerk_id
       render_unauthorized('Invalid token payload')
       return
@@ -41,7 +36,6 @@ module Authenticated
 
     # Find user by clerk_id or email
     @current_user = User.find_by_clerk_or_email(clerk_id: clerk_id, email: email)
-    Rails.logger.info "Found user: #{@current_user.inspect}"
 
     unless @current_user
       render_unauthorized('Access denied. You are not authorized. Please contact an administrator.')
@@ -62,7 +56,6 @@ module Authenticated
 
     if updates.any?
       @current_user.update!(updates)
-      Rails.logger.info "Updated user: #{updates.inspect}"
     end
   rescue ActiveRecord::RecordInvalid => e
     render_unauthorized("Failed to authenticate: #{e.message}")

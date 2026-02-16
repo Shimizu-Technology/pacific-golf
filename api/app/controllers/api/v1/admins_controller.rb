@@ -53,7 +53,7 @@ module Api
 
           ActivityLog.log(
             admin: current_user,
-            action: 'user_created',
+            action: 'admin_created',
             target: user,
             details: "Added new user: #{user.email}"
           )
@@ -95,7 +95,7 @@ module Api
 
         ActivityLog.log(
           admin: current_user,
-          action: 'user_deleted',
+          action: 'admin_deleted',
           target: nil,
           details: "Removed user: #{user_email}",
           metadata: { deleted_email: user_email }

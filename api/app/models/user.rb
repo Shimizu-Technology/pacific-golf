@@ -2,7 +2,7 @@
 
 class User < ApplicationRecord
   # Associations
-  has_many :activity_logs, dependent: :nullify
+  has_many :activity_logs, foreign_key: :admin_id, dependent: :nullify, inverse_of: :user
   has_many :organization_memberships, dependent: :destroy
   has_many :organizations, through: :organization_memberships
   has_many :tournament_assignments, dependent: :destroy

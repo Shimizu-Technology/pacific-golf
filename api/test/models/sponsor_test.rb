@@ -38,6 +38,7 @@ class SponsorTest < ActiveSupport::TestCase
     Group.delete_all
     ActivityLog.delete_all
     Tournament.delete_all
+    OrganizationMembership.delete_all
     Organization.delete_all
   end
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { createConsumer, Consumer, Subscription } from '@rails/actioncable';
+import { createConsumer } from '@rails/actioncable';
 import { Golfer } from '../services/api';
 import { api } from '../services/api';
 
@@ -28,8 +28,8 @@ interface GolferChannelCallbacks {
  * ```
  */
 export function useGolferChannel(callbacks: GolferChannelCallbacks) {
-  const consumerRef = useRef<Consumer | null>(null);
-  const subscriptionRef = useRef<Subscription | null>(null);
+  const consumerRef = useRef<any>(null);
+  const subscriptionRef = useRef<any>(null);
   const callbacksRef = useRef(callbacks);
 
   // Keep callbacks ref updated

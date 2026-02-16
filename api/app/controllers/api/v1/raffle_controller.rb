@@ -5,6 +5,11 @@ module Api
     class RaffleController < BaseController
       skip_before_action :authenticate_user!, only: [:prizes, :tickets, :board]
       before_action :set_tournament
+      before_action :authorize_tournament_admin!, only: [
+        :create_prize, :update_prize, :destroy_prize,
+        :draw, :draw_all, :reset_prize, :claim_prize,
+        :admin_tickets, :create_tickets, :mark_ticket_paid, :destroy_ticket
+      ]
 
       # ===========================================
       # PUBLIC ENDPOINTS
@@ -260,6 +265,10 @@ module Api
 
       def set_tournament
         @tournament = Tournament.find(params[:tournament_id])
+      end
+
+      def authorize_tournament_admin!
+        require_tournament_admin!(@tournament)
       end
 
       def prize_params

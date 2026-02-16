@@ -70,11 +70,11 @@ interface ScorecardData {
 }
 
 interface Tournament {
-  id: string;
+  id: string | number;
   name: string;
   total_holes: number;
   total_par: number;
-  hole_pars: Record<string, number>;
+  hole_pars?: Record<string, number>;
   tournament_format?: 'scramble' | 'stroke' | 'stableford' | 'best_ball' | 'match' | 'captain_choice' | 'custom';
   team_size?: number;
 }

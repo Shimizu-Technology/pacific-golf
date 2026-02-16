@@ -7,10 +7,11 @@ interface AddGolferModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  tournamentId: string;
-  tournamentSlug: string;
-  orgSlug: string;
-  entryFee: number;
+  tournamentId?: string | number;
+  tournamentSlug?: string;
+  orgSlug?: string;
+  entryFee?: number;
+  tournamentName?: string;
 }
 
 interface FormData {
@@ -39,7 +40,8 @@ export const AddGolferModal: React.FC<AddGolferModalProps> = ({
   onSuccess,
   tournamentSlug,
   orgSlug,
-  entryFee,
+  entryFee = 0,
+  tournamentId,
 }) => {
   const { getToken } = useAuth();
   const [formData, setFormData] = useState<FormData>(defaultFormData);
@@ -92,24 +94,29 @@ export const AddGolferModal: React.FC<AddGolferModalProps> = ({
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${orgSlug}/tournaments/${tournamentSlug}/golfers`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            golfer: {
-              ...formData,
-              registration_status: 'confirmed',
-              payment_type: 'pay_on_day', // Manual registrations are always pay on day
-              waiver_accepted_at: new Date().toISOString(),
-            },
-          }),
-        }
-      );
+      const usingOrgScopedEndpoint = Boolean(orgSlug && tournamentSlug);
+      const endpoint = usingOrgScopedEndpoint
+        ? `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${orgSlug}/tournaments/${tournamentSlug}/golfers`
+        : `${import.meta.env.VITE_API_URL}/api/v1/golfers`;
+
+      const payload = {
+        golfer: {
+          ...formData,
+          tournament_id: tournamentId,
+          registration_status: 'confirmed',
+          payment_type: 'pay_on_day', // Manual registrations are always pay on day
+          waiver_accepted_at: new Date().toISOString(),
+        },
+      };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
       if (!response.ok) {
         const data = await response.json();

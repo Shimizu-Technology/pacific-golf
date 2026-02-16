@@ -541,7 +541,7 @@ function Detail({
   value,
   color,
 }: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number | string; style?: React.CSSProperties }>;
   label: string;
   value: string;
   color: string;

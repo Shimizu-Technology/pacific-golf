@@ -112,6 +112,12 @@ export interface Tournament {
   
   // Sponsors (public display)
   sponsors?: Sponsor[];
+
+  // Legacy compatibility fields (optional)
+  employee_entry_fee?: number;
+  employee_entry_fee_dollars?: number;
+  employee_numbers_count?: number;
+  hole_pars?: Record<string, number>;
 }
 
 export interface Golfer {
@@ -524,7 +530,7 @@ export class ApiClient {
       notes?: string;
     };
     waiver_accepted: boolean;
-    tournament_id?: string;
+    tournament_id?: string | number;
   }): Promise<{ golfer: Golfer; message: string }> {
     return this.request('/api/v1/golfers', {
       method: 'POST',
@@ -847,7 +853,7 @@ export class ApiClient {
     mobile?: string;
     company?: string;
     address?: string;
-  }, employeeNumber?: string, tournamentId?: string): Promise<EmbeddedCheckoutSession> {
+  }, employeeNumber?: string, tournamentId?: string | number): Promise<EmbeddedCheckoutSession> {
     return this.request('/api/v1/checkout/embedded', {
       method: 'POST',
       body: JSON.stringify({ 
