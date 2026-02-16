@@ -1,26 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useUser, UserButton } from '@clerk/clerk-react';
-import { Button, PageTransition } from '../components/ui';
-import { Calendar, MapPin, Users, LayoutDashboard, Phone, ChevronRight, Check } from 'lucide-react';
-import { api, RegistrationStatus } from '../services/api';
+import { ArrowLeft, Calendar, MapPin, Users, LayoutDashboard, Phone, ChevronRight } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
-  const [registrationStatus, setRegistrationStatus] = useState<RegistrationStatus | null>(null);
+  const legacyRegisterUrl = (import.meta.env.VITE_LEGACY_REGISTER_URL || '').trim();
+  const hasLegacyRegistration = legacyRegisterUrl.length > 0;
 
-  useEffect(() => {
-    // Fetch registration status (public endpoint)
-    api.getRegistrationStatus()
-      .then(setRegistrationStatus)
-      .catch(console.error);
-  }, []);
+  const openLegacyRegistration = () => {
+    if (!hasLegacyRegistration) return;
+    window.location.assign(legacyRegisterUrl);
+  };
 
   return (
-    <PageTransition>
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50 to-emerald-50 relative overflow-hidden">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 relative overflow-hidden"
+      style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif' }}
+    >
       {/* Subtle golf course pattern overlay */}
       <div 
         className="absolute inset-0 opacity-[0.03]"
@@ -53,6 +52,17 @@ export const LandingPage: React.FC = () => {
       )}
 
       <div className="relative z-10 container mx-auto px-4 py-6 md:py-10">
+        <div className="mb-4 md:mb-6">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="inline-flex items-center gap-2 rounded-lg border border-[#1e3a5f]/20 bg-white/70 px-3 py-2 text-xs md:text-sm font-medium text-[#1e3a5f] transition-colors hover:bg-white"
+          >
+            <ArrowLeft size={16} />
+            Back to Pacific Golf Home
+          </button>
+        </div>
+
         {/* GIAA Header - Official Logo */}
         <div className="text-center mb-6 md:mb-8">
           <img 
@@ -65,7 +75,7 @@ export const LandingPage: React.FC = () => {
         {/* Main Title Section */}
         <div className="text-center mb-6 md:mb-10">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[#1e3a5f] mb-3 md:mb-4 tracking-wide">
-            {registrationStatus?.tournament_year || '2026'} {registrationStatus?.tournament_title || 'AIRPORT WEEK'}
+            2026 AIRPORT WEEK
           </h1>
           
           {/* Elegant script for "Xth Annual" */}
@@ -73,9 +83,7 @@ export const LandingPage: React.FC = () => {
             className="text-2xl sm:text-3xl md:text-4xl text-[#1e3a5f]/80 mb-2 md:mb-3"
             style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic' }}
           >
-            {(registrationStatus?.tournament_edition || '5th Annual').toLowerCase().includes('annual') 
-              ? registrationStatus?.tournament_edition 
-              : `${registrationStatus?.tournament_edition || '5th'} Annual`}
+            5th Annual
           </p>
           
           {/* Tournament name with Ed's golfer silhouette */}
@@ -89,7 +97,7 @@ export const LandingPage: React.FC = () => {
             
             <div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[#1e3a5f] tracking-tight">
-                {(registrationStatus?.tournament_name || 'Edward A.P. Muna II Memorial Golf Tournament').replace(' Memorial Golf Tournament', '').toUpperCase()}
+                EDWARD A.P.MUNA II
               </h2>
               <p className="text-lg sm:text-xl md:text-2xl font-bold text-[#c9a227] tracking-widest mt-1 md:mt-2">
                 MEMORIAL GOLF TOURNAMENT
@@ -100,7 +108,7 @@ export const LandingPage: React.FC = () => {
 
         {/* Main Content Card */}
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl shadow-brand-900/10 overflow-hidden">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl shadow-blue-900/10 overflow-hidden">
             {/* Event Details Header */}
             <div className="bg-gradient-to-r from-[#1e3a5f] to-[#2c5282] px-4 sm:px-6 md:px-8 py-4 md:py-5">
               <h3 className="text-white text-sm md:text-base font-semibold tracking-wider uppercase text-center">
@@ -111,80 +119,54 @@ export const LandingPage: React.FC = () => {
             <div className="p-4 sm:p-6 md:p-8">
               {/* Info Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-                <div className="bg-gradient-to-br from-slate-50 to-brand-50 rounded-xl p-4 md:p-5 border border-brand-100">
+                <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-4 md:p-5 border border-blue-100">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-[#1e3a5f] rounded-lg">
                       <Calendar className="text-white" size={18} />
                     </div>
                     <h4 className="font-bold text-[#1e3a5f] text-sm md:text-base">Date</h4>
                   </div>
-                  <p className="text-gray-900 font-semibold text-base md:text-lg">{registrationStatus?.event_date || 'January 9, 2026'}</p>
+                  <p className="text-gray-900 font-semibold text-base md:text-lg">January 9, 2026</p>
                   <div className="mt-2 space-y-1">
                     <p className="text-xs md:text-sm text-gray-600 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[#c9a227] flex-shrink-0"></span>
-                      <span>Showtime/Registration: {registrationStatus?.registration_time || '11:00 am'}</span>
+                      <span>Showtime/Registration: 11:00 am</span>
                     </p>
                     <p className="text-xs md:text-sm text-gray-600 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                      Shotgun Start: {registrationStatus?.start_time || '12:30 pm'}
+                      Shotgun Start: 12:30 pm
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-slate-50 to-brand-50 rounded-xl p-4 md:p-5 border border-brand-100">
+                <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-4 md:p-5 border border-blue-100">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-[#1e3a5f] rounded-lg">
                       <MapPin className="text-white" size={18} />
                     </div>
                     <h4 className="font-bold text-[#1e3a5f] text-sm md:text-base">Location</h4>
                   </div>
-                  <p className="text-gray-900 font-semibold text-base md:text-lg">{registrationStatus?.location_name || 'Country Club of the Pacific'}</p>
-                  <p className="text-xs md:text-sm text-gray-600 mt-2">{registrationStatus?.location_address || 'Windward Hills, Guam'}</p>
+                  <p className="text-gray-900 font-semibold text-base md:text-lg">Country Club of the Pacific</p>
+                  <p className="text-xs md:text-sm text-gray-600 mt-2">Yona, Talofofo</p>
                 </div>
 
-                <div className={`rounded-xl p-4 md:p-5 border ${
-                  registrationStatus?.registration_open === false
-                    ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300'
-                    : registrationStatus?.at_capacity 
-                    ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200' 
-                    : 'bg-gradient-to-br from-slate-50 to-brand-50 border-brand-100'
-                }`}>
+                <div className="rounded-xl p-4 md:p-5 border bg-gradient-to-br from-slate-50 to-blue-50 border-blue-100">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className={`p-2 rounded-lg ${
-                      registrationStatus?.registration_open === false
-                        ? 'bg-gray-400'
-                        : registrationStatus?.at_capacity 
-                        ? 'bg-amber-500' 
-                        : 'bg-[#1e3a5f]'
-                    }`}>
+                    <div className="p-2 rounded-lg bg-[#1e3a5f]">
                       <Users className="text-white" size={18} />
                     </div>
                     <h4 className="font-bold text-[#1e3a5f] text-sm md:text-base">Format</h4>
                   </div>
-                  <p className="text-gray-900 font-semibold text-base md:text-lg">{registrationStatus?.format_name || 'Individual Callaway'}</p>
+                  <p className="text-gray-900 font-semibold text-base md:text-lg">Individual Callaway</p>
                   <p className="text-xs md:text-sm text-gray-600 mt-2">
-                    Limited to {registrationStatus?.public_capacity ?? registrationStatus?.max_capacity ?? '...'} Players
+                    Limited to 144 Players
                   </p>
-                  {registrationStatus && (
-                    <div className="mt-2">
-                      {registrationStatus.registration_open === false ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-200 text-gray-600 rounded-full text-xs font-semibold">
-                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                          Registration Closed
-                        </span>
-                      ) : registrationStatus.public_at_capacity ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">
-                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span>
-                          Waitlist Only
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                          {registrationStatus.public_capacity_remaining} spots left
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <div className="mt-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                      4 spots left
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -193,18 +175,18 @@ export const LandingPage: React.FC = () => {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div>
                     <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
-                      Entry Fee: <span className="text-[#059669]">${registrationStatus?.entry_fee_dollars?.toFixed(2) ?? '125.00'}</span>
+                      Entry Fee: <span className="text-[#059669]">$125.00</span>
                     </h3>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700">
-                      {(registrationStatus?.fee_includes || 'Green Fee, Ditty Bag, Drinks & Food').split(',').map((item, index) => (
+                      {['Green Fee', 'Ditty Bag', 'Drinks & Food'].map((item, index) => (
                         <span key={index} className="flex items-center gap-1">
-                          <Check className="w-4 h-4 text-[#059669]" /> {item.trim()}
+                          <span className="text-[#059669]">✓</span> {item.trim()}
                         </span>
                       ))}
                     </div>
                   </div>
                   <div className="text-xs md:text-sm text-gray-600 md:text-right">
-                    <p>Make checks payable to: <strong>{registrationStatus?.checks_payable_to || 'GIAAEO'}</strong></p>
+                    <p>Make checks payable to: <strong>GIAAEO</strong></p>
                     <p className="text-gray-500 mt-1">Prize winners contacted post tournament</p>
                   </div>
                 </div>
@@ -212,31 +194,36 @@ export const LandingPage: React.FC = () => {
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                {registrationStatus?.registration_open === false ? (
-                  <div className="w-full sm:w-auto px-6 py-3 bg-gray-100 border-2 border-gray-300 rounded-lg text-center">
-                    <p className="text-gray-600 font-semibold">Registration Closed</p>
-                  </div>
-                ) : (
-                  <Button
-                    size="lg"
-                    onClick={() => navigate('/register')}
-                    className="w-full sm:w-auto text-base bg-[#1e3a5f] hover:bg-[#2c5282] shadow-lg shadow-brand-900/20"
+                {!hasLegacyRegistration ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-base font-semibold text-white bg-[#1e3a5f] opacity-60 cursor-not-allowed"
+                    title="Legacy registration URL is not configured in this environment."
                   >
                     Register Now
                     <ChevronRight size={18} className="ml-1" />
-                  </Button>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openLegacyRegistration}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-base font-semibold text-white bg-[#1e3a5f] transition-colors hover:bg-[#2c5282] shadow-lg shadow-blue-900/20"
+                  >
+                    Register Now
+                    <ChevronRight size={18} className="ml-1" />
+                  </button>
                 )}
                 
                 {/* Only show Dashboard button if admin is signed in */}
                 {isLoaded && isSignedIn && (
-                  <Button
-                    variant="outline"
-                    size="lg"
+                  <button
+                    type="button"
                     onClick={() => navigate('/admin/dashboard')}
-                    className="w-full sm:w-auto text-base border-[#1e3a5f] text-[#1e3a5f] hover:bg-[#1e3a5f] hover:text-white"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[#1e3a5f] bg-transparent px-7 py-3.5 text-base font-semibold text-[#1e3a5f] transition-colors hover:bg-[#1e3a5f] hover:text-white"
                   >
                     Dashboard
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
@@ -246,30 +233,30 @@ export const LandingPage: React.FC = () => {
         {/* Contact Footer */}
         <div className="max-w-2xl mx-auto text-center mt-8 md:mt-10 px-4">
           {/* Desktop: Single row pill */}
-          <div className="hidden sm:inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-5 py-3 shadow-lg shadow-brand-900/5">
+          <div className="hidden sm:inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-5 py-3 shadow-lg shadow-blue-900/5">
             <Phone size={16} className="text-[#1e3a5f]" />
             <span className="text-sm text-gray-600">For more information:</span>
-            <span className="font-bold text-[#1e3a5f]">{registrationStatus?.contact_name || 'Peter Torres'}</span>
-            <a href={`tel:+1${(registrationStatus?.contact_phone || '671.689.8677').replace(/\D/g, '')}`} className="text-[#c9a227] font-semibold hover:underline">
-              {registrationStatus?.contact_phone || '671.689.8677'}
+            <span className="font-bold text-[#1e3a5f]">Tournament Committee</span>
+            <a href="tel:+16715550121" className="text-[#c9a227] font-semibold hover:underline">
+              671-555-0121
             </a>
           </div>
           
           {/* Mobile: Styled like other cards */}
-          <div className="sm:hidden bg-gradient-to-br from-slate-50 to-brand-50 rounded-xl p-4 border border-brand-100 shadow-lg shadow-brand-900/5">
+          <div className="sm:hidden bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-4 border border-blue-100 shadow-lg shadow-blue-900/5">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 bg-[#1e3a5f] rounded-lg">
                 <Phone className="text-white" size={18} />
               </div>
               <h4 className="font-bold text-[#1e3a5f] text-sm">Contact</h4>
             </div>
-            <p className="text-gray-900 font-semibold text-base mb-1">{registrationStatus?.contact_name || 'Peter Torres'}</p>
+            <p className="text-gray-900 font-semibold text-base mb-1">Tournament Committee</p>
             <a 
-              href={`tel:+1${(registrationStatus?.contact_phone || '671.689.8677').replace(/\D/g, '')}`}
+              href="tel:+16715550121"
               className="inline-flex items-center gap-2 text-[#c9a227] font-semibold text-lg hover:underline"
             >
               <span>Call</span>
-              <span>{registrationStatus?.contact_phone || '671.689.8677'}</span>
+              <span>671-555-0121</span>
             </a>
           </div>
 
@@ -322,6 +309,5 @@ export const LandingPage: React.FC = () => {
         </div>
       </div>
     </div>
-    </PageTransition>
   );
 };
