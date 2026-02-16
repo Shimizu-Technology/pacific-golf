@@ -113,33 +113,40 @@ module Api
         require_org_admin!(organization)
         return if performed?
 
-        tournaments = organization.tournaments.order(event_date: :desc)
+        tournaments = organization.tournaments
+                                .left_joins(:golfers)
+                                .select(
+                                  "tournaments.*",
+                                  "SUM(CASE WHEN golfers.registration_status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed_count",
+                                  "SUM(CASE WHEN golfers.payment_status = 'paid' THEN 1 ELSE 0 END) AS paid_count"
+                                )
+                                .group("tournaments.id")
+                                .order(event_date: :desc)
 
         tournament_data = tournaments.map do |t|
+          confirmed_count = t.read_attribute(:confirmed_count).to_i
+          paid_count = t.read_attribute(:paid_count).to_i
+
           {
             id: t.id,
             name: t.name,
             slug: t.slug,
             date: t.event_date,
             status: t.status,
-            registration_count: t.golfers.where(registration_status: 'confirmed').count,
+            registration_count: confirmed_count,
             capacity: t.max_capacity,
-            revenue: t.golfers.where(payment_status: 'paid').count * (t.entry_fee || 0)
+            revenue: paid_count * (t.entry_fee || 0)
           }
         end
 
-        # Calculate total revenue by summing entry fees of paid golfers
-        total_revenue = 0
-        tournaments.each do |t|
-          paid_count = t.golfers.where(payment_status: 'paid').count
-          total_revenue += paid_count * (t.entry_fee || 0)
-        end
+        total_revenue = tournaments.sum { |t| t.read_attribute(:paid_count).to_i * (t.entry_fee || 0) }
+        total_registrations = tournaments.sum { |t| t.read_attribute(:confirmed_count).to_i }
+        active_tournaments = tournaments.count { |t| %w[open in_progress].include?(t.status) }
 
         stats = {
           total_tournaments: tournaments.count,
-          active_tournaments: tournaments.where(status: %w[open in_progress]).count,
-          total_registrations: organization.tournaments.joins(:golfers)
-                                          .where(golfers: { registration_status: 'confirmed' }).count,
+          active_tournaments: active_tournaments,
+          total_registrations: total_registrations,
           total_revenue: total_revenue
         }
 
@@ -156,17 +163,19 @@ module Api
         return if performed?
 
         tournament = organization.tournaments.find_by!(slug: params[:tournament_slug])
-        golfers = tournament.golfers.order(created_at: :desc)
+        golfers = tournament.golfers.order(created_at: :desc).to_a
+        counts_by_registration = golfers.group_by(&:registration_status).transform_values(&:count)
+        counts_by_payment = golfers.group_by(&:payment_status).transform_values(&:count)
+        paid_count = counts_by_payment.fetch('paid', 0)
 
-        paid_count = golfers.where(payment_status: 'paid').count
         stats = {
           total_registrations: golfers.count,
-          confirmed: golfers.where(registration_status: 'confirmed').count,
-          waitlisted: golfers.where(registration_status: 'waitlist').count,
-          cancelled: golfers.where(registration_status: 'cancelled').count,
+          confirmed: counts_by_registration.fetch('confirmed', 0),
+          waitlisted: counts_by_registration.fetch('waitlist', 0),
+          cancelled: counts_by_registration.fetch('cancelled', 0),
           paid: paid_count,
-          unpaid: golfers.where(payment_status: 'unpaid').count,
-          checked_in: golfers.where.not(checked_in_at: nil).count,
+          unpaid: counts_by_payment.fetch('unpaid', 0),
+          checked_in: golfers.count { |g| g.checked_in_at.present? },
           revenue: paid_count * (tournament.entry_fee || 0)
         }
 

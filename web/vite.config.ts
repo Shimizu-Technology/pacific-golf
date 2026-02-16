@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon-512.png', 'icon-192.png', 'robots.txt', 'sitemap.xml'],
       manifest: {
-        name: 'GIAA Golf Tournament - Edward A.P. Muna II Memorial',
-        short_name: 'GIAA Golf',
-        description: 'Register for the Edward A.P. Muna II Memorial Golf Tournament presented by GIAA during Airport Week on Guam.',
+        name: 'Pacific Golf',
+        short_name: 'Pacific Golf',
+        description: 'Pacific Golf is a multi-tenant platform for tournament registration, scoring, leaderboards, raffles, and sponsor management.',
         theme_color: '#1e3a5f',
         background_color: '#1e3a5f',
         display: 'standalone',

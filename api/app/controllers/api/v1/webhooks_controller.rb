@@ -26,7 +26,13 @@ module Api
           if webhook_secret.present?
             event = Stripe::Webhook.construct_event(payload, sig_header, webhook_secret)
           else
-            # For development/testing without webhook secret verification
+            if Rails.env.production?
+              Rails.logger.error("Stripe webhook secret is missing in production")
+              head :bad_request
+              return
+            end
+
+            # Development/testing fallback without signature verification
             data = JSON.parse(payload, symbolize_names: true)
             event = Stripe::Event.construct_from(data)
             Rails.logger.warn("Stripe webhook received without signature verification")
@@ -100,7 +106,7 @@ module Api
 
         # Broadcast update (non-critical - wrapped in rescue)
         begin
-          ActionCable.server.broadcast("golfers_channel", {
+          ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
             action: "payment_confirmed",
             golfer: GolferSerializer.new(golfer).as_json
           })

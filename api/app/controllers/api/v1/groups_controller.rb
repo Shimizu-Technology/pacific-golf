@@ -1,6 +1,10 @@
 module Api
   module V1
     class GroupsController < BaseController
+      before_action :authorize_collection_tournament_access!, only: [:index, :create, :batch_create, :auto_assign]
+      before_action :authorize_group_access!, only: [:show, :update, :destroy, :set_hole, :add_golfer, :remove_golfer]
+      before_action :authorize_update_positions_access!, only: [:update_positions]
+
       # GET /api/v1/groups
       def index
         tournament = find_tournament
@@ -118,6 +122,11 @@ module Api
       def add_golfer
         group = Group.find(params[:id])
         golfer = Golfer.find(params[:golfer_id])
+
+        if golfer.tournament_id != group.tournament_id
+          render json: { error: "Golfer and group must belong to the same tournament" }, status: :unprocessable_entity
+          return
+        end
 
         if group.full?
           render json: { error: "Group is full (max #{Group::MAX_GOLFERS} golfers)" }, status: :unprocessable_entity
@@ -262,6 +271,35 @@ module Api
       end
 
       private
+
+      def authorize_collection_tournament_access!
+        tournament = find_tournament
+        return render_tournament_required unless tournament
+
+        require_tournament_admin!(tournament)
+      end
+
+      def authorize_group_access!
+        group = Group.find(params[:id])
+        require_tournament_admin!(group.tournament)
+      end
+
+      def authorize_update_positions_access!
+        updates = params[:updates]
+        unless updates.is_a?(Array) && updates.any?
+          render json: { error: "updates must be a non-empty array" }, status: :unprocessable_entity
+          return
+        end
+
+        first_update = updates.first
+        golfer = Golfer.find_by(id: first_update[:golfer_id])
+        unless golfer
+          render json: { error: "Golfer not found" }, status: :not_found
+          return
+        end
+
+        require_tournament_admin!(golfer.tournament)
+      end
 
       def find_tournament
         if params[:tournament_id].present?

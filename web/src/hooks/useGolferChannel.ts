@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { createConsumer, Consumer, Subscription } from '@rails/actioncable';
 import { Golfer } from '../services/api';
+import { api } from '../services/api';
 
 interface GolferChannelCallbacks {
   onGolferUpdated?: (golfer: Golfer) => void;
@@ -59,38 +60,54 @@ export function useGolferChannel(callbacks: GolferChannelCallbacks) {
   }, []);
 
   useEffect(() => {
-    // Determine the WebSocket URL based on environment
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    const wsUrl = apiUrl.replace(/^http/, 'ws') + '/cable';
-    
-    console.log('[GolfersChannel] Connecting to:', wsUrl);
+    let isMounted = true;
 
-    try {
-      // Create the consumer
-      consumerRef.current = createConsumer(wsUrl);
+    const setupSubscription = async () => {
+      const token = await api.getWebSocketToken();
+      if (!token) {
+        console.warn('[GolfersChannel] No auth token available, skipping websocket connection');
+        return;
+      }
 
-      // Subscribe to the golfers channel
-      subscriptionRef.current = consumerRef.current.subscriptions.create(
-        { channel: 'GolfersChannel' },
-        {
-          connected() {
-            console.log('[GolfersChannel] Connected');
-          },
-          disconnected() {
-            console.log('[GolfersChannel] Disconnected');
-          },
-          rejected() {
-            console.log('[GolfersChannel] Subscription rejected');
-          },
-          received: handleReceived,
-        }
-      );
-    } catch (error) {
-      console.error('[GolfersChannel] Error setting up subscription:', error);
-    }
+      // Determine the WebSocket URL based on environment
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const wsBaseUrl = apiUrl.replace(/^http/, 'ws') + '/cable';
+      const wsUrl = `${wsBaseUrl}?token=${encodeURIComponent(token)}`;
+
+      console.log('[GolfersChannel] Connecting to:', wsBaseUrl);
+
+      if (!isMounted) return;
+
+      try {
+        // Create the consumer
+        consumerRef.current = createConsumer(wsUrl);
+
+        // Subscribe to the golfers channel
+        subscriptionRef.current = consumerRef.current.subscriptions.create(
+          { channel: 'GolfersChannel' },
+          {
+            connected() {
+              console.log('[GolfersChannel] Connected');
+            },
+            disconnected() {
+              console.log('[GolfersChannel] Disconnected');
+            },
+            rejected() {
+              console.log('[GolfersChannel] Subscription rejected');
+            },
+            received: handleReceived,
+          }
+        );
+      } catch (error) {
+        console.error('[GolfersChannel] Error setting up subscription:', error);
+      }
+    };
+
+    setupSubscription();
 
     // Cleanup on unmount
     return () => {
+      isMounted = false;
       console.log('[GolfersChannel] Cleaning up');
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();

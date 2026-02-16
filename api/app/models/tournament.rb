@@ -2,7 +2,7 @@
 
 class Tournament < ApplicationRecord
   # Associations
-  belongs_to :organization, optional: true  # Optional for now during migration
+  belongs_to :organization
   has_many :golfers, dependent: :restrict_with_error
   has_many :groups, dependent: :restrict_with_error
   has_many :scores, dependent: :destroy

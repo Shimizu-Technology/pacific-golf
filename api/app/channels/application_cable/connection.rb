@@ -9,15 +9,29 @@ module ApplicationCable
     private
 
     def find_verified_admin
-      # For ActionCable, we accept the connection and verify on subscription
-      # This is simpler for WebSocket connections where we might not have
-      # full JWT verification on initial connect
-      #
-      # For now, we allow all connections but verify on channel subscription
-      # In production, you might want to verify the JWT token here as well
-      true
+      token = request.params[:token].presence || bearer_token_from_header
+      reject_unauthorized_connection if token.blank?
+
+      decoded = ClerkAuth.verify(token)
+      reject_unauthorized_connection if decoded.blank?
+
+      clerk_id = decoded["sub"]
+      email = decoded["email"] || decoded["primary_email_address"]
+      reject_unauthorized_connection if clerk_id.blank?
+
+      user = User.find_by_clerk_or_email(clerk_id: clerk_id, email: email)
+      reject_unauthorized_connection if user.blank?
+
+      user
     rescue StandardError
       reject_unauthorized_connection
+    end
+
+    def bearer_token_from_header
+      auth_header = request.headers["Authorization"]
+      return nil unless auth_header.present?
+
+      auth_header.split(" ").last
     end
   end
 end

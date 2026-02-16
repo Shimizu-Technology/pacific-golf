@@ -333,13 +333,22 @@ export interface PaginationMeta {
 }
 
 // API client class
-class ApiClient {
+export class ApiClient {
   private getAuthToken: (() => Promise<string | null>) | null = null;
   private currentTournamentId: number | null = null;
 
   // Set the auth token getter (called from React component)
   setAuthTokenGetter(getter: () => Promise<string | null>) {
     this.getAuthToken = getter;
+  }
+
+  async getWebSocketToken(): Promise<string | null> {
+    if (!this.getAuthToken) return null;
+    try {
+      return await this.getAuthToken();
+    } catch {
+      return null;
+    }
   }
 
   // Tournament context management

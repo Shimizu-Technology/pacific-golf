@@ -336,28 +336,30 @@ module Api
       end
 
       def individual_leaderboard
-        # Get all golfers with their scores
-        golfers_with_scores = @tournament.golfers
-          .confirmed
-          .includes(:scores, :group)
-          .map do |golfer|
-            scores = golfer.scores.where(tournament: @tournament)
-            total_strokes = scores.sum(:strokes)
-            total_relative = scores.sum(:relative_score)
-            holes_completed = scores.count
+        golfers = @tournament.golfers.confirmed.includes(:group).to_a
+        scores_by_golfer = @tournament.scores
+                                   .where(score_type: 'individual')
+                                   .select(:golfer_id, :strokes, :relative_score)
+                                   .group_by(&:golfer_id)
 
-            {
-              golfer_id: golfer.id,
-              name: golfer.name,
-              group_number: golfer.group&.group_number,
-              total_strokes: total_strokes,
-              total_relative: total_relative,
-              holes_completed: holes_completed,
-              thru: holes_completed,
-              display_score: format_relative_score(total_relative),
-              checked_in: golfer.checked_in_at.present?
-            }
-          end
+        golfers_with_scores = golfers.map do |golfer|
+          scores = scores_by_golfer[golfer.id] || []
+          total_strokes = scores.sum(&:strokes)
+          total_relative = scores.sum { |s| s.relative_score || 0 }
+          holes_completed = scores.count
+
+          {
+            golfer_id: golfer.id,
+            name: golfer.name,
+            group_number: golfer.group&.group_number,
+            total_strokes: total_strokes,
+            total_relative: total_relative,
+            holes_completed: holes_completed,
+            thru: holes_completed,
+            display_score: format_relative_score(total_relative),
+            checked_in: golfer.checked_in_at.present?
+          }
+        end
 
         # Sort by relative score (ascending), then by holes completed (descending)
         golfers_with_scores
@@ -367,49 +369,49 @@ module Api
       end
 
       def team_leaderboard
-        # Get all groups with their team scores
-        groups_with_scores = @tournament.groups
-          .includes(:golfers)
-          .map do |group|
-            # For scramble, use team scores or best ball from individual scores
-            team_scores = @tournament.scores
-              .where(group: group, score_type: 'team')
-            
-            if team_scores.any?
-              total_strokes = team_scores.sum(:strokes)
-              total_relative = team_scores.sum(:relative_score)
-              holes_completed = team_scores.count
-            else
-              # Fallback: use best ball from individuals
-              holes_completed = 0
-              total_strokes = 0
-              total_relative = 0
-              
-              (1..(@tournament.total_holes || 18)).each do |hole|
-                hole_scores = @tournament.scores
-                  .where(group: group, hole: hole, score_type: 'individual')
-                
-                if hole_scores.any?
-                  best = hole_scores.order(:strokes).first
-                  total_strokes += best.strokes
-                  total_relative += best.relative_score || 0
-                  holes_completed += 1
-                end
-              end
-            end
+        groups = @tournament.groups.includes(:golfers).to_a
+        all_scores = @tournament.scores.select(:group_id, :hole, :strokes, :relative_score, :score_type).to_a
+        team_scores_by_group = all_scores.select { |s| s.score_type == 'team' }.group_by(&:group_id)
+        individual_scores_by_group_hole = all_scores
+                                          .select { |s| s.score_type == 'individual' }
+                                          .group_by { |s| [s.group_id, s.hole] }
 
-            {
-              group_id: group.id,
-              group_number: group.group_number,
-              team_name: group.golfers.map(&:name).join(' / '),
-              golfers: group.golfers.map { |g| { id: g.id, name: g.name } },
-              total_strokes: total_strokes,
-              total_relative: total_relative,
-              holes_completed: holes_completed,
-              thru: holes_completed,
-              display_score: format_relative_score(total_relative)
-            }
+        groups_with_scores = groups.map do |group|
+          team_scores = team_scores_by_group[group.id] || []
+
+          if team_scores.any?
+            total_strokes = team_scores.sum(&:strokes)
+            total_relative = team_scores.sum { |s| s.relative_score || 0 }
+            holes_completed = team_scores.count
+          else
+            # Fallback: use best ball from individuals
+            holes_completed = 0
+            total_strokes = 0
+            total_relative = 0
+
+            (1..(@tournament.total_holes || 18)).each do |hole|
+              hole_scores = individual_scores_by_group_hole[[group.id, hole]] || []
+              next if hole_scores.empty?
+
+              best = hole_scores.min_by(&:strokes)
+              total_strokes += best.strokes
+              total_relative += best.relative_score || 0
+              holes_completed += 1
+            end
           end
+
+          {
+            group_id: group.id,
+            group_number: group.group_number,
+            team_name: group.golfers.map(&:name).join(' / '),
+            golfers: group.golfers.map { |g| { id: g.id, name: g.name } },
+            total_strokes: total_strokes,
+            total_relative: total_relative,
+            holes_completed: holes_completed,
+            thru: holes_completed,
+            display_score: format_relative_score(total_relative)
+          }
+        end
 
         # Sort by relative score
         groups_with_scores

@@ -1,6 +1,7 @@
 require "jwt"
 require "net/http"
 require "openssl"
+require "digest"
 
 class ClerkAuth
   class << self
@@ -35,16 +36,15 @@ class ClerkAuth
         return nil
       end
 
-      jwks = fetch_jwks
-      return nil if jwks.nil?
-
-      decoded = JWT.decode(token, nil, true, {
-        algorithms: ["RS256"],
-        jwks: jwks
-      })
-
-      decoded.first
+      decode_with_jwks(token, fetch_jwks)
     rescue JWT::DecodeError => e
+      # Clerk rotates keys; if we have a stale cached JWKS, refresh once and retry.
+      if e.message.include?("Could not find public key for kid")
+        Rails.logger.warn("JWT key not found in cached JWKS, forcing refresh and retry")
+        refreshed_jwks = fetch_jwks(force_refresh: true)
+        return decode_with_jwks(token, refreshed_jwks)
+      end
+
       Rails.logger.error("JWT decode error: #{e.message}")
       nil
     rescue StandardError => e
@@ -54,7 +54,18 @@ class ClerkAuth
 
     private
 
-    def fetch_jwks
+    def decode_with_jwks(token, jwks)
+      return nil if jwks.nil?
+
+      decoded = JWT.decode(token, nil, true, {
+        algorithms: ["RS256"],
+        jwks: jwks
+      })
+
+      decoded.first
+    end
+
+    def fetch_jwks(force_refresh: false)
       jwks_url = ENV["CLERK_JWKS_URL"]
 
       if jwks_url.blank?
@@ -62,8 +73,11 @@ class ClerkAuth
         return nil
       end
 
-      # Cache JWKS for 1 hour
-      Rails.cache.fetch("clerk_jwks", expires_in: 1.hour) do
+      cache_key = "clerk_jwks:#{Digest::SHA256.hexdigest(jwks_url)}"
+
+      # Cache JWKS for 1 hour, scoped per JWKS URL.
+      Rails.cache.delete(cache_key) if force_refresh
+      Rails.cache.fetch(cache_key, expires_in: 1.hour) do
         uri = URI(jwks_url)
         
         http = Net::HTTP.new(uri.host, uri.port)

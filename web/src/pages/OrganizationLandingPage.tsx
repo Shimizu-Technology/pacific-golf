@@ -361,6 +361,7 @@ export function OrganizationLandingPage() {
         </div>
       </footer>
     </div>
+    </MotionConfig>
   );
 }
 
@@ -527,7 +528,6 @@ function TournamentCard({ tournament, orgSlug, primaryColor }: TournamentCardPro
         </div>
       </div>
     </div>
-    </MotionConfig>
   );
 }
 
