@@ -244,15 +244,18 @@ namespace :demo do
     puts "  - #{raffle_prizes.length} raffle prizes created"
 
     # Give each golfer raffle tickets (included with registration)
+    tournament.raffle_tickets.destroy_all
     tournament.golfers.confirmed.each do |golfer|
-      RaffleTicket.find_or_create_by!(tournament: tournament, golfer: golfer) do |rt|
-        rt.ticket_number = "MAW-#{golfer.id.to_s.rjust(4, '0')}"
-        rt.purchaser_name = golfer.name
-        rt.purchaser_email = golfer.email
-        rt.purchaser_phone = golfer.phone
-        rt.payment_status = 'paid'
-        rt.purchased_at = Time.current
-      end
+      RaffleTicket.create!(
+        tournament: tournament,
+        golfer: golfer,
+        ticket_number: "MAW-#{golfer.id.to_s.rjust(4, '0')}",
+        purchaser_name: golfer.name,
+        purchaser_email: golfer.email,
+        purchaser_phone: golfer.phone,
+        payment_status: 'paid',
+        purchased_at: Time.current
+      )
     end
     puts "  - Raffle tickets assigned to all golfers"
 
