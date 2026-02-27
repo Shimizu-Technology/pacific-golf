@@ -53,7 +53,7 @@ namespace :demo do
       location_address: 'Yona, Guam',
       tournament_format: 'scramble',
       team_size: 2,
-      entry_fee: 500, # $5.00 per registrant
+      entry_fee: 15000, # $150 per registrant ($300 per 2-person team, per Make-A-Wish page)
       max_capacity: 144,
       status: 'open',
       registration_open: true,
