@@ -45,7 +45,7 @@ namespace :demo do
       name: 'Golf for Wishes 2026',
       year: 2026,
       edition: '1st Annual',
-      event_date: 'May 2, 2026',
+      event_date: Date.new(2026, 5, 2),
       check_in_time: '7:00 AM',
       registration_time: '7:00 AM',
       start_time: '8:00 AM Shotgun Start',
