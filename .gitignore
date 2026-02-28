@@ -37,3 +37,6 @@ coverage/
 
 # Imported legacy reference project (do not commit)
 giaa-tournament/
+
+# Local Netlify folder
+.netlify
