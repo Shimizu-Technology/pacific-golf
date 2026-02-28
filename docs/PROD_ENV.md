@@ -2,6 +2,12 @@
 
 Keep this simple. If these are set correctly, deploys are stable.
 
+## Prerequisites
+- `python3`
+- `netlify` CLI
+- `curl`
+- `RENDER_API_KEY` and `NETLIFY_AUTH_TOKEN` exported in your shell
+
 ## Render (API)
 Service ID: `srv-d6gk5jrh46gs73dlf4h0`
 

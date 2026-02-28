@@ -14,6 +14,22 @@ if [[ -z "${NETLIFY_AUTH_TOKEN:-}" ]]; then
   exit 1
 fi
 
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "❌ Missing python3 (required)"
+  exit 1
+fi
+
+if ! command -v netlify >/dev/null 2>&1; then
+  echo "❌ Missing netlify CLI (required for Netlify env checks)"
+  exit 1
+fi
+
+WEB_DIR="$(dirname "$0")/../web"
+if [[ ! -d "$WEB_DIR" ]]; then
+  echo "❌ Missing web directory at $WEB_DIR"
+  exit 1
+fi
+
 echo "🔎 Checking Render env vars..."
 render_required=(
   DATABASE_URL
@@ -66,7 +82,7 @@ netlify_required=(
 )
 
 for key in "${netlify_required[@]}"; do
-  val=$(cd "$(dirname "$0")/../web" && NETLIFY_AUTH_TOKEN="$NETLIFY_AUTH_TOKEN" netlify env:get "$key" 2>/dev/null || true)
+  val=$(cd "$WEB_DIR" && NETLIFY_AUTH_TOKEN="$NETLIFY_AUTH_TOKEN" netlify env:get "$key" 2>/dev/null || true)
   if [[ -z "$val" || "$val" == *"No value set"* ]]; then
     echo "❌ Netlify missing: $key"
     exit 1
