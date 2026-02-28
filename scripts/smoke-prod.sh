@@ -28,7 +28,11 @@ check_code "$API_URL/api/v1/organizations/$ORG_SLUG" 200
 check_code "$API_URL/api/v1/organizations/$ORG_SLUG/tournaments" 200
 check_code "$API_URL/api/v1/organizations/$ORG_SLUG/tournaments/$TOURNAMENT_SLUG" 200
 
-TOURNAMENT_ID=$(curl -s "$API_URL/api/v1/organizations/$ORG_SLUG/tournaments/$TOURNAMENT_SLUG" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+TOURNAMENT_ID=$(curl -s "$API_URL/api/v1/organizations/$ORG_SLUG/tournaments/$TOURNAMENT_SLUG" | python3 -c "import sys,json; data=json.load(sys.stdin); print(data.get('id', ''))" 2>/dev/null)
+if [[ -z "$TOURNAMENT_ID" ]]; then
+  echo "❌ Failed to resolve tournament ID from $API_URL/api/v1/organizations/$ORG_SLUG/tournaments/$TOURNAMENT_SLUG"
+  exit 1
+fi
 echo "✅ Tournament ID resolved: $TOURNAMENT_ID"
 
 check_code "$API_URL/api/v1/tournaments/$TOURNAMENT_ID/scores/leaderboard" 200
