@@ -25,11 +25,31 @@ render_required=(
   STRIPE_SECRET_KEY
 )
 
-render_keys_json=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
-  "https://api.render.com/v1/services/$RENDER_SERVICE_ID/env-vars")
+render_env_url="https://api.render.com/v1/services/$RENDER_SERVICE_ID/env-vars"
+render_http_code=$(curl -sS -o /tmp/pg_render_env.json -w '%{http_code}'   -H "Authorization: Bearer $RENDER_API_KEY"   "$render_env_url")
+
+if [[ "$render_http_code" != "200" ]]; then
+  echo "❌ Render env API failed: HTTP $render_http_code ($render_env_url)"
+  exit 1
+fi
+
+if ! python3 - <<'PYJSON' >/tmp/pg_render_keys.txt
+import json
+from pathlib import Path
+raw = Path('/tmp/pg_render_env.json').read_text()
+arr = json.loads(raw)
+keys = sorted({(x.get('key') or (x.get('envVar') or {}).get('key')) for x in arr if isinstance(x, dict)})
+for k in keys:
+    if k:
+        print(k)
+PYJSON
+then
+  echo "❌ Render env API returned invalid JSON"
+  exit 1
+fi
 
 for key in "${render_required[@]}"; do
-  if ! echo "$render_keys_json" | python3 -c "import json,sys; arr=json.load(sys.stdin); keys={(x.get('key') or (x.get('envVar') or {}).get('key')) for x in arr}; sys.exit(0 if '$key' in keys else 1)"; then
+  if ! grep -qx "$key" /tmp/pg_render_keys.txt; then
     echo "❌ Render missing: $key"
     exit 1
   fi
