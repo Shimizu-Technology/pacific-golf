@@ -301,7 +301,7 @@ module Api
       end
 
       # POST /api/v1/admin/organizations/:slug/tournaments/:tournament_slug/golfers/:golfer_id/refund
-      # Admin endpoint - mark golfer as refunded (manual refund tracking)
+      # Admin endpoint - process refund (Stripe for online payments, manual for cash/check)
       def refund_golfer
         organization = Organization.find_by_slug!(params[:slug])
         require_org_admin!(organization)
@@ -310,7 +310,7 @@ module Api
         tournament = organization.tournaments.find_by!(slug: params[:tournament_slug])
         golfer = tournament.golfers.find(params[:golfer_id])
 
-        if golfer.payment_status == 'refunded'
+        if golfer.refunded?
           render json: { error: 'Already refunded' }, status: :unprocessable_entity
           return
         end
@@ -320,19 +320,55 @@ module Api
           return
         end
 
-        # For now, just mark as refunded (manual tracking)
-        # TODO: Integrate Stripe refund for online payments
-        golfer.update!(
-          payment_status: 'refunded',
-          registration_status: 'cancelled'
-        )
-        
-        render json: {
-          golfer: golfer_response(golfer),
-          message: 'Refund recorded successfully'
-        }
+        reason = params[:reason]
+        old_group = golfer.group
+
+        # Refunded golfers should not occupy a scoring group
+        golfer.update!(group_id: nil) if old_group.present?
+
+        if golfer.payment_type == 'stripe'
+          stripe_refund = golfer.process_refund!(admin: current_admin, reason: reason)
+
+          render json: {
+            golfer: golfer_response(golfer),
+            refund: {
+              id: stripe_refund.id,
+              amount: stripe_refund.amount,
+              status: stripe_refund.status
+            },
+            message: 'Refund recorded successfully'
+          }
+        else
+          refund_amount = params[:refund_amount_cents] || golfer.payment_amount_cents || golfer.tournament&.entry_fee
+
+          golfer.update!(
+            registration_status: 'cancelled',
+            payment_status: 'refunded',
+            refund_amount_cents: refund_amount,
+            refund_reason: reason,
+            refunded_at: Time.current,
+            refunded_by: current_admin
+          )
+
+          begin
+            GolferMailer.refund_confirmation_email(golfer).deliver_later
+          rescue StandardError => e
+            Rails.logger.error("Failed to send refund email: #{e.message}")
+          end
+
+          render json: {
+            golfer: golfer_response(golfer),
+            message: 'Refund recorded successfully'
+          }
+        end
+      rescue Stripe::StripeError => e
+        Rails.logger.error("Stripe refund error: #{e.message}")
+        render json: { error: "Stripe refund failed: #{e.message}" }, status: :unprocessable_entity
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'Golfer not found' }, status: :not_found
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.error("Refund database error: #{e.message}")
+        render json: { error: "Failed to update golfer record: #{e.message}" }, status: :unprocessable_entity
       end
 
       # GET /api/v1/admin/organizations/:slug/members
