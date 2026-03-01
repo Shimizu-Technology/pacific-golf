@@ -329,6 +329,27 @@ module Api
         if golfer.payment_type == 'stripe'
           stripe_refund = golfer.process_refund!(admin: current_admin, reason: reason)
 
+          begin
+            ActivityLog.log(
+              admin: current_admin,
+              action: 'golfer_refunded',
+              target: golfer,
+              details: "Refunded #{golfer.name} - $#{'%.2f' % (stripe_refund.amount / 100.0)}",
+              metadata: { reason: reason, refund_id: stripe_refund.id, amount_cents: stripe_refund.amount }
+            )
+          rescue StandardError => e
+            Rails.logger.error("Failed to log refund activity: #{e.message}")
+          end
+
+          begin
+            ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
+              action: 'updated',
+              golfer: GolferSerializer.new(golfer).as_json
+            })
+          rescue StandardError => e
+            Rails.logger.error("Failed to broadcast golfer update: #{e.message}")
+          end
+
           render json: {
             golfer: golfer_response(golfer),
             refund: {
@@ -354,6 +375,27 @@ module Api
             GolferMailer.refund_confirmation_email(golfer).deliver_later
           rescue StandardError => e
             Rails.logger.error("Failed to send refund email: #{e.message}")
+          end
+
+          begin
+            ActivityLog.log(
+              admin: current_admin,
+              action: 'golfer_refunded',
+              target: golfer,
+              details: "Marked #{golfer.name} as refunded (manual) - $#{'%.2f' % (refund_amount.to_i / 100.0)}",
+              metadata: { reason: reason, amount_cents: refund_amount }
+            )
+          rescue StandardError => e
+            Rails.logger.error("Failed to log manual refund activity: #{e.message}")
+          end
+
+          begin
+            ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
+              action: 'updated',
+              golfer: GolferSerializer.new(golfer).as_json
+            })
+          rescue StandardError => e
+            Rails.logger.error("Failed to broadcast golfer update: #{e.message}")
           end
 
           render json: {
