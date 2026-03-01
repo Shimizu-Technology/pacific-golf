@@ -323,10 +323,10 @@ module Api
         reason = params[:reason]
         old_group = golfer.group
 
-        # Refunded golfers should not occupy a scoring group
-        golfer.update!(group_id: nil) if old_group.present?
-
         if golfer.payment_type == 'stripe'
+          # Remove from group inside the Stripe block so group stays intact if refund fails
+          golfer.update!(group_id: nil) if old_group.present?
+
           stripe_refund = golfer.process_refund!(admin: current_admin, reason: reason)
 
           begin
@@ -360,6 +360,9 @@ module Api
             message: 'Refund recorded successfully'
           }
         else
+          # Remove from group for manual refunds (no external API call to fail)
+          golfer.update!(group_id: nil) if old_group.present?
+
           refund_amount = params[:refund_amount_cents] || golfer.payment_amount_cents || golfer.tournament&.entry_fee
 
           golfer.update!(
