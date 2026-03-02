@@ -311,11 +311,8 @@ module Api
         golfer = tournament.golfers.find(params[:golfer_id])
 
         reason = params[:reason]
-        response_payload = nil
 
-        golfer.with_lock do
-          golfer.reload
-
+        if golfer.payment_type == 'stripe'
           if golfer.refunded?
             render json: { error: 'Already refunded' }, status: :unprocessable_entity
             return
@@ -326,50 +323,62 @@ module Api
             return
           end
 
+          unless golfer.can_refund?
+            render json: { error: 'Cannot process Stripe refund for this golfer' }, status: :unprocessable_entity
+            return
+          end
+
           old_group = golfer.group
 
-          if golfer.payment_type == 'stripe'
-            unless golfer.can_refund?
-              render json: { error: 'Cannot process Stripe refund for this golfer' }, status: :unprocessable_entity
+          # Process refund first; only detach group after successful refund
+          stripe_refund = golfer.process_refund!(admin: current_admin, reason: reason)
+          golfer.update!(group_id: nil) if old_group.present?
+
+          begin
+            ActivityLog.log(
+              admin: current_admin,
+              action: 'golfer_refunded',
+              target: golfer,
+              details: "Refunded #{golfer.name} - $#{'%.2f' % (stripe_refund.amount / 100.0)}",
+              metadata: { reason: reason, refund_id: stripe_refund.id, amount_cents: stripe_refund.amount }
+            )
+          rescue StandardError => e
+            Rails.logger.error("Failed to log refund activity: #{e.message}")
+          end
+
+          begin
+            ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
+              action: 'updated',
+              golfer: GolferSerializer.new(golfer).as_json
+            })
+          rescue StandardError => e
+            Rails.logger.error("Failed to broadcast golfer update: #{e.message}")
+          end
+
+          render json: {
+            golfer: golfer_response(golfer),
+            refund: {
+              id: stripe_refund.id,
+              amount: stripe_refund.amount,
+              status: stripe_refund.status
+            },
+            message: 'Refund recorded successfully'
+          }
+        else
+          response_payload = nil
+
+          golfer.with_lock do
+            if golfer.refunded?
+              render json: { error: 'Already refunded' }, status: :unprocessable_entity
               return
             end
 
-            # Process refund first; only detach group after successful refund
-            stripe_refund = golfer.process_refund!(admin: current_admin, reason: reason)
-            golfer.update!(group_id: nil) if old_group.present?
-
-            begin
-              ActivityLog.log(
-                admin: current_admin,
-                action: 'golfer_refunded',
-                target: golfer,
-                details: "Refunded #{golfer.name} - $#{'%.2f' % (stripe_refund.amount / 100.0)}",
-                metadata: { reason: reason, refund_id: stripe_refund.id, amount_cents: stripe_refund.amount }
-              )
-            rescue StandardError => e
-              Rails.logger.error("Failed to log refund activity: #{e.message}")
+            if golfer.payment_status != 'paid'
+              render json: { error: 'Cannot refund unpaid registration' }, status: :unprocessable_entity
+              return
             end
 
-            begin
-              ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
-                action: 'updated',
-                golfer: GolferSerializer.new(golfer).as_json
-              })
-            rescue StandardError => e
-              Rails.logger.error("Failed to broadcast golfer update: #{e.message}")
-            end
-
-            response_payload = {
-              golfer: golfer_response(golfer),
-              refund: {
-                id: stripe_refund.id,
-                amount: stripe_refund.amount,
-                status: stripe_refund.status
-              },
-              message: 'Refund recorded successfully'
-            }
-          else
-            # Remove from group for manual refunds (no external API call to fail)
+            old_group = golfer.group
             golfer.update!(group_id: nil) if old_group.present?
 
             refund_amount = params[:refund_amount_cents] || golfer.payment_amount_cents || golfer.tournament&.entry_fee
@@ -383,41 +392,41 @@ module Api
               refunded_by: current_admin
             )
 
-            begin
-              GolferMailer.refund_confirmation_email(golfer).deliver_later
-            rescue StandardError => e
-              Rails.logger.error("Failed to send refund email: #{e.message}")
-            end
-
-            begin
-              ActivityLog.log(
-                admin: current_admin,
-                action: 'golfer_refunded',
-                target: golfer,
-                details: "Marked #{golfer.name} as refunded (manual) - $#{'%.2f' % (refund_amount.to_i / 100.0)}",
-                metadata: { reason: reason, amount_cents: refund_amount }
-              )
-            rescue StandardError => e
-              Rails.logger.error("Failed to log manual refund activity: #{e.message}")
-            end
-
-            begin
-              ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
-                action: 'updated',
-                golfer: GolferSerializer.new(golfer).as_json
-              })
-            rescue StandardError => e
-              Rails.logger.error("Failed to broadcast golfer update: #{e.message}")
-            end
-
             response_payload = {
               golfer: golfer_response(golfer),
               message: 'Refund recorded successfully'
             }
           end
-        end
 
-        render json: response_payload
+          begin
+            GolferMailer.refund_confirmation_email(golfer).deliver_later
+          rescue StandardError => e
+            Rails.logger.error("Failed to send refund email: #{e.message}")
+          end
+
+          begin
+            ActivityLog.log(
+              admin: current_admin,
+              action: 'golfer_refunded',
+              target: golfer,
+              details: "Marked #{golfer.name} as refunded (manual) - $#{'%.2f' % (golfer.refund_amount_cents.to_i / 100.0)}",
+              metadata: { reason: reason, amount_cents: golfer.refund_amount_cents }
+            )
+          rescue StandardError => e
+            Rails.logger.error("Failed to log manual refund activity: #{e.message}")
+          end
+
+          begin
+            ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
+              action: 'updated',
+              golfer: GolferSerializer.new(golfer).as_json
+            })
+          rescue StandardError => e
+            Rails.logger.error("Failed to broadcast golfer update: #{e.message}")
+          end
+
+          render json: response_payload
+        end
       rescue Stripe::StripeError => e
         Rails.logger.error("Stripe refund error: #{e.message}")
         render json: { error: "Stripe refund failed: #{e.message}" }, status: :unprocessable_entity
