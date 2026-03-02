@@ -310,29 +310,29 @@ module Api
         tournament = organization.tournaments.find_by!(slug: params[:tournament_slug])
         golfer = tournament.golfers.find(params[:golfer_id])
 
-        if golfer.refunded?
-          render json: { error: 'Already refunded' }, status: :unprocessable_entity
-          return
-        end
-
-        if golfer.payment_status != 'paid'
-          render json: { error: 'Cannot refund unpaid registration' }, status: :unprocessable_entity
-          return
-        end
-
         reason = params[:reason]
-        old_group = golfer.group
 
         if golfer.payment_type == 'stripe'
+          if golfer.refunded?
+            render json: { error: 'Already refunded' }, status: :unprocessable_entity
+            return
+          end
+
+          if golfer.payment_status != 'paid'
+            render json: { error: 'Cannot refund unpaid registration' }, status: :unprocessable_entity
+            return
+          end
+
           unless golfer.can_refund?
             render json: { error: 'Cannot process Stripe refund for this golfer' }, status: :unprocessable_entity
             return
           end
 
-          # Remove from group inside the Stripe block so group stays intact if refund fails
-          golfer.update!(group_id: nil) if old_group.present?
+          old_group = golfer.group
 
+          # Process refund first; only detach group after successful refund
           stripe_refund = golfer.process_refund!(admin: current_admin, reason: reason)
+          golfer.update!(group_id: nil) if old_group.present?
 
           begin
             ActivityLog.log(
@@ -365,19 +365,38 @@ module Api
             message: 'Refund recorded successfully'
           }
         else
-          # Remove from group for manual refunds (no external API call to fail)
-          golfer.update!(group_id: nil) if old_group.present?
+          response_payload = nil
 
-          refund_amount = params[:refund_amount_cents] || golfer.payment_amount_cents || golfer.tournament&.entry_fee
+          golfer.with_lock do
+            if golfer.refunded?
+              render json: { error: 'Already refunded' }, status: :unprocessable_entity
+              return
+            end
 
-          golfer.update!(
-            registration_status: 'cancelled',
-            payment_status: 'refunded',
-            refund_amount_cents: refund_amount,
-            refund_reason: reason,
-            refunded_at: Time.current,
-            refunded_by: current_admin
-          )
+            if golfer.payment_status != 'paid'
+              render json: { error: 'Cannot refund unpaid registration' }, status: :unprocessable_entity
+              return
+            end
+
+            old_group = golfer.group
+            golfer.update!(group_id: nil) if old_group.present?
+
+            refund_amount = params[:refund_amount_cents] || golfer.payment_amount_cents || golfer.tournament&.entry_fee
+
+            golfer.update!(
+              registration_status: 'cancelled',
+              payment_status: 'refunded',
+              refund_amount_cents: refund_amount,
+              refund_reason: reason,
+              refunded_at: Time.current,
+              refunded_by: current_admin
+            )
+
+            response_payload = {
+              golfer: golfer_response(golfer),
+              message: 'Refund recorded successfully'
+            }
+          end
 
           begin
             GolferMailer.refund_confirmation_email(golfer).deliver_later
@@ -390,8 +409,8 @@ module Api
               admin: current_admin,
               action: 'golfer_refunded',
               target: golfer,
-              details: "Marked #{golfer.name} as refunded (manual) - $#{'%.2f' % (refund_amount.to_i / 100.0)}",
-              metadata: { reason: reason, amount_cents: refund_amount }
+              details: "Marked #{golfer.name} as refunded (manual) - $#{'%.2f' % (golfer.refund_amount_cents.to_i / 100.0)}",
+              metadata: { reason: reason, amount_cents: golfer.refund_amount_cents }
             )
           rescue StandardError => e
             Rails.logger.error("Failed to log manual refund activity: #{e.message}")
@@ -406,10 +425,7 @@ module Api
             Rails.logger.error("Failed to broadcast golfer update: #{e.message}")
           end
 
-          render json: {
-            golfer: golfer_response(golfer),
-            message: 'Refund recorded successfully'
-          }
+          render json: response_payload
         end
       rescue Stripe::StripeError => e
         Rails.logger.error("Stripe refund error: #{e.message}")
