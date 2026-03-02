@@ -301,7 +301,7 @@ module Api
       end
 
       # POST /api/v1/admin/organizations/:slug/tournaments/:tournament_slug/golfers/:golfer_id/refund
-      # Admin endpoint - mark golfer as refunded (manual refund tracking)
+      # Admin endpoint - process refund (Stripe for online payments, manual for cash/check)
       def refund_golfer
         organization = Organization.find_by_slug!(params[:slug])
         require_org_admin!(organization)
@@ -310,7 +310,7 @@ module Api
         tournament = organization.tournaments.find_by!(slug: params[:tournament_slug])
         golfer = tournament.golfers.find(params[:golfer_id])
 
-        if golfer.payment_status == 'refunded'
+        if golfer.refunded?
           render json: { error: 'Already refunded' }, status: :unprocessable_entity
           return
         end
@@ -320,19 +320,108 @@ module Api
           return
         end
 
-        # For now, just mark as refunded (manual tracking)
-        # TODO: Integrate Stripe refund for online payments
-        golfer.update!(
-          payment_status: 'refunded',
-          registration_status: 'cancelled'
-        )
-        
-        render json: {
-          golfer: golfer_response(golfer),
-          message: 'Refund recorded successfully'
-        }
+        reason = params[:reason]
+        old_group = golfer.group
+
+        if golfer.payment_type == 'stripe'
+          unless golfer.can_refund?
+            render json: { error: 'Cannot process Stripe refund for this golfer' }, status: :unprocessable_entity
+            return
+          end
+
+          # Remove from group inside the Stripe block so group stays intact if refund fails
+          golfer.update!(group_id: nil) if old_group.present?
+
+          stripe_refund = golfer.process_refund!(admin: current_admin, reason: reason)
+
+          begin
+            ActivityLog.log(
+              admin: current_admin,
+              action: 'golfer_refunded',
+              target: golfer,
+              details: "Refunded #{golfer.name} - $#{'%.2f' % (stripe_refund.amount / 100.0)}",
+              metadata: { reason: reason, refund_id: stripe_refund.id, amount_cents: stripe_refund.amount }
+            )
+          rescue StandardError => e
+            Rails.logger.error("Failed to log refund activity: #{e.message}")
+          end
+
+          begin
+            ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
+              action: 'updated',
+              golfer: GolferSerializer.new(golfer).as_json
+            })
+          rescue StandardError => e
+            Rails.logger.error("Failed to broadcast golfer update: #{e.message}")
+          end
+
+          render json: {
+            golfer: golfer_response(golfer),
+            refund: {
+              id: stripe_refund.id,
+              amount: stripe_refund.amount,
+              status: stripe_refund.status
+            },
+            message: 'Refund recorded successfully'
+          }
+        else
+          # Remove from group for manual refunds (no external API call to fail)
+          golfer.update!(group_id: nil) if old_group.present?
+
+          refund_amount = params[:refund_amount_cents] || golfer.payment_amount_cents || golfer.tournament&.entry_fee
+
+          golfer.update!(
+            registration_status: 'cancelled',
+            payment_status: 'refunded',
+            refund_amount_cents: refund_amount,
+            refund_reason: reason,
+            refunded_at: Time.current,
+            refunded_by: current_admin
+          )
+
+          begin
+            GolferMailer.refund_confirmation_email(golfer).deliver_later
+          rescue StandardError => e
+            Rails.logger.error("Failed to send refund email: #{e.message}")
+          end
+
+          begin
+            ActivityLog.log(
+              admin: current_admin,
+              action: 'golfer_refunded',
+              target: golfer,
+              details: "Marked #{golfer.name} as refunded (manual) - $#{'%.2f' % (refund_amount.to_i / 100.0)}",
+              metadata: { reason: reason, amount_cents: refund_amount }
+            )
+          rescue StandardError => e
+            Rails.logger.error("Failed to log manual refund activity: #{e.message}")
+          end
+
+          begin
+            ActionCable.server.broadcast("golfers_channel_#{golfer.tournament_id}", {
+              action: 'updated',
+              golfer: GolferSerializer.new(golfer).as_json
+            })
+          rescue StandardError => e
+            Rails.logger.error("Failed to broadcast golfer update: #{e.message}")
+          end
+
+          render json: {
+            golfer: golfer_response(golfer),
+            message: 'Refund recorded successfully'
+          }
+        end
+      rescue Stripe::StripeError => e
+        Rails.logger.error("Stripe refund error: #{e.message}")
+        render json: { error: "Stripe refund failed: #{e.message}" }, status: :unprocessable_entity
+      rescue RuntimeError => e
+        Rails.logger.error("Refund runtime error: #{e.message}")
+        render json: { error: e.message }, status: :unprocessable_entity
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'Golfer not found' }, status: :not_found
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.error("Refund database error: #{e.message}")
+        render json: { error: "Failed to update golfer record: #{e.message}" }, status: :unprocessable_entity
       end
 
       # GET /api/v1/admin/organizations/:slug/members
