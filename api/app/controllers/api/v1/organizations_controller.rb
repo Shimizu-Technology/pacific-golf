@@ -324,6 +324,11 @@ module Api
         old_group = golfer.group
 
         if golfer.payment_type == 'stripe'
+          unless golfer.can_refund?
+            render json: { error: 'Cannot process Stripe refund for this golfer' }, status: :unprocessable_entity
+            return
+          end
+
           # Remove from group inside the Stripe block so group stays intact if refund fails
           golfer.update!(group_id: nil) if old_group.present?
 
@@ -409,6 +414,9 @@ module Api
       rescue Stripe::StripeError => e
         Rails.logger.error("Stripe refund error: #{e.message}")
         render json: { error: "Stripe refund failed: #{e.message}" }, status: :unprocessable_entity
+      rescue RuntimeError => e
+        Rails.logger.error("Refund runtime error: #{e.message}")
+        render json: { error: e.message }, status: :unprocessable_entity
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'Golfer not found' }, status: :not_found
       rescue ActiveRecord::RecordInvalid => e
