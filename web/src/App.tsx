@@ -58,6 +58,7 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <div className="min-h-screen flex flex-col">
         <Toaster position="top-right" />
         <Routes>
         {/* ===========================================
@@ -362,6 +363,18 @@ function App() {
         {/* Catch-all redirect to root */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+        {/* Shimizu Technology attribution */}
+        <footer className="py-4 text-center border-t border-gray-100 bg-white mt-auto">
+          <a
+            href="https://shimizu-technology.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          >
+            Built by <span className="font-medium">Shimizu Technology</span>
+          </a>
+        </footer>
+        </div>
       </BrowserRouter>
     </ErrorBoundary>
   );
