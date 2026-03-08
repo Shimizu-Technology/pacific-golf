@@ -23,6 +23,7 @@ import {
 // ---------------------------------------------------------------------------
 
 import { hexToRgba, adjustColor } from '../utils/colors';
+import { formatEventDate } from '../utils/dates';
 
 // ---------------------------------------------------------------------------
 // Animation variants
@@ -450,7 +451,7 @@ function TournamentCard({ tournament, orgSlug, primaryColor }: TournamentCardPro
         {/* Details grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-6 text-sm">
           {tournament.event_date && (
-            <Detail icon={Calendar} label="Date" value={tournament.event_date} color={primaryColor} />
+            <Detail icon={Calendar} label="Date" value={formatEventDate(tournament.event_date)} color={primaryColor} />
           )}
           {tournament.location_name && (
             <Detail icon={MapPin} label="Location" value={tournament.location_name} color={primaryColor} />

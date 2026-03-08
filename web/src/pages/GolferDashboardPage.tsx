@@ -15,6 +15,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useGolferAuth } from '../contexts/GolferAuthContext';
+import { formatEventDate } from '../utils/dates';
 
 export const GolferDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -212,7 +213,7 @@ export const GolferDashboardPage: React.FC = () => {
             {tournament.event_date && (
               <div className="flex items-center gap-3 text-gray-700">
                 <Calendar className="w-5 h-5 text-gray-400" />
-                <span>{tournament.event_date}</span>
+                <span>{formatEventDate(tournament.event_date)}</span>
               </div>
             )}
             {tournament.location_name && (

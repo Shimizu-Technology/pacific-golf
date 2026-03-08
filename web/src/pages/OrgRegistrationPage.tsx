@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Trophy, AlertCircle, CheckCircle, Loader2, C
 import { api, Tournament } from '../services/api';
 import { useOrganization } from '../components/OrganizationProvider';
 import { hexToRgba, adjustColor } from '../utils/colors';
+import { formatEventDate } from '../utils/dates';
 
 // ---------------------------------------------------------------------------
 // Animation helpers
@@ -319,7 +320,7 @@ export const OrgRegistrationPage: React.FC = () => {
             {tournament.event_date && (
               <span className="inline-flex items-center gap-1.5">
                 <Calendar className="w-4 h-4" strokeWidth={1.5} />
-                {tournament.event_date}
+                {formatEventDate(tournament.event_date)}
               </span>
             )}
             {tournament.location_name && (

@@ -262,6 +262,33 @@ export const RaffleManagementPage: React.FC = () => {
     }
   };
 
+  const handleToggleRaffle = async () => {
+    if (!tournament) return;
+    const newValue = !tournament.raffle_enabled;
+    setActionLoading('toggle-raffle');
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/organizations/${organization?.slug}/tournaments/${tournamentSlug}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ tournament: { raffle_enabled: newValue } }),
+        }
+      );
+      if (!res.ok) throw new Error('Failed to update raffle status');
+      setTournament((prev) => prev ? { ...prev, raffle_enabled: newValue } : prev);
+      toast.success(newValue ? 'Raffle enabled' : 'Raffle disabled');
+    } catch (err) {
+      toast.error('Failed to update raffle status');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -345,6 +372,35 @@ export const RaffleManagementPage: React.FC = () => {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Raffle Enabled Toggle */}
+      {tournament && (
+        <div className="max-w-6xl mx-auto px-4 pb-2">
+          <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+            <div>
+              <p className="font-semibold text-gray-900">Raffle Active</p>
+              <p className="text-sm text-gray-500">
+                {tournament.raffle_enabled
+                  ? 'Raffle is visible on the public page'
+                  : 'Raffle is hidden from the public page'}
+              </p>
+            </div>
+            <button
+              onClick={handleToggleRaffle}
+              disabled={actionLoading === 'toggle-raffle'}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${
+                tournament.raffle_enabled ? 'bg-green-500' : 'bg-gray-300'
+              } disabled:opacity-50`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                  tournament.raffle_enabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
         </div>
       )}

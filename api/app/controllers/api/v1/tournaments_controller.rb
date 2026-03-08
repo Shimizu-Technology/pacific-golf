@@ -173,7 +173,8 @@ module Api
           :max_capacity, :reserved_slots, :entry_fee, :employee_entry_fee,
           :format_name, :fee_includes, :checks_payable_to,
           :contact_name, :contact_phone,
-          :registration_open
+          :registration_open,
+          :raffle_enabled, :raffle_ticket_price_cents, :raffle_draw_time
         )
       end
     end

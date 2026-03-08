@@ -4,6 +4,7 @@ import { useOrganization } from '../components/OrganizationProvider';
 import { CheckCircle, Calendar, MapPin, Mail, CreditCard, ArrowLeft, Share2, Check } from 'lucide-react';
 import { Button, Card } from '../components/ui';
 import confetti from 'canvas-confetti';
+import { formatEventDate } from '../utils/dates';
 
 export function OrgRegistrationSuccessPage() {
   const { orgSlug, tournamentSlug } = useParams<{ orgSlug: string; tournamentSlug: string }>();
@@ -164,7 +165,7 @@ export function OrgRegistrationSuccessPage() {
             </li>
             <li className="flex items-start gap-3">
               <span className="bg-brand-100 text-brand-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium flex-shrink-0">2</span>
-              <span>Mark your calendar for {tournament.event_date}</span>
+              <span>Mark your calendar for {formatEventDate(tournament.event_date)}</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="bg-brand-100 text-brand-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium flex-shrink-0">3</span>
