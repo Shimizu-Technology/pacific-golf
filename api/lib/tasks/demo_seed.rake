@@ -57,6 +57,7 @@ namespace :demo do
       max_capacity: 144,
       status: 'open',
       registration_open: true,
+      raffle_enabled: true,
       total_holes: 18,
       total_par: 72,
       allow_card: true,
