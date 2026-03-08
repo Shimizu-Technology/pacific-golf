@@ -97,9 +97,10 @@ export const RaffleManagementPage: React.FC = () => {
     try {
       const token = await getToken();
       
-      // Get tournament
+      // Get tournament via admin endpoint so raffle_enabled is always present
       const tournamentRes = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/organizations/${organization.slug}/tournaments/${tournamentSlug}`
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/tournaments/${tournamentSlug}`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
       );
       const tournamentData = await tournamentRes.json();
       const tid = tournamentData.id || tournamentData.tournament?.id;
@@ -268,8 +269,9 @@ export const RaffleManagementPage: React.FC = () => {
     setActionLoading('toggle-raffle');
     try {
       const token = await getToken();
+      // PATCH /api/v1/tournaments/:id is the correct authenticated endpoint
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/organizations/${organization?.slug}/tournaments/${tournamentSlug}`,
+        `${import.meta.env.VITE_API_URL}/api/v1/tournaments/${tournament.id}`,
         {
           method: 'PATCH',
           headers: {
