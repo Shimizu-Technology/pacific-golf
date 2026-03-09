@@ -4,6 +4,7 @@ class TournamentSerializer < ActiveModel::Serializer
              :location_name, :location_address,
              :max_capacity, :reserved_slots,
              :entry_fee, :entry_fee_dollars,
+             :employee_discount_enabled, :employee_entry_fee, :employee_entry_fee_dollars, :employee_numbers_count,
              :format_name, :fee_includes, :checks_payable_to,
              :contact_name, :contact_phone,
              :registration_open, :can_register,
@@ -26,6 +27,12 @@ class TournamentSerializer < ActiveModel::Serializer
              :payment_instructions, :allow_cash, :allow_check, :allow_card,
              # Schedule
              :check_in_time, :shotgun_start, :tee_times_enabled, :tee_time_interval_minutes,
+             # Branding
+             :use_org_branding, :theme_preset,
+             :primary_color_override, :accent_color_override,
+             :logo_url_override, :banner_url_override, :signature_image_url_override,
+             :effective_primary_color, :effective_accent_color,
+             :effective_logo_url, :effective_banner_url, :effective_signature_image_url,
              :created_at, :updated_at
 
   def organization_slug
@@ -50,6 +57,14 @@ class TournamentSerializer < ActiveModel::Serializer
 
   def entry_fee_dollars
     object.entry_fee_dollars
+  end
+
+  def employee_entry_fee_dollars
+    object.employee_entry_fee_dollars
+  end
+
+  def employee_numbers_count
+    object.employee_numbers.count
   end
 
   def can_register
@@ -106,6 +121,26 @@ class TournamentSerializer < ActiveModel::Serializer
 
   def updated_at
     object.updated_at.in_time_zone('Guam').iso8601
+  end
+
+  def effective_primary_color
+    object.effective_primary_color
+  end
+
+  def effective_accent_color
+    object.effective_accent_color
+  end
+
+  def effective_logo_url
+    object.effective_logo_url
+  end
+
+  def effective_banner_url
+    object.effective_banner_url
+  end
+
+  def effective_signature_image_url
+    object.effective_signature_image_url
   end
 end
 

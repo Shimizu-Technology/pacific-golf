@@ -131,7 +131,6 @@ class GolferMailer < ApplicationMailer
   end
 
   def calculate_entry_fee_cents(golfer)
-    tournament = golfer.tournament
-    tournament&.entry_fee || 12500
+    golfer.effective_entry_fee_cents
   end
 end

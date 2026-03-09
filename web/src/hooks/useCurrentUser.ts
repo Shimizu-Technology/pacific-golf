@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { getDevToken } from '../components/ProtectedRoute';
+import { getAdminAuthToken } from '../utils/clerkToken';
 
 interface CurrentUser {
   id: string;
@@ -58,7 +59,7 @@ export function useCurrentUser() {
       }
 
       try {
-        const token = await getToken();
+        const token = await getAdminAuthToken(getToken);
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/v1/admins/me`,
           {

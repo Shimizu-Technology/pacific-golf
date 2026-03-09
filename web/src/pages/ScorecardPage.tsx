@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuthToken } from '../hooks/useAuthToken';
-import { useGolferAuth } from '../contexts/GolferAuthContext';
+import { useOptionalGolferAuth } from '../contexts/GolferAuthContext';
 import { 
   ArrowLeft, 
   Save, 
@@ -16,6 +16,7 @@ import {
   LogOut
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { AdminLayout } from '../components/AdminLayout';
 
 interface Golfer {
   id: number;
@@ -26,6 +27,13 @@ interface Group {
   id: number;
   group_number: number;
   hole_position: string;
+}
+
+interface GroupOption {
+  id: number;
+  group_number: number;
+  hole_position_label?: string | null;
+  golfers?: { id: number; name: string }[];
 }
 
 interface HoleScore {
@@ -85,14 +93,17 @@ export const ScorecardPage: React.FC = () => {
   const navigate = useNavigate();
   const groupId = searchParams.get('group');
   const tournamentIdParam = searchParams.get('tournament'); // For golfer flow
-  const { getToken, isAuthenticated, authType, isGolferAuth } = useAuthToken();
-  const { tournament: golferTournament } = useGolferAuth();
+  const { getToken, isGolferAuth } = useAuthToken();
+  const golferAuth = useOptionalGolferAuth();
+  const golferTournament = golferAuth?.tournament;
 
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [scorecard, setScorecard] = useState<ScorecardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [groupOptions, setGroupOptions] = useState<GroupOption[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
   
   // Local scores state for editing
   const [localScores, setLocalScores] = useState<Record<string, number>>({});
@@ -103,16 +114,74 @@ export const ScorecardPage: React.FC = () => {
 
   // Team scoring mode for scramble format
   const isTeamScoring = tournament?.tournament_format === 'scramble';
+  const isOrgAdminMode = Boolean(orgSlug && tournamentSlug);
+
+  const fetchGroupOptions = useCallback(async () => {
+    if (!isOrgAdminMode || !orgSlug || !tournamentSlug) return;
+
+    setLoadingGroups(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const tournamentRes = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/organizations/${orgSlug}/tournaments/${tournamentSlug}`
+      );
+      if (!tournamentRes.ok) {
+        console.error('[Scorecard] Tournament fetch failed', {
+          url: `${import.meta.env.VITE_API_URL}/api/v1/organizations/${orgSlug}/tournaments/${tournamentSlug}`,
+          status: tournamentRes.status,
+          statusText: tournamentRes.statusText,
+        });
+        throw new Error('Tournament not found');
+      }
+      const tournamentData = await tournamentRes.json();
+      const resolvedTournament = tournamentData.tournament || tournamentData;
+      const tournamentId = resolvedTournament.id;
+      setTournament(resolvedTournament);
+
+      const groupsRes = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/groups?tournament_id=${tournamentId}`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` },
+        }
+      );
+      if (!groupsRes.ok) {
+        let body: unknown = null;
+        try {
+          body = await groupsRes.json();
+        } catch {
+          body = await groupsRes.text().catch(() => null);
+        }
+        console.error('[Scorecard] Groups fetch failed', {
+          url: `${import.meta.env.VITE_API_URL}/api/v1/groups?tournament_id=${tournamentId}`,
+          status: groupsRes.status,
+          statusText: groupsRes.statusText,
+          body,
+        });
+        throw new Error('Unable to load groups');
+      }
+      const groups = await groupsRes.json();
+      setGroupOptions(groups || []);
+      setError(null);
+    } catch (err) {
+      console.error('[Scorecard] fetchGroupOptions error', err);
+      setError(err instanceof Error ? err.message : 'Failed to load groups');
+    } finally {
+      setLoadingGroups(false);
+    }
+  }, [getToken, isOrgAdminMode, orgSlug, tournamentSlug]);
 
   const fetchData = useCallback(async () => {
     if (!groupId) {
-      setError('No group selected');
+      setError(null);
       setLoading(false);
       return;
     }
 
     try {
       const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
       
       let tournamentId: string | number;
       
@@ -141,11 +210,17 @@ export const ScorecardPage: React.FC = () => {
       const scorecardRes = await fetch(
         `${import.meta.env.VITE_API_URL}/api/v1/tournaments/${tournamentId}/scores/scorecard?group_id=${groupId}`,
         {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+          headers: { 'Authorization': `Bearer ${token}` },
         }
       );
       if (!scorecardRes.ok) {
         const errorData = await scorecardRes.json().catch(() => ({}));
+        console.error('[Scorecard] scorecard fetch failed', {
+          url: `${import.meta.env.VITE_API_URL}/api/v1/tournaments/${tournamentId}/scores/scorecard?group_id=${groupId}`,
+          status: scorecardRes.status,
+          statusText: scorecardRes.statusText,
+          errorData,
+        });
         throw new Error(errorData.error || 'Failed to load scorecard');
       }
       const scorecardData = await scorecardRes.json();
@@ -182,6 +257,7 @@ export const ScorecardPage: React.FC = () => {
       setDirtyScores(new Set());
 
     } catch (err) {
+      console.error('[Scorecard] fetchData error', err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setLoading(false);
@@ -191,6 +267,12 @@ export const ScorecardPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (!groupId && isOrgAdminMode) {
+      fetchGroupOptions();
+    }
+  }, [groupId, isOrgAdminMode, fetchGroupOptions]);
 
   const updateScore = (hole: number, golferId: number, delta: number) => {
     const key = `${hole}-${golferId}`;
@@ -312,6 +394,69 @@ export const ScorecardPage: React.FC = () => {
     );
   }
 
+  if (!groupId && isOrgAdminMode) {
+    const chooseGroupView = (
+      <div className="min-h-screen bg-gray-100 p-4">
+        <div className="mx-auto max-w-4xl space-y-4">
+          <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
+            <p className="text-sm font-medium text-stone-500">Live Scoring</p>
+            <h1 className="mt-1 text-2xl font-bold text-stone-900">{tournament?.name || 'Tournament'}</h1>
+            <p className="mt-2 text-sm text-stone-600">
+              Select a group to open live score entry.
+            </p>
+          </div>
+
+          {loadingGroups ? (
+            <div className="rounded-xl border border-stone-200 bg-white p-8 text-center shadow-soft">
+              <Loader2 className="mx-auto h-7 w-7 animate-spin text-green-700" />
+              <p className="mt-3 text-sm text-stone-500">Loading groups...</p>
+            </div>
+          ) : error ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+              <AlertCircle className="mx-auto h-7 w-7 text-red-500" />
+              <p className="mt-2 text-sm text-red-700">{error}</p>
+            </div>
+          ) : groupOptions.length === 0 ? (
+            <div className="rounded-xl border border-stone-200 bg-white p-8 text-center shadow-soft">
+              <p className="text-sm text-stone-600">No groups available yet. Create groups first.</p>
+              <Link
+                to={`/${orgSlug}/admin/groups`}
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
+              >
+                Go to Groups
+              </Link>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+              <div className="divide-y divide-stone-200">
+                {groupOptions.map((group) => (
+                  <button
+                    key={group.id}
+                    onClick={() => navigate(`/${orgSlug}/admin/tournaments/${tournamentSlug}/scorecard?group=${group.id}`)}
+                    className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-stone-50"
+                  >
+                    <div>
+                      <p className="font-semibold text-stone-900">
+                        Group {group.group_number}
+                        {group.hole_position_label ? ` - Hole ${group.hole_position_label}` : ''}
+                      </p>
+                      <p className="mt-1 text-sm text-stone-500">
+                        {(group.golfers || []).map((g) => g.name).join(', ') || 'No golfers assigned'}
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium text-green-700">Open</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+
+    return isOrgAdminMode ? <AdminLayout>{chooseGroupView}</AdminLayout> : chooseGroupView;
+  }
+
   if (error || !scorecard || !tournament) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -332,14 +477,13 @@ export const ScorecardPage: React.FC = () => {
 
   const totalHoles = tournament.total_holes || 18;
   const currentHoleData = scorecard.holes.find(h => h.hole === currentHole);
-
   // Determine back link based on auth type
   const backLink = (isGolferAuth || !orgSlug)
     ? '/golfer/dashboard' 
     : `/${orgSlug}/admin/tournaments/${tournamentSlug}`;
   const backLabel = (isGolferAuth || !orgSlug) ? 'Dashboard' : 'Back';
 
-  return (
+  const pageContent = (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
       <header className="bg-green-700 text-white sticky top-0 z-10">
@@ -652,4 +796,10 @@ export const ScorecardPage: React.FC = () => {
       </main>
     </div>
   );
+
+  if (isOrgAdminMode) {
+    return <AdminLayout>{pageContent}</AdminLayout>;
+  }
+
+  return pageContent;
 };

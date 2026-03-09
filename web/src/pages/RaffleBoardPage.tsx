@@ -11,6 +11,7 @@ import {
   Sparkles,
   PartyPopper
 } from 'lucide-react';
+import { adjustColor } from '../utils/colors';
 
 interface Prize {
   id: number;
@@ -51,12 +52,18 @@ interface RaffleBoardData {
   last_updated: string;
 }
 
+interface BrandInfo {
+  primaryColor: string;
+  bannerUrl: string | null;
+}
+
 export const RaffleBoardPage: React.FC = () => {
   const { orgSlug, tournamentSlug } = useParams<{ orgSlug: string; tournamentSlug: string }>();
   const [data, setData] = useState<RaffleBoardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showWinnerAnimation, setShowWinnerAnimation] = useState<number | null>(null);
+  const [brandInfo, setBrandInfo] = useState<BrandInfo>({ primaryColor: '#047857', bannerUrl: null });
 
   const fetchData = useCallback(async () => {
     try {
@@ -67,6 +74,10 @@ export const RaffleBoardPage: React.FC = () => {
       if (!tournamentRes.ok) throw new Error('Tournament not found');
       const tournamentData = await tournamentRes.json();
       const tournamentId = tournamentData.id || tournamentData.tournament?.id;
+      setBrandInfo({
+        primaryColor: tournamentData.effective_primary_color || '#047857',
+        bannerUrl: tournamentData.effective_banner_url || null,
+      });
 
       // Get raffle board
       const boardRes = await fetch(
@@ -166,9 +177,17 @@ export const RaffleBoardPage: React.FC = () => {
   }
 
   const { tournament, prizes, stats } = data;
+  const darkPrimary = adjustColor(brandInfo.primaryColor, -0.25);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-brand-900">
+    <div
+      className="min-h-screen"
+      style={{
+        background: brandInfo.bannerUrl
+          ? `linear-gradient(rgba(10,15,25,0.85), rgba(10,15,25,0.92)), url(${brandInfo.bannerUrl}) center / cover no-repeat`
+          : `linear-gradient(135deg, ${darkPrimary} 0%, ${adjustColor(brandInfo.primaryColor, -0.1)} 55%, #111827 100%)`,
+      }}
+    >
       {/* Header */}
       <header className="bg-black/30 backdrop-blur-sm border-b border-white/10 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -182,7 +201,7 @@ export const RaffleBoardPage: React.FC = () => {
                 Back
               </Link>
               <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                <Gift className="w-8 h-8 text-yellow-400" />
+                <Gift className="w-8 h-8" style={{ color: brandInfo.primaryColor }} />
                 {tournament.name} Raffle
               </h1>
             </div>
@@ -190,7 +209,7 @@ export const RaffleBoardPage: React.FC = () => {
               {tournament.raffle_draw_time && (
                 <div className="text-right">
                   <p className="text-white/60 text-xs">Drawing in</p>
-                  <p className="text-xl font-bold text-yellow-400 flex items-center gap-1">
+                  <p className="text-xl font-bold flex items-center gap-1" style={{ color: brandInfo.primaryColor }}>
                     <Clock className="w-5 h-5" />
                     {formatCountdown(tournament.raffle_draw_time)}
                   </p>

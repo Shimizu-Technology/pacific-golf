@@ -648,9 +648,9 @@ export const GroupManagementPage: React.FC = () => {
             </div>
           )}
 
-          <div className="grid lg:grid-cols-3 gap-4 lg:gap-6">
+          <div className={`grid gap-4 lg:gap-6 ${unassigned.length === 0 ? 'lg:grid-cols-1' : 'lg:grid-cols-3'}`}>
             {/* Desktop: Unassigned Players Sidebar */}
-            <Card className="hidden lg:block lg:col-span-1">
+            <Card className={`hidden lg:block self-start h-fit p-4 lg:p-5 ${unassigned.length === 0 ? 'lg:hidden' : 'lg:col-span-1'}`}>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Users size={24} />
                 Unassigned Players ({unassigned.length})
@@ -675,7 +675,7 @@ export const GroupManagementPage: React.FC = () => {
             {/* Groups */}
             <div 
               ref={groupsContainerRef}
-              className="lg:col-span-2 space-y-4 max-h-[calc(100vh-280px)] lg:max-h-[calc(100vh-200px)] overflow-y-auto"
+              className={`${unassigned.length === 0 ? 'lg:col-span-1' : 'lg:col-span-2'} space-y-4 max-h-[calc(100vh-280px)] lg:max-h-[calc(100vh-200px)] overflow-y-auto`}
             >
               {groups.length === 0 ? (
                 <Card className="p-4 lg:p-6">

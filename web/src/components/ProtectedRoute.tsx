@@ -3,17 +3,20 @@ import { useAuth, useClerk } from '@clerk/clerk-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { ShieldX, Home, LogOut } from 'lucide-react';
+import { getAdminAuthToken } from '../utils/clerkToken';
 
 // Dev auth helpers
 const DEV_TOKEN_KEY = 'pacific_golf_dev_token';
 const isDev = import.meta.env.DEV;
+const isDevBypassEnabled = import.meta.env.VITE_ENABLE_DEV_AUTH_BYPASS === 'true';
 
 export function getDevToken(): string | null {
-  if (!isDev) return null;
+  if (!isDev || !isDevBypassEnabled) return null;
   return localStorage.getItem(DEV_TOKEN_KEY);
 }
 
 export function setDevToken(token: string): void {
+  if (!isDev || !isDevBypassEnabled) return;
   localStorage.setItem(DEV_TOKEN_KEY, token);
 }
 
@@ -45,7 +48,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       // Production: use Clerk's JWT template
       api.setAuthTokenGetter(async () => {
         try {
-          return await getToken({ template: 'giaa-tournament' });
+          return await getAdminAuthToken(getToken);
         } catch (error) {
           console.error('Failed to get auth token:', error);
           return null;
@@ -65,7 +68,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         }
         try {
           const admin = await api.getCurrentAdmin();
-          console.log('Dev auth verified:', admin.email);
+          void admin;
           setAuthStatus('authorized');
         } catch (error) {
           console.error('Dev auth failed:', error);
@@ -98,12 +101,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         try {
           // Try to get current admin - this will fail if not authorized
           const admin = await api.getCurrentAdmin();
-          console.log('Admin verified:', admin.email);
+          void admin;
           setAuthStatus('authorized');
           return; // Success - exit the retry loop
         } catch (error) {
           lastError = error as Error;
-          console.log(`Admin verification attempt ${attempt + 1} failed:`, lastError.message);
           
           // If it's a clear "not authorized" message, don't retry
           if (lastError.message?.includes('not authorized') || 

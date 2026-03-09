@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import {
@@ -23,7 +23,6 @@ import {
   OrgTournamentPage,
   OrgRegistrationSuccessPage,
 } from './pages';
-import { OrgAdminDashboard } from './pages/OrgAdminDashboard';
 import { OrgTournamentAdmin } from './pages/OrgTournamentAdmin';
 import { OrgCheckInPage } from './pages/OrgCheckInPage';
 import { CreateTournamentPage } from './pages/CreateTournamentPage';
@@ -31,7 +30,6 @@ import { LeaderboardPage, ScorecardPage, RaffleBoardPage, RaffleManagementPage, 
 import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
 import { CreateOrganizationPage } from './pages/CreateOrganizationPage';
 import { EditOrganizationPage } from './pages/EditOrganizationPage';
-import { OrgSettingsPage } from './pages/OrgSettingsPage';
 import { GolferAuthProvider } from './contexts';
 
 // Wrapper component for admin routes with tournament context
@@ -43,6 +41,30 @@ function AdminRouteWrapper({ children }: { children: React.ReactNode }) {
       </TournamentProvider>
     </ProtectedRoute>
   );
+}
+
+function OrgAdminRouteWrapper({ children }: { children: React.ReactNode }) {
+  const { orgSlug, tournamentSlug } = useParams<{ orgSlug: string; tournamentSlug?: string }>();
+
+  return (
+    <ProtectedRoute>
+      <OrganizationProvider>
+        <TournamentProvider orgSlug={orgSlug} initialTournamentSlug={tournamentSlug}>
+          {children}
+        </TournamentProvider>
+      </OrganizationProvider>
+    </ProtectedRoute>
+  );
+}
+
+function OrgAdminDashboardRedirect() {
+  const { orgSlug } = useParams<{ orgSlug: string }>();
+  return <Navigate to={orgSlug ? `/${orgSlug}/admin` : '/'} replace />;
+}
+
+function OrgAdminSettingsRedirect() {
+  const { orgSlug } = useParams<{ orgSlug: string }>();
+  return <Navigate to={orgSlug ? `/${orgSlug}/admin/settings` : '/'} replace />;
 }
 
 // Wrapper for organization-scoped public routes
@@ -161,15 +183,51 @@ function App() {
             ORG-SCOPED ADMIN ROUTES (Multi-tenant)
             =========================================== */}
         
-        {/* Organization Admin Dashboard */}
+        {/* Organization Admin Legacy Dashboard */}
         <Route
           path="/:orgSlug/admin"
           element={
-            <ProtectedRoute>
-              <OrganizationProvider>
-                <OrgAdminDashboard />
-              </OrganizationProvider>
-            </ProtectedRoute>
+            <OrgAdminRouteWrapper>
+              <AdminDashboard />
+            </OrgAdminRouteWrapper>
+          }
+        />
+        <Route
+          path="/:orgSlug/admin/dashboard"
+          element={
+            <OrgAdminDashboardRedirect />
+          }
+        />
+        <Route
+          path="/:orgSlug/admin/groups"
+          element={
+            <OrgAdminRouteWrapper>
+              <GroupManagementPage />
+            </OrgAdminRouteWrapper>
+          }
+        />
+        <Route
+          path="/:orgSlug/admin/checkin"
+          element={
+            <OrgAdminRouteWrapper>
+              <CheckInPage />
+            </OrgAdminRouteWrapper>
+          }
+        />
+        <Route
+          path="/:orgSlug/admin/reports"
+          element={
+            <OrgAdminRouteWrapper>
+              <ReportsPage />
+            </OrgAdminRouteWrapper>
+          }
+        />
+        <Route
+          path="/:orgSlug/admin/tournaments"
+          element={
+            <OrgAdminRouteWrapper>
+              <TournamentManagementPage />
+            </OrgAdminRouteWrapper>
           }
         />
 
@@ -177,11 +235,15 @@ function App() {
         <Route
           path="/:orgSlug/admin/settings"
           element={
-            <ProtectedRoute>
-              <OrganizationProvider>
-                <OrgSettingsPage />
-              </OrganizationProvider>
-            </ProtectedRoute>
+            <OrgAdminRouteWrapper>
+              <AdminSettingsPage />
+            </OrgAdminRouteWrapper>
+          }
+        />
+        <Route
+          path="/:orgSlug/admin/organization-settings"
+          element={
+            <OrgAdminSettingsRedirect />
           }
         />
 
@@ -201,11 +263,9 @@ function App() {
         <Route
           path="/:orgSlug/admin/tournaments/:tournamentSlug"
           element={
-            <ProtectedRoute>
-              <OrganizationProvider>
-                <OrgTournamentAdmin />
-              </OrganizationProvider>
-            </ProtectedRoute>
+            <OrgAdminRouteWrapper>
+              <OrgTournamentAdmin />
+            </OrgAdminRouteWrapper>
           }
         />
 
@@ -213,11 +273,9 @@ function App() {
         <Route
           path="/:orgSlug/admin/tournaments/:tournamentSlug/checkin"
           element={
-            <ProtectedRoute>
-              <OrganizationProvider>
-                <OrgCheckInPage />
-              </OrganizationProvider>
-            </ProtectedRoute>
+            <OrgAdminRouteWrapper>
+              <OrgCheckInPage />
+            </OrgAdminRouteWrapper>
           }
         />
 
@@ -225,11 +283,9 @@ function App() {
         <Route
           path="/:orgSlug/admin/tournaments/:tournamentSlug/scorecard"
           element={
-            <ProtectedRoute>
-              <OrganizationProvider>
-                <ScorecardPage />
-              </OrganizationProvider>
-            </ProtectedRoute>
+            <OrgAdminRouteWrapper>
+              <ScorecardPage />
+            </OrgAdminRouteWrapper>
           }
         />
 
@@ -237,11 +293,9 @@ function App() {
         <Route
           path="/:orgSlug/admin/tournaments/:tournamentSlug/raffle"
           element={
-            <ProtectedRoute>
-              <OrganizationProvider>
-                <RaffleManagementPage />
-              </OrganizationProvider>
-            </ProtectedRoute>
+            <OrgAdminRouteWrapper>
+              <RaffleManagementPage />
+            </OrgAdminRouteWrapper>
           }
         />
 
@@ -249,11 +303,9 @@ function App() {
         <Route
           path="/:orgSlug/admin/tournaments/:tournamentSlug/sponsors"
           element={
-            <ProtectedRoute>
-              <OrganizationProvider>
-                <SponsorManagementPage />
-              </OrganizationProvider>
-            </ProtectedRoute>
+            <OrgAdminRouteWrapper>
+              <SponsorManagementPage />
+            </OrgAdminRouteWrapper>
           }
         />
 

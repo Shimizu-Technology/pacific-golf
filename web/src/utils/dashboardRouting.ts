@@ -1,4 +1,5 @@
 import { api } from '../services/api';
+import { getAdminAuthToken } from './clerkToken';
 
 const DEFAULT_DASHBOARD_PATH = '/admin/dashboard';
 
@@ -11,8 +12,14 @@ export async function resolveBestDashboardPath(
   if (explicitPath) return explicitPath;
 
   try {
-    const token = await getToken({ template: 'giaa-tournament' });
+    const token = await getAdminAuthToken(getToken);
     if (!token) return DEFAULT_DASHBOARD_PATH;
+
+    // Super admins should always land on the platform dashboard first.
+    const currentAdmin = await api.getCurrentAdminWithToken(token);
+    if (currentAdmin?.is_super_admin) {
+      return '/super-admin';
+    }
 
     const organizations = await api.getMyOrganizationsWithToken(token);
 

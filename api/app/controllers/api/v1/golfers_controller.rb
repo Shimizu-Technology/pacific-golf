@@ -6,7 +6,7 @@ module Api
       before_action :authorize_golfer_access!, only: [
         :show, :update, :destroy, :cancel, :refund, :mark_refunded,
         :check_in, :undo_check_in, :payment_details, :promote, :demote,
-        :send_payment_link, :update_payment_status
+        :send_payment_link, :update_payment_status, :toggle_employee
       ]
 
       # GET /api/v1/golfers
@@ -95,15 +95,34 @@ module Api
             raise ActiveRecord::Rollback
           end
 
+          employee_number_record = nil
+          if params[:employee_number].present?
+            validation = tournament.validate_employee_number(params[:employee_number])
+            unless validation[:valid]
+              error_response = { errors: [validation[:error]], status: :unprocessable_entity }
+              raise ActiveRecord::Rollback
+            end
+
+            employee_number_record = validation[:employee_number_record]
+            employee_number_record.lock!
+          end
+
           golfer = tournament.golfers.new(golfer_params)
           golfer.waiver_accepted_at = Time.current if params[:waiver_accepted]
+          if employee_number_record
+            golfer.is_employee = true
+            golfer.employee_number = employee_number_record.employee_number
+            golfer.employee_number_record = employee_number_record
+          end
 
           if golfer.save
+            employee_number_record&.mark_used!(golfer)
             result = {
               golfer: golfer,
               message: golfer.registration_status == "confirmed" ?
                 "Your spot is confirmed!" :
-                "You have been added to the waitlist."
+                "You have been added to the waitlist.",
+              employee_discount_applied: golfer.is_employee?
             }
           else
             error_response = { errors: golfer.errors.full_messages, status: :unprocessable_entity }
@@ -120,7 +139,8 @@ module Api
 
           render json: {
             golfer: GolferSerializer.new(result[:golfer]),
-            message: result[:message]
+            message: result[:message],
+            employee_discount_applied: result[:employee_discount_applied]
           }, status: :created
         end
       end
@@ -352,6 +372,7 @@ module Api
           refunded_at: Time.current,
           refunded_by: current_admin
         )
+        golfer.employee_number_record&.release! if golfer.employee_number_record&.used?
 
         # CRITICAL: Return success response FIRST
         render json: golfer
@@ -440,7 +461,7 @@ module Api
         
         # Calculate the payment amount
         tournament = golfer.tournament
-        payment_amount = tournament&.entry_fee || 12500
+        payment_amount = golfer.effective_entry_fee_cents
 
         golfer.update!(
           payment_status: "paid",
@@ -455,12 +476,13 @@ module Api
           admin: current_admin,
           action: 'payment_marked',
           target: golfer,
-          details: "Marked #{golfer.name} as paid (#{params[:payment_method]}) - $#{format('%.2f', payment_amount / 100.0)}",
+          details: "Marked #{golfer.name} as paid (#{params[:payment_method]}) - $#{format('%.2f', payment_amount / 100.0)}#{golfer.is_employee? ? ' (Employee Rate)' : ''}",
           metadata: {
             payment_method: params[:payment_method],
             receipt_number: params[:receipt_number],
             previous_status: old_status,
-            payment_amount_cents: payment_amount
+            payment_amount_cents: payment_amount,
+            is_employee: golfer.is_employee?
           }
         )
 
@@ -598,7 +620,8 @@ module Api
         else
           golfer.update!(
             payment_status: 'paid',
-            paid_at: Time.current
+            paid_at: Time.current,
+            payment_amount_cents: golfer.effective_entry_fee_cents
           )
           
           # Send payment confirmation email when marking as paid
@@ -617,6 +640,110 @@ module Api
 
         broadcast_golfer_update(golfer)
         render json: golfer
+      end
+
+      # POST /api/v1/golfers/:id/toggle_employee
+      def toggle_employee
+        golfer = Golfer.find(params[:id])
+        if golfer.payment_status == "paid"
+          return render json: { error: "Cannot change employee status after payment" }, status: :unprocessable_entity
+        end
+
+        next_status = !golfer.is_employee?
+        if next_status
+          if params[:employee_number].present?
+            validation = golfer.tournament.validate_employee_number(params[:employee_number])
+            return render json: { error: validation[:error] }, status: :unprocessable_entity unless validation[:valid]
+
+            employee_record = validation[:employee_number_record]
+            employee_record.lock!
+            golfer.update!(
+              is_employee: true,
+              employee_number: employee_record.employee_number,
+              employee_number_record: employee_record
+            )
+            employee_record.mark_used!(golfer)
+          else
+            golfer.update!(is_employee: true)
+          end
+        else
+          golfer.employee_number_record&.release! if golfer.employee_number_record&.used?
+          golfer.update!(is_employee: false, employee_number: nil, employee_number_record: nil)
+        end
+
+        ActivityLog.log(
+          admin: current_admin,
+          action: "employee_status_changed",
+          target: golfer,
+          details: "#{golfer.name} #{golfer.is_employee? ? 'marked as employee' : 'removed employee status'}",
+          metadata: { is_employee: golfer.is_employee? }
+        )
+
+        broadcast_golfer_update(golfer)
+        render json: golfer
+      end
+
+      # POST /api/v1/golfers/bulk_set_employee
+      def bulk_set_employee
+        golfer_ids = params[:golfer_ids]
+        is_employee = params[:is_employee]
+
+        unless golfer_ids.is_a?(Array) && golfer_ids.any?
+          return render json: { error: "golfer_ids must be a non-empty array" }, status: :unprocessable_entity
+        end
+        unless [true, false].include?(is_employee)
+          return render json: { error: "is_employee must be true or false" }, status: :unprocessable_entity
+        end
+
+        tournament = find_tournament
+        return render_tournament_required unless tournament
+
+        golfers = tournament.golfers.where(id: golfer_ids)
+        return render json: { error: "No matching golfers found" }, status: :not_found if golfers.empty?
+
+        updated_golfers = []
+        skipped_reasons = []
+
+        golfers.find_each do |golfer|
+          if golfer.payment_status == "paid"
+            skipped_reasons << { name: golfer.name, reason: "already paid" }
+            next
+          end
+          if golfer.registration_status == "cancelled" || golfer.payment_status == "refunded"
+            skipped_reasons << { name: golfer.name, reason: "cancelled/refunded" }
+            next
+          end
+          if golfer.is_employee == is_employee
+            skipped_reasons << { name: golfer.name, reason: "already #{is_employee ? 'employee' : 'non-employee'}" }
+            next
+          end
+
+          if is_employee
+            golfer.update!(is_employee: true)
+          else
+            golfer.employee_number_record&.release! if golfer.employee_number_record&.used?
+            golfer.update!(is_employee: false, employee_number: nil, employee_number_record: nil)
+          end
+
+          ActivityLog.log(
+            admin: current_admin,
+            action: "employee_status_changed",
+            target: golfer,
+            details: "#{golfer.name} #{is_employee ? 'marked as employee' : 'removed employee status'} (bulk action)",
+            metadata: { bulk_action: true, is_employee: is_employee }
+          )
+          updated_golfers << golfer
+          broadcast_golfer_update(golfer)
+        end
+
+        render json: {
+          success: true,
+          message: "#{updated_golfers.count} golfer(s) #{is_employee ? 'marked as employees' : 'updated to non-employees'}",
+          updated_count: updated_golfers.count,
+          skipped_count: skipped_reasons.count,
+          skipped_reasons: skipped_reasons,
+          golfers: ActiveModelSerializers::SerializableResource.new(updated_golfers)
+        }
       end
 
       # POST /api/v1/golfers/bulk_send_payment_links
@@ -725,6 +852,10 @@ module Api
             registration_open: tournament.can_register?,
             entry_fee_cents: tournament.entry_fee || 12500,
             entry_fee_dollars: tournament.entry_fee_dollars,
+            employee_entry_fee_cents: tournament.employee_entry_fee || 5000,
+            employee_entry_fee_dollars: tournament.employee_entry_fee_dollars,
+            employee_discount_enabled: tournament.employee_discount_enabled?,
+            employee_discount_available: tournament.employee_discount_enabled? && tournament.employee_numbers.available.any?,
             # Tournament configuration for landing page
             tournament_year: tournament.year,
             tournament_edition: tournament.edition,
@@ -780,7 +911,10 @@ module Api
           capacity_remaining: tournament.capacity_remaining,
           at_capacity: tournament.at_capacity?,
           entry_fee_cents: tournament.entry_fee || 12500,
-          entry_fee_dollars: tournament.entry_fee_dollars
+          entry_fee_dollars: tournament.entry_fee_dollars,
+          employee_entry_fee_cents: tournament.employee_entry_fee || 5000,
+          employee_entry_fee_dollars: tournament.employee_entry_fee_dollars,
+          employee_discount_enabled: tournament.employee_discount_enabled?
         }
       end
 
@@ -822,7 +956,8 @@ module Api
           :name, :company, :address, :phone, :mobile, :email,
           :payment_type, :payment_status, :registration_status,
           :group_id, :hole_number, :position, :notes,
-          :payment_method, :receipt_number, :payment_notes
+          :payment_method, :receipt_number, :payment_notes,
+          :is_employee, :employee_number, :employee_number_record_id
         )
       end
 

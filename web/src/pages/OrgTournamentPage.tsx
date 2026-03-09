@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import { useOrganization } from '../components/OrganizationProvider';
 import { api, Tournament, Sponsor } from '../services/api';
+import { SignedInAdminBar } from '../components/SignedInAdminBar';
 import { motion, MotionConfig, useInView } from 'framer-motion';
 import { 
-  Calendar, MapPin, Users, DollarSign, Clock, 
-  Trophy, AlertCircle, ChevronLeft, Star, Building2, ExternalLink, Check
+  Calendar, MapPin, Users, DollarSign, Clock, Home,
+  Trophy, AlertCircle, ChevronLeft, Star, Building2, ExternalLink, Check, LayoutDashboard, LogIn
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -13,6 +15,7 @@ import {
 // ---------------------------------------------------------------------------
 
 import { hexToRgba, adjustColor } from '../utils/colors';
+import { resolveTournamentBranding } from '../utils/tournamentBranding';
 
 // ---------------------------------------------------------------------------
 // Animation variants
@@ -90,6 +93,7 @@ function ScrollReveal({
 
 export function OrgTournamentPage() {
   const { orgSlug, tournamentSlug } = useParams<{ orgSlug: string; tournamentSlug: string }>();
+  const { isLoaded, isSignedIn } = useAuth();
   const { organization, isLoading: orgLoading } = useOrganization();
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,7 +118,8 @@ export function OrgTournamentPage() {
     fetchTournament();
   }, [orgSlug, tournamentSlug]);
 
-  const primaryColor = organization?.primary_color || '#1e3a2f';
+  const branding = resolveTournamentBranding(organization, tournament);
+  const primaryColor = branding.primaryColor;
   const primaryDark = adjustColor(primaryColor, -0.15);
 
   if (orgLoading || isLoading) {
@@ -160,15 +165,16 @@ export function OrgTournamentPage() {
   return (
     <MotionConfig reducedMotion="user">
     <div className="min-h-screen bg-stone-50 text-stone-900">
+      <SignedInAdminBar dashboardPath={`/${orgSlug}/admin`} />
       {/* ================================================================= */}
       {/* HERO                                                               */}
       {/* ================================================================= */}
       <header className="relative overflow-hidden">
-        {organization?.banner_url ? (
+        {branding.bannerUrl ? (
           <>
             <div className="absolute inset-0">
               <img
-                src={organization.banner_url}
+                src={branding.bannerUrl}
                 alt=""
                 className="w-full h-full object-cover"
               />
@@ -188,19 +194,47 @@ export function OrgTournamentPage() {
           </>
         )}
 
-        <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 py-12 sm:py-20">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 lg:px-8 py-12 sm:py-20">
           <motion.div
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, ease }}
+            className="mb-6 flex items-center justify-between gap-3"
           >
-            <Link
-              to={`/${orgSlug}`}
-              className="inline-flex items-center gap-1 text-sm text-white/70 hover:text-white transition-colors duration-200 mb-6"
-            >
-              <ChevronLeft className="w-4 h-4" strokeWidth={2} />
-              Back to {organization?.name || 'Tournaments'}
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                to={`/${orgSlug}`}
+                className="inline-flex items-center gap-1 text-sm text-white/70 hover:text-white transition-colors duration-200"
+              >
+                <ChevronLeft className="w-4 h-4" strokeWidth={2} />
+                Back to {organization?.name || 'Tournaments'}
+              </Link>
+              <Link
+                to="/"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                <Home className="w-3.5 h-3.5" />
+                Home
+              </Link>
+            </div>
+
+            {isLoaded && isSignedIn ? (
+              <Link
+                to={`/${orgSlug}/admin`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                Staff Dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/admin/login"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Staff Login
+              </Link>
+            )}
           </motion.div>
 
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -220,13 +254,24 @@ export function OrgTournamentPage() {
               </motion.div>
 
               <motion.h1
-                className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-3"
+                className="mb-3 text-3xl font-display font-bold tracking-tight text-white sm:text-4xl lg:text-5xl"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.1, ease }}
               >
                 {tournament.display_name}
               </motion.h1>
+
+              {branding.signatureImageUrl && (
+                <motion.img
+                  src={branding.signatureImageUrl}
+                  alt=""
+                  className="mb-4 h-14 w-auto object-contain opacity-95"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, delay: 0.2, ease }}
+                />
+              )}
 
               {tournament.event_date && (
                 <motion.p
@@ -238,6 +283,14 @@ export function OrgTournamentPage() {
                   {tournament.event_date}
                 </motion.p>
               )}
+              <motion.p
+                className="mt-2 text-sm text-white/70"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3, ease }}
+              >
+                Tournament home page: event details, sponsors, and registration.
+              </motion.p>
             </div>
 
             <motion.span
@@ -256,7 +309,7 @@ export function OrgTournamentPage() {
       {/* ================================================================= */}
       {/* MAIN CONTENT                                                       */}
       {/* ================================================================= */}
-      <main className="max-w-5xl mx-auto px-6 lg:px-8 py-10 sm:py-14 -mt-4">
+      <main className="max-w-6xl mx-auto px-6 lg:px-8 py-10 sm:py-14 -mt-4">
         <div className="grid md:grid-cols-3 gap-6">
           {/* Details Card */}
           <ScrollReveal className="md:col-span-2">
@@ -408,6 +461,22 @@ export function OrgTournamentPage() {
                     Registration deadline: {new Date(tournament.registration_deadline).toLocaleDateString()}
                   </p>
                 )}
+
+                {isLoaded && isSignedIn ? (
+                  <Link
+                    to={`/${orgSlug}/admin`}
+                    className="mt-3 block w-full rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-center text-sm font-medium text-stone-700 transition-colors duration-200 hover:bg-stone-50"
+                  >
+                    Staff Dashboard
+                  </Link>
+                ) : (
+                  <Link
+                    to="/admin/login"
+                    className="mt-3 block w-full rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-center text-sm font-medium text-stone-700 transition-colors duration-200 hover:bg-stone-50"
+                  >
+                    Staff Login
+                  </Link>
+                )}
               </motion.div>
             </ScrollReveal>
 
@@ -457,6 +526,48 @@ export function OrgTournamentPage() {
                 </ul>
               </div>
             </ScrollReveal>
+
+            {organization && (
+              <ScrollReveal delay={0.28}>
+                <div className="bg-white rounded-2xl border border-stone-200 p-6">
+                  <h3 className="font-bold tracking-tight mb-4">Hosted By</h3>
+                  <div className="flex items-start gap-3">
+                    {branding.logoUrl ? (
+                      <img
+                        src={branding.logoUrl}
+                        alt={organization.name}
+                        className="w-12 h-12 rounded-xl object-contain bg-stone-50 border border-stone-200"
+                      />
+                    ) : (
+                      <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-semibold"
+                        style={{ backgroundColor: primaryColor }}
+                      >
+                        {organization.name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-stone-900">{organization.name}</p>
+                      {organization.description && (
+                        <p className="mt-1 text-sm text-stone-600 line-clamp-2">{organization.description}</p>
+                      )}
+                      {organization.website_url && (
+                        <a
+                          href={organization.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-sm font-medium"
+                          style={{ color: primaryColor }}
+                        >
+                          Visit organization site
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </ScrollReveal>
+            )}
           </div>
         </div>
       </main>
@@ -465,7 +576,7 @@ export function OrgTournamentPage() {
       {/* SPONSORS                                                           */}
       {/* ================================================================= */}
       {tournament.sponsors && tournament.sponsors.length > 0 && (
-        <section className="max-w-5xl mx-auto px-6 lg:px-8 pb-12 sm:pb-16">
+        <section className="max-w-6xl mx-auto px-6 lg:px-8 pb-12 sm:pb-16">
           <ScrollReveal>
             <div className="flex items-center gap-3 mb-8">
               <Star className="w-5 h-5" style={{ color: primaryColor }} strokeWidth={2} />
@@ -517,7 +628,7 @@ export function OrgTournamentPage() {
       {/* FOOTER                                                             */}
       {/* ================================================================= */}
       <footer className="border-t border-stone-200">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8 flex items-center justify-between text-sm text-stone-400">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8 flex items-center justify-between text-sm text-stone-400">
           <p>
             Powered by{' '}
             <span className="font-medium text-stone-600">Pacific Golf</span>

@@ -3,7 +3,7 @@
 module Api
   module V1
     class DevAuthController < ApplicationController
-      before_action :ensure_development!
+      before_action :ensure_dev_bypass_enabled!
 
       # POST /api/v1/dev/login
       # Body: { email: "user@example.com" }
@@ -47,9 +47,11 @@ module Api
 
       private
 
-      def ensure_development!
-        unless Rails.env.development?
-          render json: { error: "Not available in #{Rails.env}" }, status: :forbidden
+      def ensure_dev_bypass_enabled!
+        dev_bypass_enabled = ENV.fetch("ENABLE_DEV_AUTH_BYPASS", "false") == "true"
+
+        unless Rails.env.development? && dev_bypass_enabled
+          render json: { error: "Dev auth bypass is disabled" }, status: :forbidden
         end
       end
     end

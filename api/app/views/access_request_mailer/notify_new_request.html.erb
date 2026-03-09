@@ -1,0 +1,58 @@
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding: 20px 12px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 640px; background: #ffffff; border: 1px solid #e7e5e4; border-radius: 14px; overflow: hidden;">
+        <tr>
+          <td bgcolor="#0f2f5f" style="padding: 22px 24px; background-color: #0f2f5f; color: #ffffff !important;">
+            <p style="margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #dbeafe !important; -webkit-text-fill-color: #dbeafe;">
+              Pacific Golf
+            </p>
+            <h1 style="margin: 8px 0 0; font-size: 24px; line-height: 1.25; color: #ffffff !important; -webkit-text-fill-color: #ffffff;">
+              New Access Request
+            </h1>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding: 22px 24px;">
+            <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.55; color: #44403c;">
+              A new organization submitted a request to use Pacific Golf.
+            </p>
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse: separate; border-spacing: 0; border: 1px solid #e7e5e4; border-radius: 12px; overflow: hidden;">
+              <tr>
+                <td style="padding: 10px 12px; width: 165px; background: #fafaf9; font-size: 13px; color: #78716c; font-weight: 600;">Organization</td>
+                <td style="padding: 10px 12px; font-size: 14px; color: #1c1917;"><%= @access_request.organization_name %></td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 12px; width: 165px; background: #fafaf9; font-size: 13px; color: #78716c; font-weight: 600;">Contact Name</td>
+                <td style="padding: 10px 12px; font-size: 14px; color: #1c1917;"><%= @access_request.contact_name %></td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 12px; width: 165px; background: #fafaf9; font-size: 13px; color: #78716c; font-weight: 600;">Email</td>
+                <td style="padding: 10px 12px; font-size: 14px; color: #1c1917;"><a href="mailto:<%= @access_request.email %>" style="color: #1d4ed8; text-decoration: none;"><%= @access_request.email %></a></td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 12px; width: 165px; background: #fafaf9; font-size: 13px; color: #78716c; font-weight: 600;">Phone</td>
+                <td style="padding: 10px 12px; font-size: 14px; color: #1c1917;"><%= @access_request.phone.presence || "Not provided" %></td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 12px; width: 165px; background: #fafaf9; font-size: 13px; color: #78716c; font-weight: 600;">Source</td>
+                <td style="padding: 10px 12px; font-size: 14px; color: #1c1917;"><%= @access_request.source %></td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 12px; width: 165px; background: #fafaf9; font-size: 13px; color: #78716c; font-weight: 600;">Submitted At</td>
+                <td style="padding: 10px 12px; font-size: 14px; color: #1c1917;"><%= @access_request.created_at.in_time_zone("Guam").strftime("%b %-d, %Y %l:%M %p") %></td>
+              </tr>
+            </table>
+
+            <div style="margin-top: 16px; border: 1px solid #e7e5e4; border-radius: 12px; padding: 12px; background: #fafaf9;">
+              <p style="margin: 0 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #78716c;">Notes</p>
+              <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #292524;"><%= @access_request.notes.presence || "No notes provided." %></p>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

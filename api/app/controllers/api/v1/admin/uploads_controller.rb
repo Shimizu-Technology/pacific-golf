@@ -39,11 +39,22 @@ module Api
             content_type: file.content_type
           )
 
-          # Return the URL
-          url = Rails.application.routes.url_helpers.rails_blob_url(
-            blob,
-            host: request.base_url
-          )
+          # For S3 buckets configured with public read policy (ACLs disabled), return
+          # a direct object URL. Otherwise, fall back to app-hosted blob URL.
+          url = if ActiveStorage::Blob.service.is_a?(ActiveStorage::Service::S3Service)
+            s3_bucket = ENV["AWS_S3_BUCKET"].presence || ENV["AWS_BUCKET"].presence
+            s3_region = ENV.fetch("AWS_REGION", "us-east-1")
+            if s3_bucket.present?
+              "https://#{s3_bucket}.s3.#{s3_region}.amazonaws.com/#{blob.key}"
+            else
+              blob.url
+            end
+          else
+            Rails.application.routes.url_helpers.rails_blob_url(
+              blob,
+              host: request.base_url
+            )
+          end
 
           render json: {
             url: url,

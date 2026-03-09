@@ -77,9 +77,26 @@ module Api
         return if performed?
 
         organization = Organization.new(organization_params)
+        invite_emails = admin_invite_emails
 
-        if organization.save
-          render json: organization_response(organization), status: :created
+        invalid_emails = invalid_admin_invite_emails(invite_emails)
+        if invalid_emails.any?
+          return render json: {
+            errors: ["Invalid admin invite email(s): #{invalid_emails.join(', ')}"]
+          }, status: :unprocessable_entity
+        end
+
+        if organization.valid?
+          invite_results = []
+
+          ActiveRecord::Base.transaction do
+            organization.save!
+            invite_results = invite_admins_to_organization(organization, invite_emails)
+          end
+
+          render json: organization_response(organization).merge(
+            invited_admins: invite_results
+          ), status: :created
         else
           render json: { errors: organization.errors.full_messages }, status: :unprocessable_entity
         end
@@ -144,7 +161,7 @@ module Api
         active_tournaments = tournaments.count { |t| %w[open in_progress].include?(t.status) }
 
         stats = {
-          total_tournaments: tournaments.count,
+          total_tournaments: tournament_data.length,
           active_tournaments: active_tournaments,
           total_registrations: total_registrations,
           total_revenue: total_revenue
@@ -465,9 +482,11 @@ module Api
           return render json: { error: "Email is required" }, status: :unprocessable_entity
         end
 
-        user = User.find_by(email: email)
-        unless user
-          return render json: { error: "No user found with that email. They must create an account first." }, status: :not_found
+        user = User.find_or_initialize_by(email: email)
+        user_created = user.new_record?
+        if user_created
+          user.role = "org_admin"
+          user.save!
         end
 
         existing = org.organization_memberships.find_by(user: user)
@@ -477,8 +496,18 @@ module Api
 
         role = params[:role] || 'admin'
         membership = org.organization_memberships.create!(user: user, role: role)
+        AdminInvitationMailer.organization_admin_invite(
+          user: user,
+          organization: org,
+          invited_by: current_user
+        ).deliver_later
 
-        render json: { member: member_response(membership) }, status: :created
+        render json: {
+          member: member_response(membership),
+          invitation_sent: true,
+          signup_required: user.clerk_id.blank?,
+          user_created: user_created
+        }, status: :created
       end
 
       # PATCH /api/v1/admin/organizations/:slug/members/:member_id
@@ -519,7 +548,71 @@ module Api
         render json: { success: true }
       end
 
+      # POST /api/v1/admin/organizations/:slug/members/:member_id/resend_invite
+      def resend_member_invite
+        org = Organization.find_by!(slug: params[:slug])
+        require_org_admin!(org)
+        return if performed?
+
+        membership = org.organization_memberships.includes(:user).find(params[:member_id])
+        user = membership.user
+
+        AdminInvitationMailer.organization_admin_invite(
+          user: user,
+          organization: org,
+          invited_by: current_user
+        ).deliver_later
+
+        render json: {
+          success: true,
+          invitation_sent: true,
+          signed_in: user.clerk_id.present?,
+          member: member_response(membership)
+        }
+      end
+
       private
+
+      def admin_invite_emails
+        raw = params.dig(:organization, :admin_invite_emails)
+        return [] unless raw.is_a?(Array)
+
+        raw.map { |email| email.to_s.strip.downcase }.reject(&:blank?).uniq
+      end
+
+      def invalid_admin_invite_emails(emails)
+        emails.reject { |email| URI::MailTo::EMAIL_REGEXP.match?(email) }
+      end
+
+      def invite_admins_to_organization(organization, emails)
+        emails.map do |email|
+          user = User.find_or_initialize_by(email: email)
+          user_created = user.new_record?
+          if user_created
+            user.role = "org_admin"
+            user.save!
+          end
+
+          membership = organization.organization_memberships.find_or_initialize_by(user: user)
+          membership_created = membership.new_record?
+          role_changed = membership.role != "admin"
+          membership.role = "admin"
+          membership.save! if membership_created || role_changed
+
+          AdminInvitationMailer.organization_admin_invite(
+            user: user,
+            organization: organization,
+            invited_by: current_user
+          ).deliver_later
+
+          {
+            email: email,
+            user_created: user_created,
+            membership_created: membership_created,
+            signup_required: user.clerk_id.blank?
+          }
+        end
+      end
 
       def member_response(membership)
         {
@@ -528,6 +621,7 @@ module Api
           name: membership.user.name || membership.user.email,
           email: membership.user.email,
           role: membership.role,
+          signed_in: membership.user.clerk_id.present?,
           created_at: membership.created_at
         }
       end
@@ -544,7 +638,8 @@ module Api
         params.require(:golfer).permit(
           :name, :email, :phone, :mobile, :company, :address,
           :payment_type, :payment_status, :payment_method,
-          :registration_status, :notes, :waiver_accepted_at
+          :registration_status, :notes, :waiver_accepted_at,
+          :is_employee, :employee_number, :employee_number_record_id
         )
       end
 
@@ -555,10 +650,13 @@ module Api
           :location_name, :location_address,
           :tournament_format, :scoring_type, :team_size, :shotgun_start,
           :max_capacity, :reserved_slots, :waitlist_enabled, :waitlist_max,
-          :entry_fee, :early_bird_fee, :early_bird_deadline,
+          :entry_fee, :employee_discount_enabled, :employee_entry_fee, :early_bird_fee, :early_bird_deadline,
           :allow_cash, :allow_check, :allow_card, :checks_payable_to, :payment_instructions,
           :registration_deadline,
-          :contact_name, :contact_phone, :fee_includes
+          :contact_name, :contact_phone, :fee_includes, :public_listed,
+          :use_org_branding, :theme_preset,
+          :primary_color_override, :accent_color_override,
+          :logo_url_override, :banner_url_override, :signature_image_url_override
         )
       end
 

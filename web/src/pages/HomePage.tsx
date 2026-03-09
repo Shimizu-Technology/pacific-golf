@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import {
@@ -8,18 +8,39 @@ import {
   Globe,
   History,
   LayoutDashboard,
+  Mail,
+  MapPin,
   Quote,
   RefreshCw,
+  Search,
+  Send,
   Ticket,
   Trophy
 } from 'lucide-react';
 import { Button } from '../components/ui';
 import { SignedInAdminBar } from '../components/SignedInAdminBar';
+import { api, type AccessRequestPayload, type PublicTournamentListing } from '../services/api';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { isLoaded, isSignedIn } = useAuth();
   const [orgSlug, setOrgSlug] = useState('');
+  const [openTournaments, setOpenTournaments] = useState<PublicTournamentListing[]>([]);
+  const [discoverableLoading, setDiscoverableLoading] = useState(true);
+  const [discoverableError, setDiscoverableError] = useState<string | null>(null);
+  const [discoverableQuery, setDiscoverableQuery] = useState('');
+  const [requestSubmitting, setRequestSubmitting] = useState(false);
+  const [requestSuccess, setRequestSuccess] = useState<string | null>(null);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [accessForm, setAccessForm] = useState<AccessRequestPayload>({
+    organization_name: '',
+    contact_name: '',
+    email: '',
+    phone: '',
+    notes: '',
+    source: 'homepage',
+  });
+  const [honeypot, setHoneypot] = useState('');
   const cleanedSlug = useMemo(
     () => orgSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''),
     [orgSlug]
@@ -28,6 +49,97 @@ export const HomePage: React.FC = () => {
   const goToOrg = () => {
     if (!cleanedSlug) return;
     navigate(`/${cleanedSlug}`);
+  };
+
+  useEffect(() => {
+    let active = true;
+
+    const loadDiscoverable = async () => {
+      setDiscoverableLoading(true);
+      setDiscoverableError(null);
+      try {
+        const items = await api.getDiscoverableTournaments();
+        if (!active) return;
+        setOpenTournaments(items);
+      } catch (error) {
+        if (!active) return;
+        const message = error instanceof Error ? error.message : 'Could not load open tournaments.';
+        setDiscoverableError(message);
+      } finally {
+        if (active) setDiscoverableLoading(false);
+      }
+    };
+
+    loadDiscoverable();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const filteredOpenTournaments = useMemo(() => {
+    const term = discoverableQuery.trim().toLowerCase();
+    if (!term) return openTournaments;
+
+    return openTournaments.filter((item) =>
+      `${item.organization_name} ${item.name} ${item.organization_slug}`.toLowerCase().includes(term)
+    );
+  }, [discoverableQuery, openTournaments]);
+
+  const submitAccessRequest = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setRequestSuccess(null);
+    setRequestError(null);
+
+    if (
+      !accessForm.organization_name.trim() ||
+      !accessForm.contact_name.trim() ||
+      !accessForm.email.trim()
+    ) {
+      setRequestError('Organization, contact name, and email are required.');
+      return;
+    }
+
+    setRequestSubmitting(true);
+    try {
+      await api.submitAccessRequest({
+        ...accessForm,
+        organization_name: accessForm.organization_name.trim(),
+        contact_name: accessForm.contact_name.trim(),
+        email: accessForm.email.trim(),
+        phone: accessForm.phone?.trim(),
+        notes: accessForm.notes?.trim(),
+        source: 'homepage',
+      }, honeypot);
+      setRequestSuccess("Thanks. We received your request and will contact you soon.");
+      setAccessForm({
+        organization_name: '',
+        contact_name: '',
+        email: '',
+        phone: '',
+        notes: '',
+        source: 'homepage',
+      });
+      setHoneypot('');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not submit request right now.';
+      setRequestError(message);
+    } finally {
+      setRequestSubmitting(false);
+    }
+  };
+
+  const resetAccessRequestForm = () => {
+    setRequestSuccess(null);
+    setRequestError(null);
+    setAccessForm({
+      organization_name: '',
+      contact_name: '',
+      email: '',
+      phone: '',
+      notes: '',
+      source: 'homepage',
+    });
+    setHoneypot('');
   };
 
   return (
@@ -201,6 +313,162 @@ export const HomePage: React.FC = () => {
                 description="Players and guests can follow live updates while authorized staff manage entry and operations."
               />
             </div>
+          </div>
+        </section>
+
+        <section className="max-w-6xl mx-auto px-6 py-12 lg:py-16">
+          <div className="grid gap-6 lg:grid-cols-12">
+            <article className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm lg:col-span-7">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-2xl font-display font-semibold tracking-tight text-stone-900">
+                  Open tournaments
+                </h2>
+                <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-medium text-stone-600">
+                  Public registration list
+                </span>
+              </div>
+
+              <label htmlFor="open-tournament-search" className="mb-2 block text-sm font-medium text-stone-700">
+                Search by organization or tournament
+              </label>
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-stone-300 px-3 py-2.5 focus-within:ring-2 focus-within:ring-emerald-500">
+                <Search size={16} className="text-stone-500" />
+                <input
+                  id="open-tournament-search"
+                  type="text"
+                  value={discoverableQuery}
+                  onChange={(e) => setDiscoverableQuery(e.target.value)}
+                  placeholder="Rotary, Chamber, memorial..."
+                  className="w-full bg-transparent text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none"
+                />
+              </div>
+
+              {discoverableLoading ? (
+                <p className="text-sm text-stone-500">Loading open tournaments...</p>
+              ) : discoverableError ? (
+                <p className="text-sm text-red-600">{discoverableError}</p>
+              ) : filteredOpenTournaments.length === 0 ? (
+                <p className="text-sm text-stone-600">
+                  No publicly listed tournaments match your search right now.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {filteredOpenTournaments.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                          {item.organization_name}
+                        </p>
+                        <p className="text-base font-semibold text-stone-900">{item.name}</p>
+                        <p className="mt-1 flex flex-wrap items-center gap-3 text-xs text-stone-600">
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin size={13} />
+                            {item.location_name || 'Location TBD'}
+                          </span>
+                          <span>{item.event_date || 'Date TBD'}</span>
+                          <span>${item.entry_fee_dollars.toFixed(2)}</span>
+                          {item.public_capacity_remaining != null && (
+                            <span>{item.public_capacity_remaining} spots remaining</span>
+                          )}
+                        </p>
+                      </div>
+                      <Link
+                        to={`/${item.organization_slug}/tournaments/${item.slug}`}
+                        className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+                      >
+                        View tournament
+                        <ArrowRight size={14} className="ml-1.5" />
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+
+            <article className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm lg:col-span-5">
+              <h2 className="mb-2 flex items-center gap-2 text-2xl font-display font-semibold tracking-tight text-stone-900">
+                <Mail size={20} />
+                Request access
+              </h2>
+              <p className="mb-4 text-sm leading-relaxed text-stone-600">
+                New organizations can request onboarding here. We respond with next steps, setup timing, and pricing.
+              </p>
+
+              {requestSuccess ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="mb-3 flex items-start gap-2">
+                    <CheckCircle2 size={18} className="mt-0.5 text-emerald-700" />
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-900">Request sent</p>
+                      <p className="text-sm text-emerald-800">{requestSuccess}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-emerald-700">
+                    You should also receive a follow-up by email once we review your request.
+                  </p>
+                  <Button type="button" className="mt-4 inline-flex items-center" onClick={resetAccessRequestForm}>
+                    Submit another request
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={submitAccessRequest} className="space-y-3">
+                  <input
+                    type="text"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    className="hidden"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Organization name"
+                    value={accessForm.organization_name}
+                    onChange={(e) => setAccessForm((prev) => ({ ...prev, organization_name: e.target.value }))}
+                    className="w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Contact name"
+                    value={accessForm.contact_name}
+                    onChange={(e) => setAccessForm((prev) => ({ ...prev, contact_name: e.target.value }))}
+                    className="w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email address"
+                    value={accessForm.email}
+                    onChange={(e) => setAccessForm((prev) => ({ ...prev, email: e.target.value }))}
+                    className="w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Phone (optional)"
+                    value={accessForm.phone}
+                    onChange={(e) => setAccessForm((prev) => ({ ...prev, phone: e.target.value }))}
+                    className="w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <textarea
+                    placeholder="What kind of tournaments do you run?"
+                    value={accessForm.notes}
+                    onChange={(e) => setAccessForm((prev) => ({ ...prev, notes: e.target.value }))}
+                    rows={4}
+                    className="w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+
+                  {requestError && <p className="text-sm text-red-600">{requestError}</p>}
+
+                  <Button type="submit" className="inline-flex items-center" disabled={requestSubmitting || honeypot.length > 0}>
+                    {requestSubmitting ? 'Submitting...' : 'Submit request'}
+                    <Send size={14} className="ml-2" />
+                  </Button>
+                </form>
+              )}
+            </article>
           </div>
         </section>
 

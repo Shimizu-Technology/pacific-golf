@@ -3,17 +3,19 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuthToken } from '../hooks/useAuthToken';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { ImageUpload } from '../components/ImageUpload';
+import { isValidWebsiteUrl, normalizeWebsiteUrl } from '../utils/url';
 import {
   ArrowLeft,
   Building2,
   Loader2,
   Save,
-  AlertCircle,
   Palette,
   Mail,
   Phone,
   Globe,
   FileText,
+  UserPlus,
+  X,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -60,6 +62,10 @@ export const CreateOrganizationPage: React.FC = () => {
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [inviteEmailInput, setInviteEmailInput] = useState('');
+  const [adminInviteEmails, setAdminInviteEmails] = useState<string[]>([]);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const inviteDeliveryHint = 'Invite sent. If they do not see it, ask them to check spam/promotions.';
 
   useEffect(() => {
     if (!userLoading && !isSuperAdmin) {
@@ -114,12 +120,35 @@ export const CreateOrganizationPage: React.FC = () => {
       newErrors.contact_email = 'Invalid email format';
     }
 
-    if (formData.website_url && !formData.website_url.startsWith('http')) {
-      newErrors.website_url = 'Website URL must start with http:// or https://';
+    if (formData.website_url && !isValidWebsiteUrl(formData.website_url)) {
+      newErrors.website_url = 'Please enter a valid website URL';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAddInviteEmail = () => {
+    const email = inviteEmailInput.trim().toLowerCase();
+    if (!email) return;
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setInviteError('Please enter a valid email address');
+      return;
+    }
+
+    if (adminInviteEmails.includes(email)) {
+      setInviteError('That email has already been added');
+      return;
+    }
+
+    setAdminInviteEmails(prev => [...prev, email]);
+    setInviteEmailInput('');
+    setInviteError(null);
+  };
+
+  const handleRemoveInviteEmail = (email: string) => {
+    setAdminInviteEmails(prev => prev.filter(item => item !== email));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,6 +160,11 @@ export const CreateOrganizationPage: React.FC = () => {
     }
 
     setSaving(true);
+    const normalizedFormData = {
+      ...formData,
+      website_url: normalizeWebsiteUrl(formData.website_url),
+    };
+    setFormData(normalizedFormData);
 
     try {
       const token = await getToken();
@@ -142,7 +176,12 @@ export const CreateOrganizationPage: React.FC = () => {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ organization: formData }),
+          body: JSON.stringify({
+            organization: {
+              ...normalizedFormData,
+              admin_invite_emails: adminInviteEmails,
+            },
+          }),
         }
       );
 
@@ -153,6 +192,9 @@ export const CreateOrganizationPage: React.FC = () => {
 
       const org = await response.json();
       toast.success('Organization created successfully!');
+      if (adminInviteEmails.length > 0) {
+        toast.success(inviteDeliveryHint, { duration: 5000 });
+      }
       
       // Navigate to the super admin dashboard to see the new org
       setTimeout(() => {
@@ -167,8 +209,8 @@ export const CreateOrganizationPage: React.FC = () => {
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
       </div>
     );
   }
@@ -178,40 +220,40 @@ export const CreateOrganizationPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-stone-50">
       <Toaster position="top-right" />
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <header className="border-b border-stone-800 bg-gradient-to-r from-stone-900 via-slate-900 to-stone-800 text-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
           <Link
             to="/super-admin"
-            className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+            className="mb-4 inline-flex items-center gap-2 text-sm text-stone-300 transition-colors hover:text-white"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-green-100 rounded-xl">
-              <Building2 className="w-6 h-6 text-green-600" />
+            <div className="rounded-2xl bg-white/10 p-3 ring-1 ring-white/15">
+              <Building2 className="w-6 h-6 text-emerald-300" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Create Organization</h1>
-              <p className="text-gray-500">Set up a new golf organization</p>
+              <h1 className="text-2xl font-display font-bold tracking-tight">Create Organization</h1>
+              <p className="text-sm text-stone-300">Set up a new golf organization</p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <form onSubmit={handleSubmit}>
           {/* Basic Info */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Basic Information</h2>
+          <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
+            <h2 className="mb-6 text-lg font-semibold text-stone-900">Basic Information</h2>
             
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   Organization Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -220,8 +262,8 @@ export const CreateOrganizationPage: React.FC = () => {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="e.g., Make-A-Wish Guam"
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.name ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full rounded-xl border bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    errors.name ? 'border-red-500' : 'border-stone-300'
                   }`}
                 />
                 {errors.name && (
@@ -230,12 +272,12 @@ export const CreateOrganizationPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   URL Slug <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center">
-                  <span className="px-4 py-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-xl text-gray-500">
-                    pacificgolf.io/
+                  <span className="rounded-l-xl border border-r-0 border-stone-300 bg-stone-100 px-4 py-3 text-stone-500">
+                    pacific-golf.com/
                   </span>
                   <input
                     type="text"
@@ -243,22 +285,22 @@ export const CreateOrganizationPage: React.FC = () => {
                     value={formData.slug}
                     onChange={handleChange}
                     placeholder="make-a-wish-guam"
-                    className={`flex-1 px-4 py-3 border rounded-r-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                      errors.slug ? 'border-red-500' : 'border-gray-300'
+                    className={`flex-1 rounded-r-xl border bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                      errors.slug ? 'border-red-500' : 'border-stone-300'
                     }`}
                   />
                 </div>
                 {errors.slug ? (
                   <p className="mt-1 text-sm text-red-600">{errors.slug}</p>
                 ) : (
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-stone-500">
                     This will be the URL for your organization's tournaments
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   <FileText className="w-4 h-4 inline mr-1" />
                   Description
                 </label>
@@ -268,22 +310,22 @@ export const CreateOrganizationPage: React.FC = () => {
                   onChange={handleChange}
                   rows={3}
                   placeholder="Brief description of your organization..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             </div>
           </div>
 
           {/* Branding */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">
+          <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
+            <h2 className="mb-6 text-lg font-semibold text-stone-900">
               <Palette className="w-5 h-5 inline mr-2" />
               Branding
             </h2>
             
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   Brand Color
                 </label>
                 <div className="flex items-center gap-4 flex-wrap">
@@ -292,9 +334,9 @@ export const CreateOrganizationPage: React.FC = () => {
                       key={color.value}
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, primary_color: color.value }))}
-                      className={`w-10 h-10 rounded-xl border-2 transition-all ${
+                      className={`h-10 w-10 rounded-xl border-2 transition-all ${
                         formData.primary_color === color.value
-                          ? 'border-gray-900 scale-110'
+                          ? 'scale-110 border-stone-900'
                           : 'border-transparent hover:scale-105'
                       }`}
                       style={{ backgroundColor: color.value }}
@@ -306,9 +348,9 @@ export const CreateOrganizationPage: React.FC = () => {
                       type="color"
                       value={formData.primary_color}
                       onChange={(e) => setFormData(prev => ({ ...prev, primary_color: e.target.value }))}
-                      className="w-10 h-10 rounded-xl cursor-pointer"
+                      className="h-10 w-10 cursor-pointer rounded-xl"
                     />
-                    <span className="text-sm text-gray-500">{formData.primary_color}</span>
+                    <span className="text-sm text-stone-500">{formData.primary_color}</span>
                   </div>
                 </div>
               </div>
@@ -320,6 +362,8 @@ export const CreateOrganizationPage: React.FC = () => {
                 getToken={getToken}
                 placeholder="Upload logo (PNG or SVG recommended)"
                 helpText="Square image works best. Max 5MB."
+                recommendedSize="512x512px (minimum 256x256px)"
+                usageNote="Admin header, organization cards, and public page branding"
               />
 
               <ImageUpload
@@ -328,19 +372,22 @@ export const CreateOrganizationPage: React.FC = () => {
                 onChange={(url) => setFormData(prev => ({ ...prev, banner_url: url }))}
                 getToken={getToken}
                 placeholder="Upload banner image"
-                helpText="Wide image (e.g. 1200×400) works best. Max 5MB."
+                helpText="Wide image (hero/background) works best. Max 5MB."
+                recommendedSize="1600x600px (minimum 1200x400px)"
+                usageNote="Public organization and tournament hero sections"
+                previewClassName="h-24 w-full object-cover"
               />
 
               {/* Preview */}
               {(formData.name || formData.logo_url) && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-sm font-medium text-gray-500 mb-3">Preview</p>
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                  <p className="mb-3 text-sm font-medium text-stone-500">Preview</p>
                   <div className="flex items-center gap-4">
                     {formData.logo_url ? (
                       <img
                         src={formData.logo_url}
                         alt="Logo preview"
-                        className="w-12 h-12 rounded-xl object-contain bg-white"
+                        className="h-12 w-12 rounded-xl bg-white object-contain"
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
@@ -354,26 +401,73 @@ export const CreateOrganizationPage: React.FC = () => {
                       </div>
                     )}
                     <div>
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-semibold text-stone-900">
                         {formData.name || 'Organization Name'}
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-stone-500">
                         /{formData.slug || 'slug'}
                       </p>
                     </div>
                   </div>
                 </div>
               )}
+
+              {/* Usage preview */}
+              <div className="rounded-xl border border-stone-200 bg-white p-4">
+                <p className="mb-3 text-sm font-medium text-stone-600">Public Hero Preview</p>
+                <div
+                  className="relative overflow-hidden rounded-xl border border-stone-200"
+                  style={{
+                    backgroundColor: formData.primary_color,
+                    minHeight: '120px',
+                  }}
+                >
+                  {formData.banner_url && (
+                    <img
+                      src={formData.banner_url}
+                      alt="Banner preview"
+                      className="absolute inset-0 h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-black/35" />
+                  <div className="relative z-10 flex items-center gap-3 px-4 py-4 text-white">
+                    {formData.logo_url ? (
+                      <img
+                        src={formData.logo_url}
+                        alt="Logo preview"
+                        className="h-10 w-10 rounded-md border border-white/25 bg-white/90 object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-white/20 font-semibold">
+                        {(formData.name || '?').charAt(0)}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold">{formData.name || 'Organization Name'}</p>
+                      <p className="text-xs text-white/85">/{formData.slug || 'organization-slug'}</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-stone-500">
+                  This is a representative preview of how your branding appears on public-facing hero sections.
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Contact Info */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Contact Information</h2>
+          <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
+            <h2 className="mb-6 text-lg font-semibold text-stone-900">Contact Information</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   <Mail className="w-4 h-4 inline mr-1" />
                   Contact Email
                 </label>
@@ -383,8 +477,8 @@ export const CreateOrganizationPage: React.FC = () => {
                   value={formData.contact_email}
                   onChange={handleChange}
                   placeholder="events@example.org"
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.contact_email ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full rounded-xl border bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    errors.contact_email ? 'border-red-500' : 'border-stone-300'
                   }`}
                 />
                 {errors.contact_email && (
@@ -393,7 +487,7 @@ export const CreateOrganizationPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   <Phone className="w-4 h-4 inline mr-1" />
                   Contact Phone
                 </label>
@@ -403,25 +497,31 @@ export const CreateOrganizationPage: React.FC = () => {
                   value={formData.contact_phone}
                   onChange={handleChange}
                   placeholder="671-555-0123"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   <Globe className="w-4 h-4 inline mr-1" />
                   Website
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   name="website_url"
                   value={formData.website_url}
                   onChange={handleChange}
-                  placeholder="https://example.org"
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.website_url ? 'border-red-500' : 'border-gray-300'
+                  onBlur={() =>
+                    setFormData(prev => ({ ...prev, website_url: normalizeWebsiteUrl(prev.website_url) }))
+                  }
+                  placeholder="example.org"
+                  className={`w-full rounded-xl border bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    errors.website_url ? 'border-red-500' : 'border-stone-300'
                   }`}
                 />
+                {!errors.website_url && (
+                  <p className="mt-1 text-sm text-stone-500">We'll automatically add https:// if omitted</p>
+                )}
                 {errors.website_url && (
                   <p className="mt-1 text-sm text-red-600">{errors.website_url}</p>
                 )}
@@ -429,18 +529,80 @@ export const CreateOrganizationPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Optional Admin Invites */}
+          <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
+            <h2 className="mb-2 text-lg font-semibold text-stone-900">Initial Organization Admins (Optional)</h2>
+            <p className="mb-4 text-sm text-stone-500">
+              Invite admins now so they receive an email with instructions to create their account and sign in.
+            </p>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <input
+                type="email"
+                value={inviteEmailInput}
+                onChange={(e) => {
+                  setInviteEmailInput(e.target.value);
+                  if (inviteError) setInviteError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddInviteEmail();
+                  }
+                }}
+                placeholder="admin@example.org"
+                className={`flex-1 rounded-xl border bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                  inviteError ? 'border-red-500' : 'border-stone-300'
+                }`}
+              />
+              <button
+                type="button"
+                onClick={handleAddInviteEmail}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+              >
+                <UserPlus className="h-4 w-4" />
+                Add Admin
+              </button>
+            </div>
+            {inviteError && <p className="mt-2 text-sm text-red-600">{inviteError}</p>}
+
+            {adminInviteEmails.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {adminInviteEmails.map((email) => (
+                  <span
+                    key={email}
+                    className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-sm text-stone-700"
+                  >
+                    {email}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveInviteEmail(email)}
+                      className="rounded-full p-0.5 text-stone-500 transition-colors hover:bg-stone-200 hover:text-stone-700"
+                      aria-label={`Remove ${email}`}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <p className="mt-3 text-xs text-stone-500">
+              New admins receive an invite email with sign-up instructions. If not received, check spam/promotions.
+            </p>
+          </div>
+
           {/* Submit */}
           <div className="flex items-center justify-between">
             <Link
               to="/super-admin"
-              className="px-6 py-3 text-gray-700 hover:text-gray-900"
+              className="px-6 py-3 text-stone-700 transition-colors hover:text-stone-900"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-xl font-semibold transition-colors shadow-lg shadow-green-600/25"
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 font-semibold text-white shadow-brand transition-colors hover:bg-emerald-700 disabled:bg-stone-300"
             >
               {saving ? (
                 <>

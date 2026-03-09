@@ -20,6 +20,36 @@ export interface Organization {
   updated_at?: string;
 }
 
+export interface PublicTournamentListing {
+  id: number;
+  name: string;
+  slug: string;
+  event_date: string | null;
+  location_name: string | null;
+  organization_slug: string;
+  organization_name: string;
+  registration_open: boolean;
+  public_capacity_remaining: number | null;
+  entry_fee_dollars: number;
+}
+
+export interface AccessRequestPayload {
+  organization_name: string;
+  contact_name: string;
+  email: string;
+  phone?: string;
+  notes?: string;
+  source?: "homepage" | "manual" | "referral" | "unknown";
+}
+
+export interface AccessRequestRecord extends AccessRequestPayload {
+  id: number;
+  status: "new" | "contacted" | "qualified" | "closed";
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  created_at: string;
+}
+
 // Sponsor types
 export interface Sponsor {
   id: number;
@@ -50,6 +80,7 @@ export interface Tournament {
   reserved_slots: number;
   entry_fee: number;
   entry_fee_dollars: number;
+  employee_discount_enabled?: boolean;
   organization_id?: string;
   organization_slug?: string;
   format_name: string | null;
@@ -112,6 +143,20 @@ export interface Tournament {
   
   // Sponsors (public display)
   sponsors?: Sponsor[];
+
+  // Branding (org fallback + optional tournament overrides)
+  use_org_branding?: boolean;
+  theme_preset?: 'classic' | 'premium' | 'minimal' | 'event';
+  primary_color_override?: string | null;
+  accent_color_override?: string | null;
+  logo_url_override?: string | null;
+  banner_url_override?: string | null;
+  signature_image_url_override?: string | null;
+  effective_primary_color?: string | null;
+  effective_accent_color?: string | null;
+  effective_logo_url?: string | null;
+  effective_banner_url?: string | null;
+  effective_signature_image_url?: string | null;
 
   // Legacy compatibility fields (optional)
   employee_entry_fee?: number;
@@ -258,6 +303,8 @@ export interface EmbeddedCheckoutSession {
   client_secret: string;
   session_id: string;
   test_mode?: boolean;
+  is_employee?: boolean;
+  entry_fee?: number;
   error?: string;
 }
 
@@ -286,6 +333,7 @@ export interface RegistrationStatus {
   // Employee discount
   employee_entry_fee_cents: number;
   employee_entry_fee_dollars: number;
+  employee_discount_enabled?: boolean;
   employee_discount_available: boolean;
   // Tournament configuration
   tournament_year: number | string;
@@ -329,6 +377,7 @@ export interface GolferStats {
   entry_fee_dollars: number;
   employee_entry_fee_cents: number;
   employee_entry_fee_dollars: number;
+  employee_discount_enabled?: boolean;
 }
 
 export interface PaginationMeta {
@@ -458,6 +507,15 @@ export class ApiClient {
     return this.request('/api/v1/tournaments/current', {}, false);
   }
 
+  async getDiscoverableTournaments(query?: string): Promise<PublicTournamentListing[]> {
+    const searchParams = new URLSearchParams();
+    if (query && query.trim().length > 0) {
+      searchParams.set('q', query.trim());
+    }
+    const suffix = searchParams.toString();
+    return this.request(`/api/v1/tournaments/discoverable${suffix ? `?${suffix}` : ''}`, {}, false);
+  }
+
   async getTournament(id: number): Promise<Tournament> {
     return this.request(`/api/v1/tournaments/${id}`);
   }
@@ -527,6 +585,36 @@ export class ApiClient {
     return this.requestWithToken('/api/v1/admin/organizations', token);
   }
 
+  async submitAccessRequest(
+    payload: AccessRequestPayload,
+    websiteHoneypot?: string
+  ): Promise<{ message: string }> {
+    return this.request('/api/v1/access_requests', {
+      method: 'POST',
+      body: JSON.stringify({
+        access_request: payload,
+        website: websiteHoneypot,
+      }),
+    }, false);
+  }
+
+  async getAccessRequestsWithToken(token: string): Promise<AccessRequestRecord[]> {
+    return this.requestWithToken('/api/v1/admin/access_requests', token);
+  }
+
+  async updateAccessRequestStatusWithToken(
+    token: string,
+    id: number,
+    status: AccessRequestRecord['status']
+  ): Promise<AccessRequestRecord> {
+    return this.requestWithToken(`/api/v1/admin/access_requests/${id}`, token, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        access_request: { status },
+      }),
+    });
+  }
+
   async createOrganization(data: Partial<Organization>): Promise<Organization> {
     return this.request('/api/v1/admin/organizations', {
       method: 'POST',
@@ -547,6 +635,17 @@ export class ApiClient {
     return { data };
   }
 
+  async createOrganizationTournament(orgSlug: string, data: Partial<Tournament>): Promise<Tournament> {
+    const response = await this.request<{
+      tournament: Tournament;
+      message: string;
+    }>(`/api/v1/admin/organizations/${orgSlug}/tournaments`, {
+      method: 'POST',
+      body: JSON.stringify({ tournament: data }),
+    });
+    return response.tournament;
+  }
+
   // Public endpoints (no auth required)
   async getRegistrationStatus(): Promise<RegistrationStatus> {
     return this.request('/api/v1/golfers/registration_status', {}, false);
@@ -565,8 +664,9 @@ export class ApiClient {
       notes?: string;
     };
     waiver_accepted: boolean;
+    employee_number?: string;
     tournament_id?: string | number;
-  }): Promise<{ golfer: Golfer; message: string }> {
+  }): Promise<{ golfer: Golfer; message: string; employee_discount_applied?: boolean }> {
     return this.request('/api/v1/golfers', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -837,6 +937,10 @@ export class ApiClient {
     return this.request('/api/v1/admins/me');
   }
 
+  async getCurrentAdminWithToken(token: string): Promise<Admin> {
+    return this.requestWithToken('/api/v1/admins/me', token);
+  }
+
   async getAdmins(): Promise<Admin[]> {
     return this.request('/api/v1/admins');
   }
@@ -852,6 +956,12 @@ export class ApiClient {
     return this.request(`/api/v1/admins/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ admin: data }),
+    });
+  }
+
+  async resendAdminInvite(id: number): Promise<{ success: boolean; invitation_sent: boolean; signed_in: boolean }> {
+    return this.request(`/api/v1/admins/${id}/resend_invite`, {
+      method: 'POST',
     });
   }
 
@@ -969,21 +1079,27 @@ export class ApiClient {
     return this.request(`/api/v1/employee_numbers${query}`);
   }
 
-  async createEmployeeNumber(data: { employee_number: string; employee_name?: string }): Promise<EmployeeNumber> {
+  async createEmployeeNumber(
+    data: { employee_number: string; employee_name?: string },
+    tournamentId?: number
+  ): Promise<EmployeeNumber> {
     return this.request('/api/v1/employee_numbers', {
       method: 'POST',
-      body: JSON.stringify({ employee_number: data }),
+      body: JSON.stringify({ employee_number: data, tournament_id: tournamentId || this.currentTournamentId }),
     });
   }
 
-  async bulkCreateEmployeeNumbers(numbers: Array<{ employee_number: string; employee_name?: string } | string>): Promise<{
+  async bulkCreateEmployeeNumbers(
+    numbers: Array<{ employee_number: string; employee_name?: string } | string>,
+    tournamentId?: number
+  ): Promise<{
     created: number;
     errors: Array<{ employee_number: string; errors: string[] }>;
     employee_numbers: EmployeeNumber[];
   }> {
     return this.request('/api/v1/employee_numbers/bulk_create', {
       method: 'POST',
-      body: JSON.stringify({ employee_numbers: numbers }),
+      body: JSON.stringify({ employee_numbers: numbers, tournament_id: tournamentId || this.currentTournamentId }),
     });
   }
 
@@ -1006,7 +1122,7 @@ export class ApiClient {
     });
   }
 
-  async validateEmployeeNumber(employeeNumber: string): Promise<{
+  async validateEmployeeNumber(employeeNumber: string, tournamentId?: number): Promise<{
     valid: boolean;
     error?: string;
     employee_fee?: number;
@@ -1015,7 +1131,7 @@ export class ApiClient {
   }> {
     return this.request('/api/v1/employee_numbers/validate', {
       method: 'POST',
-      body: JSON.stringify({ employee_number: employeeNumber }),
+      body: JSON.stringify({ employee_number: employeeNumber, tournament_id: tournamentId }),
     }, false); // No auth required
   }
 }

@@ -22,10 +22,12 @@ Rails.application.routes.draw do
 
       # Current tournament (legacy, for backwards compatibility)
       get 'tournaments/current' => 'tournaments#current'
+      get 'tournaments/discoverable' => 'tournaments#discoverable'
 
       # Registration (public)
       get 'golfers/registration_status' => 'golfers#registration_status'
       post 'golfers' => 'golfers#create'
+      post 'access_requests' => 'access_requests#create'
 
       # Payment Links (public endpoints)
       get 'payment_links/:token' => 'payment_links#show'
@@ -68,6 +70,7 @@ Rails.application.routes.draw do
       post 'admin/organizations/:slug/members' => 'organizations#add_member'
       patch 'admin/organizations/:slug/members/:member_id' => 'organizations#update_member'
       delete 'admin/organizations/:slug/members/:member_id' => 'organizations#remove_member'
+      post 'admin/organizations/:slug/members/:member_id/resend_invite' => 'organizations#resend_member_invite'
       get 'admin/organizations/:slug/tournaments' => 'organizations#admin_tournaments'
       post 'admin/organizations/:slug/tournaments' => 'organizations#create_tournament'
       get 'admin/organizations/:slug/tournaments/:tournament_slug' => 'organizations#admin_tournament'
@@ -75,6 +78,8 @@ Rails.application.routes.draw do
       patch 'admin/organizations/:slug/tournaments/:tournament_slug/golfers/:golfer_id' => 'organizations#update_golfer'
       post 'admin/organizations/:slug/tournaments/:tournament_slug/golfers/:golfer_id/cancel' => 'organizations#cancel_golfer'
       post 'admin/organizations/:slug/tournaments/:tournament_slug/golfers/:golfer_id/refund' => 'organizations#refund_golfer'
+      get 'admin/access_requests' => 'access_requests#index'
+      patch 'admin/access_requests/:id' => 'access_requests#update'
 
       # Tournaments (admin)
       resources :tournaments, except: [:create] do
@@ -100,10 +105,23 @@ Rails.application.routes.draw do
           post :refund
           post :mark_refunded
           post :send_payment_link
+          post :toggle_employee
         end
         collection do
           get :stats
+          post :bulk_set_employee
           post :bulk_send_payment_links
+        end
+      end
+
+      # Employee Numbers
+      resources :employee_numbers, only: [:index, :create, :update, :destroy] do
+        member do
+          post :release
+        end
+        collection do
+          post :bulk_create
+          post :validate
         end
       end
 
@@ -165,6 +183,9 @@ Rails.application.routes.draw do
       resources :admins do
         collection do
           get :me
+        end
+        member do
+          post :resend_invite
         end
       end
 

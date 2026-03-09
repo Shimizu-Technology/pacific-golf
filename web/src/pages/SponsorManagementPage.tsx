@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { useOrganization } from '../components/OrganizationProvider';
+import { AdminLayout } from '../components/AdminLayout';
 import { 
   Building2, 
   Plus,
@@ -128,44 +129,44 @@ export const SponsorManagementPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
-      </div>
+      <AdminLayout>
+        <div className="min-h-[320px] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AdminLayout>
+      <div className="space-y-6">
       {/* Header */}
-      <header 
-        className="text-white py-6 px-4"
-        style={{ backgroundColor: organization?.primary_color || '#1e40af' }}
-      >
-        <div className="max-w-6xl mx-auto">
+      <header className="rounded-2xl border border-stone-200 bg-white px-4 py-6 shadow-soft">
+        <div>
           <div className="flex items-center justify-between">
             <div>
               <Link
                 to={`/${organization?.slug}/admin/tournaments/${tournamentSlug}`}
-                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-2"
+                className="mb-2 inline-flex items-center gap-2 text-stone-500 hover:text-stone-700"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Tournament
               </Link>
-              <h1 className="text-2xl font-bold flex items-center gap-3">
-                <Building2 className="w-8 h-8" />
+              <h1 className="flex items-center gap-3 text-2xl font-bold text-stone-900">
+                <Building2 className="w-8 h-8 text-emerald-600" />
                 Sponsor Management
               </h1>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={fetchData}
-                className="p-2 bg-white/10 rounded-lg hover:bg-white/20"
+                className="rounded-lg p-2 text-stone-600 hover:bg-stone-100"
               >
                 <RefreshCw className="w-5 h-5" />
               </button>
               <button
                 onClick={() => { setEditingSponsor(null); setShowModal(true); }}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-brand-600 rounded-lg hover:bg-brand-50 font-medium"
+                className="flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 font-medium text-white hover:bg-green-800"
               >
                 <Plus className="w-5 h-5" />
                 Add Sponsor
@@ -176,10 +177,10 @@ export const SponsorManagementPage: React.FC = () => {
       </header>
 
       {/* Stats */}
-      <div className="max-w-6xl mx-auto px-4 py-4">
+      <div>
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3">
-            <Building2 className="w-8 h-8 text-brand-500" />
+            <Building2 className="w-8 h-8 text-emerald-600" />
             <div>
               <p className="text-sm text-gray-500">Total Sponsors</p>
               <p className="text-xl font-bold">{sponsors.length}</p>
@@ -203,7 +204,7 @@ export const SponsorManagementPage: React.FC = () => {
       </div>
 
       {/* Sponsors by Tier */}
-      <main className="max-w-6xl mx-auto px-4 pb-8">
+      <main className="pb-8">
         {TIERS.map(tier => {
           const tierSponsors = sponsorsByTier[tier.value] || [];
           if (tierSponsors.length === 0) return null;
@@ -243,7 +244,7 @@ export const SponsorManagementPage: React.FC = () => {
                           href={sponsor.website_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-brand-600 hover:underline flex items-center gap-1 mt-1"
+                          className="mt-1 flex items-center gap-1 text-sm text-emerald-700 hover:underline"
                         >
                           <ExternalLink className="w-3 h-3" />
                           Website
@@ -288,7 +289,8 @@ export const SponsorManagementPage: React.FC = () => {
           onSuccess={() => { setShowModal(false); setEditingSponsor(null); fetchData(); }}
         />
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 
@@ -454,7 +456,7 @@ const SponsorModal: React.FC<{
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 disabled:opacity-50"
             >
               {saving ? 'Saving...' : (sponsor ? 'Update' : 'Create')}
             </button>

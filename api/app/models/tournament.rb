@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class Tournament < ApplicationRecord
+  HEX_COLOR_REGEX = /\A#[0-9A-Fa-f]{6}\z/
+  THEME_PRESETS = %w[classic premium minimal event].freeze
+
   # Associations
   belongs_to :organization
   has_many :golfers, dependent: :restrict_with_error
@@ -12,6 +15,7 @@ class Tournament < ApplicationRecord
   has_many :activity_logs, dependent: :nullify
   has_many :tournament_assignments, dependent: :destroy
   has_many :assigned_users, through: :tournament_assignments, source: :user
+  has_many :employee_numbers, dependent: :destroy
 
   # Validations
   validates :name, presence: true
@@ -19,7 +23,18 @@ class Tournament < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[draft open closed in_progress completed archived] }
   validates :max_capacity, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :entry_fee, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :employee_entry_fee, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :employee_discount_enabled, inclusion: { in: [true, false] }
   validates :slug, uniqueness: { scope: :organization_id, case_sensitive: false }, allow_blank: true
+  validates :public_listed, inclusion: { in: [true, false] }
+  validates :use_org_branding, inclusion: { in: [true, false] }
+  validates :theme_preset, presence: true, inclusion: { in: THEME_PRESETS }
+  validates :primary_color_override,
+            format: { with: HEX_COLOR_REGEX, message: "must be a hex color like #16a34a" },
+            allow_blank: true
+  validates :accent_color_override,
+            format: { with: HEX_COLOR_REGEX, message: "must be a hex color like #16a34a" },
+            allow_blank: true
 
   # Callbacks
   before_validation :generate_slug, on: :create
@@ -28,6 +43,10 @@ class Tournament < ApplicationRecord
   scope :active, -> { where.not(status: 'archived') }
   scope :archived, -> { where(status: 'archived') }
   scope :open_for_registration, -> { where(status: 'open', registration_open: true) }
+  scope :discoverable_public, lambda {
+    where(public_listed: true, status: %w[open in_progress], registration_open: true)
+      .where("registration_deadline IS NULL OR registration_deadline > ?", Time.current)
+  }
   scope :by_year, ->(year) { where(year: year) }
   scope :recent, -> { order(year: :desc, created_at: :desc) }
   scope :for_organization, ->(org) { where(organization: org) }
@@ -94,6 +113,11 @@ class Tournament < ApplicationRecord
   def entry_fee_dollars
     return 0.00 if entry_fee.nil?
     entry_fee / 100.0
+  end
+
+  def employee_entry_fee_dollars
+    return 0.00 if employee_entry_fee.nil?
+    employee_entry_fee / 100.0
   end
 
   def early_bird_fee_dollars
@@ -191,6 +215,43 @@ class Tournament < ApplicationRecord
     "#{base}/#{organization.slug}/tournaments/#{slug}"
   end
 
+  def validate_employee_number(employee_number)
+    return { valid: false, error: "Employee discount is not enabled for this tournament" } unless employee_discount_enabled?
+    return { valid: false, error: "Employee number is required" } if employee_number.blank?
+
+    record = employee_numbers.find_by(employee_number: employee_number.strip)
+    return { valid: false, error: "Invalid employee number" } unless record
+    return { valid: false, error: "This employee number has already been used" } if record.used?
+
+    { valid: true, employee_number_record: record }
+  end
+
+  # Branding resolution (org defaults with optional tournament overrides)
+  def effective_primary_color
+    return organization&.primary_color if use_org_branding?
+    primary_color_override.presence || organization&.primary_color
+  end
+
+  def effective_accent_color
+    return nil if use_org_branding?
+    accent_color_override.presence
+  end
+
+  def effective_logo_url
+    return organization&.logo_url if use_org_branding?
+    logo_url_override.presence || organization&.logo_url
+  end
+
+  def effective_banner_url
+    return organization&.banner_url if use_org_branding?
+    banner_url_override.presence || organization&.banner_url
+  end
+
+  def effective_signature_image_url
+    return nil if use_org_branding?
+    signature_image_url_override.presence
+  end
+
   # Actions
   def archive!
     update!(status: 'archived', registration_open: false)
@@ -228,12 +289,21 @@ class Tournament < ApplicationRecord
       max_capacity: max_capacity,
       reserved_slots: reserved_slots,
       entry_fee: entry_fee,
+      employee_discount_enabled: employee_discount_enabled,
+      employee_entry_fee: employee_entry_fee,
       format_name: format_name,
       fee_includes: fee_includes,
       checks_payable_to: checks_payable_to,
       contact_name: contact_name,
       contact_phone: contact_phone,
-      registration_open: false
+      registration_open: false,
+      use_org_branding: use_org_branding,
+      theme_preset: theme_preset,
+      primary_color_override: primary_color_override,
+      accent_color_override: accent_color_override,
+      logo_url_override: logo_url_override,
+      banner_url_override: banner_url_override,
+      signature_image_url_override: signature_image_url_override
     )
   end
 

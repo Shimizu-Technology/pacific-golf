@@ -7,6 +7,7 @@ import { api, Golfer, GolferStats, ActivityLog } from '../services/api';
 import { AddGolferModal } from '../components/AddGolferModal';
 import { BulkActionBar, BulkActionButton } from '../components/BulkActionBar';
 import { useGolferChannel } from '../hooks/useGolferChannel';
+import { useTournament } from '../contexts';
 import * as XLSX from 'xlsx';
 
 // Format date for display (uses browser's locale which respects timezone)
@@ -29,6 +30,7 @@ const formatRegistrationDate = (dateString: string) => {
 };
 
 export const AdminDashboard: React.FC = () => {
+  const { currentTournament, isLoading: isTournamentLoading } = useTournament();
   const [golfers, setGolfers] = useState<Golfer[]>([]);
   const [stats, setStats] = useState<GolferStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,13 +115,23 @@ export const AdminDashboard: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (isTournamentLoading) return;
+
+    if (!currentTournament?.id) {
+      setGolfers([]);
+      setStats(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       const [golfersResponse, statsResponse] = await Promise.all([
-        api.getGolfers({ per_page: 1000 }),
-        api.getGolferStats(),
+        api.getGolfers({ per_page: 1000, tournament_id: currentTournament.id }),
+        api.getGolferStats(currentTournament.id),
       ]);
       setGolfers(golfersResponse.golfers);
       setStats(statsResponse);
@@ -129,31 +141,34 @@ export const AdminDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentTournament?.id, isTournamentLoading]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   // Real-time updates via ActionCable
   const handleGolferUpdated = useCallback((updatedGolfer: Golfer) => {
+    if (!currentTournament?.id || updatedGolfer.tournament_id !== currentTournament.id) return;
     setGolfers(prev => prev.map(g => g.id === updatedGolfer.id ? updatedGolfer : g));
     // Also update selectedGolfer if it's the same one
     setSelectedGolfer(prev => prev?.id === updatedGolfer.id ? updatedGolfer : prev);
     // Refresh stats
-    api.getGolferStats().then(setStats).catch(console.error);
-  }, []);
+    api.getGolferStats(currentTournament.id).then(setStats).catch(console.error);
+  }, [currentTournament?.id]);
 
   const handleGolferCreated = useCallback((newGolfer: Golfer) => {
+    if (!currentTournament?.id || newGolfer.tournament_id !== currentTournament.id) return;
     setGolfers(prev => [...prev, newGolfer]);
-    api.getGolferStats().then(setStats).catch(console.error);
-  }, []);
+    api.getGolferStats(currentTournament.id).then(setStats).catch(console.error);
+  }, [currentTournament?.id]);
 
   const handleGolferDeleted = useCallback((golferId: number) => {
+    if (!currentTournament?.id) return;
     setGolfers(prev => prev.filter(g => g.id !== golferId));
     setSelectedGolfer(prev => prev?.id === golferId ? null : prev);
-    api.getGolferStats().then(setStats).catch(console.error);
-  }, []);
+    api.getGolferStats(currentTournament.id).then(setStats).catch(console.error);
+  }, [currentTournament?.id]);
 
   useGolferChannel({
     onGolferUpdated: handleGolferUpdated,
@@ -956,6 +971,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowAddModal(true)}
+              disabled={!currentTournament}
               className="p-2 text-brand-600 hover:text-brand-800 transition-colors"
               title="Add Golfer"
             >
@@ -971,6 +987,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="relative" ref={exportMenuRef}>
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={!currentTournament}
                 className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
                 title="Export"
               >
@@ -1058,21 +1075,21 @@ export const AdminDashboard: React.FC = () => {
           
           {/* Mobile Stats Grid */}
           <div className="grid grid-cols-4 gap-2">
-            <div className="bg-white rounded-lg p-2 border border-gray-200 text-center">
+            <div className="bg-gradient-to-br from-stone-50 to-white rounded-lg p-2 border border-stone-200 text-center">
               <p className="text-lg font-bold text-gray-900">{stats?.total || 0}</p>
               <p className="text-[10px] text-gray-500 leading-tight">Total</p>
             </div>
-            <div className="bg-white rounded-lg p-2 border border-gray-200 text-center">
-              <p className="text-lg font-bold text-purple-600">{stats?.paid || 0}</p>
-              <p className="text-[10px] text-gray-500 leading-tight">Paid</p>
+            <div className="bg-gradient-to-br from-emerald-50 to-white rounded-lg p-2 border border-emerald-200 text-center">
+              <p className="text-lg font-bold text-emerald-800">{stats?.confirmed || 0}</p>
+              <p className="text-[10px] text-emerald-700 leading-tight">Confirmed</p>
             </div>
-            <div className="bg-white rounded-lg p-2 border border-gray-200 text-center">
-              <p className="text-lg font-bold text-teal-600">{stats?.checked_in || 0}</p>
-              <p className="text-[10px] text-gray-500 leading-tight">Checked In</p>
+            <div className="bg-gradient-to-br from-amber-50 to-white rounded-lg p-2 border border-amber-200 text-center">
+              <p className="text-lg font-bold text-amber-700">{stats?.waitlist || 0}</p>
+              <p className="text-[10px] text-amber-700 leading-tight">Waitlist</p>
             </div>
-            <div className="bg-white rounded-lg p-2 border border-gray-200 text-center">
-              <p className="text-lg font-bold text-amber-600">{stats?.waitlist || 0}</p>
-              <p className="text-[10px] text-gray-500 leading-tight">Waitlist</p>
+            <div className="bg-gradient-to-br from-cyan-50 to-white rounded-lg p-2 border border-cyan-200 text-center">
+              <p className="text-lg font-bold text-cyan-800">{stats?.paid || 0}</p>
+              <p className="text-[10px] text-cyan-700 leading-tight">Paid</p>
             </div>
           </div>
         </div>
@@ -1083,6 +1100,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setShowAddModal(true)}
+              disabled={!currentTournament}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               <UserPlus size={18} />
@@ -1098,6 +1116,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={!currentTournament}
                 className="flex items-center gap-2 px-4 py-2 bg-brand-800 text-white rounded-lg hover:bg-brand-700 transition-colors"
               >
                 <Download size={18} />
@@ -1159,6 +1178,15 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
+        {!currentTournament && (
+          <Card className="border border-stone-200 bg-stone-50 p-4">
+            <p className="text-sm font-medium text-stone-700">No tournament selected</p>
+            <p className="mt-1 text-sm text-stone-500">
+              Create a tournament or select one from the tournament picker to view dashboard metrics.
+            </p>
+          </Card>
+        )}
+
         {/* Desktop Capacity Indicator */}
         {stats && (
           <div className="hidden lg:block">
@@ -1210,26 +1238,26 @@ export const AdminDashboard: React.FC = () => {
 
         {/* Desktop Stats Grid - Full cards */}
         <div className="hidden lg:grid lg:grid-cols-5 gap-4">
-          <Card className="bg-brand-50 border-l-4 border-brand-800">
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Total</h3>
-            <p className="text-3xl font-bold text-brand-800">{stats?.total || 0}</p>
-            <p className="text-xs text-gray-500 mt-0.5">excl. cancelled</p>
+          <Card className="bg-white border border-gray-200 border-l-4 border-l-brand-800 p-4">
+            <h3 className="text-sm font-medium text-stone-600">Total</h3>
+            <p className="mt-1 text-3xl font-bold text-stone-900">{stats?.total || 0}</p>
+            <p className="mt-0.5 text-xs text-stone-500">Registrants (excl. cancelled)</p>
           </Card>
-          <Card className="bg-green-50 border-l-4 border-green-600">
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Confirmed</h3>
-            <p className="text-3xl font-bold text-green-600">{stats?.confirmed || 0}</p>
+          <Card className="bg-white border border-gray-200 border-l-4 border-l-green-600 p-4">
+            <h3 className="text-sm font-medium text-green-700">Confirmed</h3>
+            <p className="mt-1 text-3xl font-bold text-green-800">{stats?.confirmed || 0}</p>
           </Card>
-          <Card className="bg-amber-50 border-l-4 border-amber-600">
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Waitlist</h3>
-            <p className="text-3xl font-bold text-amber-600">{stats?.waitlist || 0}</p>
+          <Card className="bg-white border border-gray-200 border-l-4 border-l-green-600 p-4">
+            <h3 className="text-sm font-medium text-green-700">Waitlist</h3>
+            <p className="mt-1 text-3xl font-bold text-green-800">{stats?.waitlist || 0}</p>
           </Card>
-          <Card className="bg-purple-50 border-l-4 border-purple-600">
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Paid</h3>
-            <p className="text-3xl font-bold text-purple-600">{stats?.paid || 0}</p>
+          <Card className="bg-white border border-gray-200 border-l-4 border-l-green-600 p-4">
+            <h3 className="text-sm font-medium text-green-700">Paid</h3>
+            <p className="mt-1 text-3xl font-bold text-green-800">{stats?.paid || 0}</p>
           </Card>
-          <Card className="bg-teal-50 border-l-4 border-teal-600">
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Checked In</h3>
-            <p className="text-3xl font-bold text-teal-600">{stats?.checked_in || 0}</p>
+          <Card className="bg-white border border-gray-200 border-l-4 border-l-green-600 p-4">
+            <h3 className="text-sm font-medium text-green-700">Checked In</h3>
+            <p className="mt-1 text-3xl font-bold text-green-800">{stats?.checked_in || 0}</p>
           </Card>
         </div>
 

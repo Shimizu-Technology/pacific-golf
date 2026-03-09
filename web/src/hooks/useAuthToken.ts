@@ -1,6 +1,7 @@
 import { useAuth } from '@clerk/clerk-react';
 import { useContext, useCallback } from 'react';
 import { getDevToken } from '../components/ProtectedRoute';
+import { getAdminAuthToken } from '../utils/clerkToken';
 
 // Import context directly to avoid throwing when outside provider
 import { GolferAuthContext } from '../contexts/GolferAuthContext';
@@ -43,7 +44,7 @@ export function useAuthToken() {
     // Prefer Clerk auth if available (admin)
     if (isClerkSignedIn) {
       try {
-        const token = await getClerkToken();
+        const token = await getAdminAuthToken(getClerkToken);
         return token;
       } catch (error) {
         console.error('Failed to get Clerk token:', error);

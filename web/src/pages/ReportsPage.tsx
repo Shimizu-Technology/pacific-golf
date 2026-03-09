@@ -343,7 +343,7 @@ export const ReportsPage: React.FC = () => {
             </span>
           )}
           {showGroup && golfer.hole_position_label && (
-            <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-700">
+            <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
               {golfer.hole_position_label}
             </span>
           )}
@@ -391,14 +391,14 @@ export const ReportsPage: React.FC = () => {
         {/* Summary Cards - Compact 4-column grid on mobile */}
         {stats && (
           <div className="grid grid-cols-4 gap-2 lg:gap-4">
-            <div className="bg-gradient-to-br from-brand-50 to-brand-100 rounded-lg p-2 lg:p-4 border border-brand-200">
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-2 lg:p-4 border border-emerald-200">
               <div className="flex flex-col lg:flex-row lg:items-center lg:gap-3">
-                <div className="hidden lg:block p-2 bg-brand-500 rounded-lg">
+                <div className="hidden lg:block p-2 bg-emerald-600 rounded-lg">
                   <Users className="text-white" size={18} />
                 </div>
                 <div className="text-center lg:text-left">
-                  <p className="text-[10px] lg:text-xs text-brand-600 font-medium">Registered</p>
-                  <p className="text-lg lg:text-2xl font-bold text-brand-800">{stats.total}</p>
+                  <p className="text-[10px] lg:text-xs text-emerald-700 font-medium">Registered</p>
+                  <p className="text-lg lg:text-2xl font-bold text-emerald-900">{stats.total}</p>
                 </div>
               </div>
             </div>
@@ -450,7 +450,7 @@ export const ReportsPage: React.FC = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1 px-2.5 py-1.5 lg:px-3 lg:py-2 rounded-lg text-xs lg:text-sm font-medium whitespace-nowrap transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-[#1e3a5f] text-white'
+                    ? 'bg-emerald-700 text-white'
                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                 }`}
               >
@@ -495,7 +495,7 @@ export const ReportsPage: React.FC = () => {
                       <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as 'all' | 'confirmed' | 'cancelled' | 'waitlist')}
-                        className="text-xs lg:text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="text-xs lg:text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       >
                         <option value="all">All</option>
                         <option value="confirmed">Confirmed</option>
@@ -591,8 +591,8 @@ export const ReportsPage: React.FC = () => {
                               </div>
                             )}
                             {g.checked_in && (
-                              <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center">
-                                <CheckCircle size={12} className="text-brand-600" />
+                              <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <CheckCircle size={12} className="text-emerald-600" />
                               </div>
                             )}
                           </div>
@@ -626,7 +626,7 @@ export const ReportsPage: React.FC = () => {
                             </td>
                             <td className="px-3 py-2 text-center">
                               {g.checked_in && (
-                                <CheckCircle size={16} className="text-brand-600 mx-auto" />
+                                <CheckCircle size={16} className="text-emerald-600 mx-auto" />
                               )}
                             </td>
                           </tr>
@@ -650,7 +650,7 @@ export const ReportsPage: React.FC = () => {
                       </div>
                       <div className="bg-white rounded-lg p-2 lg:p-3 border">
                         <p className="text-[10px] lg:text-xs text-gray-500 uppercase">Pre-Paid</p>
-                        <p className="text-lg lg:text-xl font-bold text-brand-600">{paymentStats.prePaid.count}</p>
+                        <p className="text-lg lg:text-xl font-bold text-emerald-700">{paymentStats.prePaid.count}</p>
                         <p className="text-xs text-gray-500">${(paymentStats.prePaid.amount / 100).toLocaleString()}</p>
                       </div>
                       <div className="bg-white rounded-lg p-2 lg:p-3 border">
@@ -692,7 +692,7 @@ export const ReportsPage: React.FC = () => {
                             setPaymentTimingFilter('all');
                             setPaymentChannelFilter('all');
                           }}
-                          className="text-xs text-brand-600 hover:text-brand-800 underline"
+                          className="text-xs text-emerald-700 hover:text-emerald-900 underline"
                         >
                           Clear filters
                         </button>
@@ -719,7 +719,7 @@ export const ReportsPage: React.FC = () => {
                                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                                     g.payment_timing === 'day_of' 
                                       ? 'bg-amber-100 text-amber-700' 
-                                      : 'bg-brand-100 text-brand-700'
+                                      : 'bg-emerald-100 text-emerald-700'
                                   }`}>
                                     {g.payment_timing === 'day_of' ? 'Day-Of' : 'Pre-Paid'}
                                   </span>
@@ -778,7 +778,7 @@ export const ReportsPage: React.FC = () => {
                                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                                     g.payment_timing === 'day_of' 
                                       ? 'bg-amber-100 text-amber-700' 
-                                      : 'bg-brand-100 text-brand-700'
+                                      : 'bg-emerald-100 text-emerald-700'
                                   }`}>
                                     {g.payment_timing === 'day_of' ? 'Day-Of' : 'Pre-Paid'}
                                   </span>
@@ -903,7 +903,7 @@ export const ReportsPage: React.FC = () => {
                                 allCheckedIn 
                                   ? 'bg-green-100 text-green-700' 
                                   : checkedInCount > 0 
-                                    ? 'bg-brand-100 text-brand-700'
+                                    ? 'bg-emerald-100 text-emerald-700'
                                     : 'bg-gray-100 text-gray-500'
                               }`}>
                                 {checkedInCount}/{totalCount} <Check className="w-3 h-3" />
@@ -922,7 +922,7 @@ export const ReportsPage: React.FC = () => {
                                       <UserCheck size={10} className="text-white" />
                                     </span>
                                   ) : (
-                                    <span className="w-4 h-4 rounded-full bg-brand-100 flex items-center justify-center text-[10px] font-medium text-brand-600">
+                                    <span className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center text-[10px] font-medium text-emerald-600">
                                       {String.fromCharCode(65 + idx)}
                                     </span>
                                   )}
@@ -967,11 +967,11 @@ export const ReportsPage: React.FC = () => {
                       <div key={g.id} className="p-3 border-b border-gray-100 last:border-b-0">
                         <p className="font-medium text-gray-900">{g.name}</p>
                         <div className="mt-1 space-y-0.5">
-                          <a href={`mailto:${g.email}`} className="block text-xs text-brand-600 truncate">
+                          <a href={`mailto:${g.email}`} className="block text-xs text-emerald-700 truncate">
                             {g.email}
                           </a>
                           {g.phone && (
-                            <a href={`tel:${g.phone}`} className="block text-xs text-brand-600">
+                            <a href={`tel:${g.phone}`} className="block text-xs text-emerald-700">
                               {g.phone}
                             </a>
                           )}
@@ -999,13 +999,13 @@ export const ReportsPage: React.FC = () => {
                           <tr key={g.id} className="hover:bg-gray-50">
                             <td className="px-3 py-2 font-medium">{g.name}</td>
                             <td className="px-3 py-2">
-                              <a href={`mailto:${g.email}`} className="text-brand-600 hover:underline">
+                              <a href={`mailto:${g.email}`} className="text-emerald-700 hover:underline">
                                 {g.email}
                               </a>
                             </td>
                             <td className="px-3 py-2">
                               {g.phone ? (
-                                <a href={`tel:${g.phone}`} className="text-brand-600 hover:underline">
+                                <a href={`tel:${g.phone}`} className="text-emerald-700 hover:underline">
                                   {g.phone}
                                 </a>
                               ) : (

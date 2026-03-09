@@ -54,6 +54,8 @@ interface OrgInfo {
   name?: string;
 }
 
+const FALLBACK_PRIMARY_COLOR = '#047857';
+
 // ---------------------------------------------------------------------------
 // Animation config
 // ---------------------------------------------------------------------------
@@ -236,17 +238,6 @@ export const LeaderboardPage: React.FC = () => {
   const listRef = useRef(null);
   const isInView = useInView(listRef, { once: true, margin: '0px' });
 
-  // Fetch org info for primaryColor
-  useEffect(() => {
-    if (!orgSlug) return;
-    fetch(`${import.meta.env.VITE_API_URL}/api/v1/organizations/${orgSlug}`)
-      .then((res) => res.ok ? res.json() : null)
-      .then((d) => {
-        if (d) setOrgInfo({ primary_color: d.primary_color, name: d.name });
-      })
-      .catch(() => {});
-  }, [orgSlug]);
-
   const fetchLeaderboard = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
     try {
@@ -255,6 +246,10 @@ export const LeaderboardPage: React.FC = () => {
       );
       if (!tournamentRes.ok) throw new Error('Tournament not found');
       const tournamentData = await tournamentRes.json();
+      setOrgInfo((prev) => ({
+        ...prev,
+        primary_color: tournamentData.effective_primary_color || prev.primary_color,
+      }));
 
       const tournamentId = tournamentData.id || tournamentData.tournament?.id;
       const leaderboardRes = await fetch(
@@ -284,7 +279,7 @@ export const LeaderboardPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [autoRefresh, fetchLeaderboard]);
 
-  const primaryColor = orgInfo.primary_color || '#16a34a';
+  const primaryColor = orgInfo.primary_color || FALLBACK_PRIMARY_COLOR;
 
   const formatTime = (date: Date) =>
     date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
@@ -298,7 +293,7 @@ export const LeaderboardPage: React.FC = () => {
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           >
-            <RefreshCw className="w-10 h-10 text-green-500 mx-auto" />
+            <RefreshCw className="w-10 h-10 mx-auto" style={{ color: primaryColor }} />
           </motion.div>
           <motion.p
             className="text-gray-400 mt-4 text-sm"
@@ -332,7 +327,8 @@ export const LeaderboardPage: React.FC = () => {
           </p>
           <Link
             to={`/${orgSlug}/tournaments/${tournamentSlug}`}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all shadow-lg shadow-green-600/25"
+            className="inline-flex items-center gap-2 px-6 py-3 text-white rounded-xl font-semibold transition-all shadow-lg"
+            style={{ backgroundColor: primaryColor, boxShadow: `0 8px 24px ${hexToRgba(primaryColor, 0.28)}` }}
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Tournament

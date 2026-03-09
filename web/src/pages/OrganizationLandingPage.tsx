@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import { useOrganization } from '../components/OrganizationProvider';
 import { SignedInAdminBar } from '../components/SignedInAdminBar';
 import { api, Tournament } from '../services/api';
@@ -16,6 +17,9 @@ import {
   Globe,
   Flag,
   DollarSign,
+  Home,
+  LayoutDashboard,
+  LogIn,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -100,6 +104,8 @@ function ScrollReveal({
 
 export function OrganizationLandingPage() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
+  const { isLoaded, isSignedIn } = useAuth();
+  const staffSignedIn = Boolean(isSignedIn);
   const { organization, isLoading: orgLoading } = useOrganization();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -187,7 +193,34 @@ export function OrganizationLandingPage() {
           </>
         )}
 
-        <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 py-16 sm:py-24 text-center">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 lg:px-8 py-16 sm:py-24 text-center">
+          <div className="mb-8 flex justify-end gap-2">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+            >
+              <Home className="w-3.5 h-3.5" />
+              Home
+            </Link>
+            {isLoaded && isSignedIn ? (
+              <Link
+                to={`/${orgSlug}/admin`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                Staff Dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/admin/login"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Staff Login
+              </Link>
+            )}
+          </div>
+
           {organization.logo_url && (
             <motion.div
               initial={{ opacity: 0, scale: 0.92 }}
@@ -206,7 +239,7 @@ export function OrganizationLandingPage() {
           )}
 
           <motion.h1
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-5"
+            className="mb-5 text-4xl font-display font-bold tracking-tight text-white sm:text-5xl lg:text-6xl"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.15, ease }}
@@ -230,11 +263,16 @@ export function OrganizationLandingPage() {
       {/* ================================================================= */}
       {/* TOURNAMENTS                                                        */}
       {/* ================================================================= */}
-      <main className="max-w-5xl mx-auto px-6 lg:px-8 py-12 sm:py-16">
+      <main className="max-w-6xl mx-auto px-6 lg:px-8 py-12 sm:py-16">
         <ScrollReveal>
           <div className="flex items-center gap-3 mb-10">
             <Trophy className="w-5 h-5" style={{ color: primaryColor }} strokeWidth={2} />
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Tournaments</h2>
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Tournaments</h2>
+              <p className="mt-1 text-sm text-stone-500">
+                Organization hub for all current and past events.
+              </p>
+            </div>
           </div>
         </ScrollReveal>
 
@@ -261,6 +299,8 @@ export function OrganizationLandingPage() {
             tournaments={tournaments}
             orgSlug={orgSlug!}
             primaryColor={primaryColor}
+            isLoaded={isLoaded}
+            isSignedIn={staffSignedIn}
           />
         )}
       </main>
@@ -269,7 +309,7 @@ export function OrganizationLandingPage() {
       {/* CONTACT                                                            */}
       {/* ================================================================= */}
       {(organization.contact_email || organization.contact_phone || organization.website_url) && (
-        <section className="max-w-5xl mx-auto px-6 lg:px-8 pb-16 sm:pb-20">
+        <section className="max-w-6xl mx-auto px-6 lg:px-8 pb-16 sm:pb-20">
           <ScrollReveal>
             <h3 className="text-xl font-semibold tracking-tight mb-8">Get in Touch</h3>
           </ScrollReveal>
@@ -354,7 +394,7 @@ export function OrganizationLandingPage() {
       {/* FOOTER                                                             */}
       {/* ================================================================= */}
       <footer className="border-t border-stone-200">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8 flex items-center justify-between text-sm text-stone-400">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8 flex items-center justify-between text-sm text-stone-400">
           <p>
             Powered by{' '}
             <span className="font-medium text-stone-600">Pacific Golf</span>
@@ -375,10 +415,14 @@ function TournamentList({
   tournaments,
   orgSlug,
   primaryColor,
+  isLoaded,
+  isSignedIn,
 }: {
   tournaments: Tournament[];
   orgSlug: string;
   primaryColor: string;
+  isLoaded: boolean;
+  isSignedIn: boolean;
 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '0px' });
@@ -397,6 +441,8 @@ function TournamentList({
             tournament={tournament}
             orgSlug={orgSlug}
             primaryColor={primaryColor}
+            isLoaded={isLoaded}
+            isSignedIn={isSignedIn}
           />
         </motion.div>
       ))}
@@ -412,6 +458,8 @@ interface TournamentCardProps {
   tournament: Tournament;
   orgSlug: string;
   primaryColor: string;
+  isLoaded: boolean;
+  isSignedIn: boolean;
 }
 
 const statusConfig: Record<string, { label: string; dot: string }> = {
@@ -422,7 +470,7 @@ const statusConfig: Record<string, { label: string; dot: string }> = {
   draft: { label: 'Coming Soon', dot: 'bg-sky-400' },
 };
 
-function TournamentCard({ tournament, orgSlug, primaryColor }: TournamentCardProps) {
+function TournamentCard({ tournament, orgSlug, primaryColor, isLoaded, isSignedIn }: TournamentCardProps) {
   const status = statusConfig[tournament.status] || {
     label: tournament.status,
     dot: 'bg-stone-400',
@@ -434,7 +482,7 @@ function TournamentCard({ tournament, orgSlug, primaryColor }: TournamentCardPro
       : null;
 
   return (
-    <div className="group bg-white rounded-2xl border border-stone-200 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-stone-200/60">
+    <div className="group overflow-hidden rounded-2xl border border-stone-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-stone-200/60">
       <div className="p-6 sm:p-7">
         {/* Top row: name + status */}
         <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
@@ -491,40 +539,49 @@ function TournamentCard({ tournament, orgSlug, primaryColor }: TournamentCardPro
         )}
 
         {/* CTA */}
-        <div className="mt-6 flex items-center gap-3">
-          {tournament.can_register ? (
-            <>
-              <Link
-                to={`/${orgSlug}/tournaments/${tournament.slug}/register`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-                style={{
-                  backgroundColor: primaryColor,
-                  boxShadow: `0 2px 8px ${hexToRgba(primaryColor, 0.25)}`,
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 20px ${hexToRgba(primaryColor, 0.35)}`;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = `0 2px 8px ${hexToRgba(primaryColor, 0.25)}`;
-                }}
-              >
-                Register Now
-                <ChevronRight className="w-4 h-4" strokeWidth={2} />
-              </Link>
-              <Link
-                to={`/${orgSlug}/tournaments/${tournament.slug}`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-stone-500 hover:text-stone-700 transition-colors duration-200"
-              >
-                View Details
-              </Link>
-            </>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <Link
+            to={`/${orgSlug}/tournaments/${tournament.slug}`}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+            style={{
+              backgroundColor: primaryColor,
+              boxShadow: `0 2px 8px ${hexToRgba(primaryColor, 0.25)}`,
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 20px ${hexToRgba(primaryColor, 0.35)}`;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.boxShadow = `0 2px 8px ${hexToRgba(primaryColor, 0.25)}`;
+            }}
+          >
+            View Tournament
+            <ChevronRight className="w-4 h-4" strokeWidth={2} />
+          </Link>
+
+          {tournament.can_register && (
+            <Link
+              to={`/${orgSlug}/tournaments/${tournament.slug}/register`}
+            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-sm font-medium text-stone-700 transition-colors duration-200 hover:bg-stone-50"
+            >
+              Register Now
+            </Link>
+          )}
+
+          {isLoaded && isSignedIn ? (
+            <Link
+              to={`/${orgSlug}/admin`}
+              className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-sm font-medium text-stone-700 transition-colors duration-200 hover:bg-stone-50"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </Link>
           ) : (
             <Link
-              to={`/${orgSlug}/tournaments/${tournament.slug}`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-stone-600 bg-stone-100 rounded-xl hover:bg-stone-200 transition-colors duration-200"
+              to="/admin/login"
+              className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-sm font-medium text-stone-700 transition-colors duration-200 hover:bg-stone-50"
             >
-              View Details
-              <ChevronRight className="w-4 h-4" strokeWidth={2} />
+              <LogIn className="w-4 h-4" />
+              Staff Login
             </Link>
           )}
         </div>
