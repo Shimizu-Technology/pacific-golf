@@ -590,14 +590,18 @@ module Api
           user_created = user.new_record?
           if user_created
             user.role = "org_admin"
-            user.save!
+            unless user.save
+              raise ActiveRecord::Rollback, user.errors.full_messages.join(", ")
+            end
           end
 
           membership = organization.organization_memberships.find_or_initialize_by(user: user)
           membership_created = membership.new_record?
           role_changed = membership.role != "admin"
           membership.role = "admin"
-          membership.save! if membership_created || role_changed
+          if (membership_created || role_changed) && !membership.save
+            raise ActiveRecord::Rollback, membership.errors.full_messages.join(", ")
+          end
 
           AdminInvitationMailer.organization_admin_invite(
             user: user,

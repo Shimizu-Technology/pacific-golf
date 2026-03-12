@@ -64,7 +64,7 @@ class TournamentSerializer < ActiveModel::Serializer
   end
 
   def employee_numbers_count
-    object.employee_numbers.count
+    object.employee_numbers.size
   end
 
   def can_register

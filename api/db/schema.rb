@@ -344,7 +344,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_001000) do
     t.uuid "organization_id", null: false
     t.text "payment_instructions"
     t.string "primary_color_override"
-    t.boolean "public_listed", default: true, null: false
+    t.boolean "public_listed", default: false, null: false
     t.boolean "raffle_auto_draw", default: false
     t.text "raffle_description"
     t.datetime "raffle_draw_time"

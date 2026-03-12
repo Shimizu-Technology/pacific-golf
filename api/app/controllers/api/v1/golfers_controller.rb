@@ -2,7 +2,7 @@ module Api
   module V1
     class GolfersController < BaseController
       skip_before_action :authenticate_user!, only: [:create, :registration_status]
-      before_action :authorize_collection_tournament_access!, only: [:index, :stats, :bulk_send_payment_links]
+      before_action :authorize_collection_tournament_access!, only: [:index, :stats, :bulk_send_payment_links, :bulk_set_employee]
       before_action :authorize_golfer_access!, only: [
         :show, :update, :destroy, :cancel, :refund, :mark_refunded,
         :check_in, :undo_check_in, :payment_details, :promote, :demote,

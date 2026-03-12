@@ -19,6 +19,7 @@ tournament_one:
   contact_name: "Test Contact"
   contact_phone: "671-555-0000"
   registration_open: true
+  public_listed: true
 
 tournament_archived:
   organization: org_one
