@@ -13,6 +13,7 @@ import {
 // ---------------------------------------------------------------------------
 
 import { hexToRgba, adjustColor } from '../utils/colors';
+import { formatEventDate } from '../utils/dates';
 
 // ---------------------------------------------------------------------------
 // Animation variants
@@ -235,7 +236,7 @@ export function OrgTournamentPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.25, ease }}
                 >
-                  {tournament.event_date}
+                  {formatEventDate(tournament.event_date)}
                 </motion.p>
               )}
             </div>
@@ -279,7 +280,7 @@ export function OrgTournamentPage() {
                 <div className="flex items-start gap-3">
                   <Calendar className="w-5 h-5 mt-0.5 shrink-0" style={{ color: primaryColor }} strokeWidth={1.5} />
                   <div>
-                    <p className="font-medium text-stone-900">{tournament.event_date || 'Date TBA'}</p>
+                    <p className="font-medium text-stone-900">{formatEventDate(tournament.event_date) || 'Date TBA'}</p>
                     {tournament.registration_time && (
                       <p className="text-stone-500 text-sm">Registration: {tournament.registration_time}</p>
                     )}
