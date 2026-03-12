@@ -12,7 +12,7 @@ export function formatEventDate(dateStr: string | null | undefined): string {
   const parts = dateStr.split('-');
   if (parts.length !== 3) return dateStr;
   const [year, month, day] = parts.map(Number);
-  if (!year || !month || !day) return dateStr;
+  if (isNaN(year) || isNaN(month) || isNaN(day) || month < 1 || day < 1) return dateStr;
   const d = new Date(year, month - 1, day);
   return d.toLocaleDateString('en-US', {
     year: 'numeric',
