@@ -1,7 +1,7 @@
 module Api
   module V1
     class TournamentsController < BaseController
-      skip_before_action :authenticate_user!, only: [:current]
+      skip_before_action :authenticate_user!, only: [:current, :discoverable]
       before_action :set_tournament, only: [:show, :update, :destroy, :archive, :copy, :open, :close]
       before_action :authorize_tournament_access!, only: [:show, :update, :destroy, :archive, :copy, :open, :close]
 
@@ -26,6 +26,25 @@ module Api
         else
           render json: { error: "No active tournament found" }, status: :not_found
         end
+      end
+
+      # GET /api/v1/tournaments/discoverable
+      # Public endpoint for homepage "Open Tournaments" listing.
+      def discoverable
+        tournaments = Tournament.discoverable_public
+                               .includes(:organization)
+                               .order(updated_at: :desc)
+                               .limit(100)
+
+        if params[:q].present?
+          search_term = "%#{params[:q].to_s.strip}%"
+          tournaments = tournaments.where(
+            "tournaments.name ILIKE :term OR organizations.name ILIKE :term OR organizations.slug ILIKE :term",
+            term: search_term
+          ).references(:organizations)
+        end
+
+        render json: tournaments.map { |tournament| discoverable_response(tournament) }
       end
 
       # GET /api/v1/tournaments/:id
@@ -125,7 +144,7 @@ module Api
         # Close any other open tournaments in the same organization first
         Tournament.where(status: 'open', organization_id: @tournament.organization_id)
                   .where.not(id: @tournament.id)
-                  .update_all(status: 'closed')
+                  .update_all(status: 'closed', registration_open: false)
         
         @tournament.update!(status: 'open', registration_open: true)
         
@@ -170,11 +189,29 @@ module Api
           :name, :year, :edition, :status,
           :event_date, :registration_time, :start_time,
           :location_name, :location_address,
-          :max_capacity, :reserved_slots, :entry_fee, :employee_entry_fee,
+          :max_capacity, :reserved_slots, :entry_fee, :employee_discount_enabled, :employee_entry_fee,
           :format_name, :fee_includes, :checks_payable_to,
-          :contact_name, :contact_phone,
+          :contact_name, :contact_phone, :public_listed,
+          :use_org_branding, :theme_preset,
+          :primary_color_override, :accent_color_override,
+          :logo_url_override, :banner_url_override, :signature_image_url_override,
           :registration_open
         )
+      end
+
+      def discoverable_response(tournament)
+        {
+          id: tournament.id,
+          name: tournament.name,
+          slug: tournament.slug,
+          event_date: tournament.event_date,
+          location_name: tournament.location_name,
+          organization_slug: tournament.organization.slug,
+          organization_name: tournament.organization.name,
+          registration_open: tournament.can_register?,
+          public_capacity_remaining: tournament.public_capacity_remaining,
+          entry_fee_dollars: tournament.entry_fee_dollars
+        }
       end
     end
   end

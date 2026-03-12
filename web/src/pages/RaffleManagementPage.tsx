@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { useOrganization } from '../components/OrganizationProvider';
+import { AdminLayout } from '../components/AdminLayout';
 import { 
   Gift, 
   Plus,
@@ -264,45 +265,45 @@ export const RaffleManagementPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-      </div>
+      <AdminLayout>
+        <div className="min-h-[320px] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AdminLayout>
+      <div className="space-y-6">
       {/* Header */}
-      <header 
-        className="text-white py-6 px-4"
-        style={{ backgroundColor: organization?.primary_color || '#7c3aed' }}
-      >
-        <div className="max-w-6xl mx-auto">
+      <header className="rounded-2xl border border-stone-200 bg-white px-4 py-6 shadow-soft">
+        <div>
           <div className="flex items-center justify-between">
             <div>
               <Link
                 to={`/${organization?.slug}/admin/tournaments/${tournamentSlug}`}
-                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-2"
+                className="mb-2 inline-flex items-center gap-2 text-stone-500 hover:text-stone-700"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Tournament
               </Link>
-              <h1 className="text-2xl font-bold flex items-center gap-3">
-                <Gift className="w-8 h-8" />
+              <h1 className="flex items-center gap-3 text-2xl font-bold text-stone-900">
+                <Gift className="w-8 h-8 text-violet-600" />
                 Raffle Management
               </h1>
             </div>
             <div className="flex items-center gap-3">
               <Link
                 to={`/${organization?.slug}/tournaments/${tournamentSlug}/raffle`}
-                className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20"
+                className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
                 target="_blank"
               >
                 View Public Board
               </Link>
               <button
                 onClick={fetchData}
-                className="p-2 bg-white/10 rounded-lg hover:bg-white/20"
+                className="rounded-lg p-2 text-stone-600 hover:bg-stone-100"
               >
                 <RefreshCw className="w-5 h-5" />
               </button>
@@ -313,17 +314,17 @@ export const RaffleManagementPage: React.FC = () => {
 
       {/* Stats */}
       {stats && (
-        <div className="max-w-6xl mx-auto px-4 py-4">
+        <div>
           <div className="grid grid-cols-4 gap-4">
             <div className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3">
-              <Gift className="w-8 h-8 text-purple-500" />
+              <Gift className="w-8 h-8 text-violet-600" />
               <div>
                 <p className="text-sm text-gray-500">Prizes</p>
                 <p className="text-xl font-bold">{prizes.length}</p>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3">
-              <Ticket className="w-8 h-8 text-brand-500" />
+              <Ticket className="w-8 h-8 text-emerald-600" />
               <div>
                 <p className="text-sm text-gray-500">Tickets Sold</p>
                 <p className="text-xl font-bold">{stats.paid}</p>
@@ -350,14 +351,14 @@ export const RaffleManagementPage: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div className="max-w-6xl mx-auto px-4">
+      <div>
         <div className="border-b border-gray-200 mb-6">
           <div className="flex gap-8">
             <button
               onClick={() => setActiveTab('prizes')}
               className={`pb-3 px-1 border-b-2 font-medium ${
                 activeTab === 'prizes'
-                  ? 'border-purple-600 text-purple-600'
+                  ? 'border-green-700 text-green-700'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -368,7 +369,7 @@ export const RaffleManagementPage: React.FC = () => {
               onClick={() => setActiveTab('tickets')}
               className={`pb-3 px-1 border-b-2 font-medium ${
                 activeTab === 'tickets'
-                  ? 'border-purple-600 text-purple-600'
+                  ? 'border-green-700 text-green-700'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -380,14 +381,14 @@ export const RaffleManagementPage: React.FC = () => {
       </div>
 
       {/* Content */}
-      <main className="max-w-6xl mx-auto px-4 pb-8">
+      <main className="pb-8">
         {activeTab === 'prizes' && (
           <div>
             {/* Actions */}
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => { setEditingPrize(null); setShowPrizeModal(true); }}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800"
               >
                 <Plus className="w-5 h-5" />
                 Add Prize
@@ -509,7 +510,7 @@ export const RaffleManagementPage: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => setShowTicketModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800"
               >
                 <Plus className="w-5 h-5" />
                 Sell Tickets
@@ -596,7 +597,8 @@ export const RaffleManagementPage: React.FC = () => {
           onSuccess={() => { setShowTicketModal(false); fetchData(); }}
         />
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 
@@ -737,7 +739,7 @@ const PrizeModal: React.FC<{
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 disabled:opacity-50"
             >
               {saving ? 'Saving...' : (prize ? 'Update' : 'Create')}
             </button>
@@ -861,12 +863,12 @@ const TicketModal: React.FC<{
             <label htmlFor="mark_paid" className="text-sm">Mark as paid (cash sale)</label>
           </div>
 
-          <div className="p-4 bg-purple-50 rounded-lg">
+          <div className="p-4 bg-emerald-50 rounded-lg">
             <div className="flex justify-between text-lg font-semibold">
               <span>Total:</span>
               <span>${total.toFixed(2)}</span>
             </div>
-            <p className="text-sm text-purple-600">
+            <p className="text-sm text-emerald-700">
               {form.quantity} ticket(s) × ${(ticketPrice / 100).toFixed(2)}
             </p>
           </div>
@@ -882,7 +884,7 @@ const TicketModal: React.FC<{
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 disabled:opacity-50"
             >
               {saving ? 'Creating...' : 'Sell Tickets'}
             </button>

@@ -283,3 +283,7 @@ export function useGolferAuth() {
   }
   return context;
 }
+
+export function useOptionalGolferAuth() {
+  return useContext(GolferAuthContext);
+}

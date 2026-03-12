@@ -27,6 +27,13 @@ class Rack::Attack
     req.ip
   end
 
+  throttle("req/ip/access-requests", limit: 5, period: 1.hour) do |req|
+    next unless req.post?
+    next unless req.path == "/api/v1/access_requests"
+
+    req.ip
+  end
+
   # Authenticated traffic throttle keyed by bearer token fingerprint.
   throttle("req/token/authenticated", limit: 120, period: 1.minute) do |req|
     auth_header = req.get_header("HTTP_AUTHORIZATION").to_s

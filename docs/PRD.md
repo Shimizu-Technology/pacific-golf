@@ -1032,6 +1032,10 @@ Each org can customize:
 - Primary color (buttons, links)
 - Banner image (tournament pages)
 
+Detailed decisions for admin tournament context (single operational context with multi-tournament support) and theming evolution are tracked in:
+- `docs/ADMIN_TOURNAMENT_CONTEXT_AND_THEMING_BLUEPRINT.md`
+- `docs/CLIENT_BRANDING_CUSTOMIZATION_STRATEGY.md`
+
 Stored in `organizations` table, applied via CSS custom properties:
 
 ```css

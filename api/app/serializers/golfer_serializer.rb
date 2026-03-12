@@ -12,7 +12,8 @@ class GolferSerializer < ActiveModel::Serializer
              :refunded_by_name, :can_refund, :can_cancel, :cancelled, :refunded,
              :formatted_payment_timestamp,
              # Payment timing fields
-             :paid_at, :payment_timing, :payment_channel
+             :paid_at, :payment_timing, :payment_channel,
+             :is_employee, :employee_number
 
   belongs_to :group, optional: true
 

@@ -1,6 +1,7 @@
 class Golfer < ApplicationRecord
   belongs_to :tournament
   belongs_to :group, optional: true
+  belongs_to :employee_number_record, class_name: "EmployeeNumber", optional: true
   belongs_to :refunded_by, class_name: "User", optional: true
   has_many :scores, dependent: :destroy
 
@@ -51,11 +52,6 @@ class Golfer < ApplicationRecord
   # For pay_on_day, emails are sent immediately on registration
   after_commit :send_confirmation_email, on: :create, if: :should_send_immediate_emails?
   after_commit :notify_admin, on: :create, if: :should_send_immediate_emails?
-
-  # Employee features have been removed - provide safe defaults for any remaining references
-  def is_employee
-    false
-  end
 
   # Status check methods
   def checked_in?
@@ -149,6 +145,8 @@ class Golfer < ApplicationRecord
       refunded_at: Time.current,
       refunded_by: admin
     )
+
+    employee_number_record&.release! if employee_number_record&.used?
   end
 
   # Process a refund through Stripe and cancel the registration
@@ -178,6 +176,8 @@ class Golfer < ApplicationRecord
       refunded_at: Time.current,
       refunded_by: admin
     )
+
+    employee_number_record&.release! if employee_number_record&.used?
 
     # Send refund notification email
     GolferMailer.refund_confirmation_email(self).deliver_later rescue nil
@@ -241,6 +241,14 @@ class Golfer < ApplicationRecord
   # Check if payment link can be sent
   def can_send_payment_link?
     payment_status != "paid" && payment_status != "refunded" && registration_status != "cancelled"
+  end
+
+  def effective_entry_fee_cents
+    if is_employee? && tournament&.employee_discount_enabled?
+      tournament.employee_entry_fee || 5000
+    else
+      tournament&.entry_fee || 12500
+    end
   end
 
   # Format payment details for display

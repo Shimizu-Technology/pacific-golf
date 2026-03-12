@@ -1,37 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, MotionConfig } from 'framer-motion';
-import { PageTransition } from '../components/ui';
 import { useOrganization } from '../components/OrganizationProvider';
 import { useAuthToken } from '../hooks/useAuthToken';
-import { hexToRgba } from '../utils/colors';
-import { 
-  Users, 
-  DollarSign, 
-  Calendar, 
-  ChevronRight, 
-  Plus,
-  Settings,
-  Trophy,
-  AlertCircle,
-  Loader2
-} from 'lucide-react';
-
-// ---------------------------------------------------------------------------
-// Animation variants
-// ---------------------------------------------------------------------------
-
-const ease = [0.22, 1, 0.36, 1] as const;
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } },
-};
-
-const staggerContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
-};
+import { AlertCircle, Calendar, ChevronRight, DollarSign, Loader2, Plus, Settings, Trophy, Users } from 'lucide-react';
+import { OrgAdminLayout } from '../components/OrgAdminLayout';
 
 interface TournamentSummary {
   id: string;
@@ -101,19 +73,19 @@ export const OrgAdminDashboard: React.FC = () => {
 
   if (orgLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error</h2>
-          <p className="text-gray-600">{error}</p>
+          <h2 className="text-xl font-semibold text-stone-900 mb-2">Error</h2>
+          <p className="text-stone-600">{error}</p>
         </div>
       </div>
     );
@@ -121,8 +93,8 @@ export const OrgAdminDashboard: React.FC = () => {
 
   if (!organization) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Organization not found</p>
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <p className="text-stone-600">Organization not found</p>
       </div>
     );
   }
@@ -156,178 +128,135 @@ export const OrgAdminDashboard: React.FC = () => {
     }).format(cents / 100);
   };
 
-  const primaryColor = organization.primary_color || '#1e40af';
-
   return (
-    <MotionConfig reducedMotion="user">
-    <PageTransition>
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, ease }}
-        className="text-white py-8 px-4"
-        style={{ backgroundColor: primaryColor }}
-      >
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">{organization.name}</h1>
-              <p className="text-white/80 mt-1">Admin Dashboard</p>
-            </div>
-            <Link
-              to={`/${organization.slug}/admin/settings`}
-              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition"
-            >
-              <Settings className="w-5 h-5" />
-              <span>Settings</span>
-            </Link>
-          </div>
-        </div>
-      </motion.header>
-
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Stats Cards */}
-        {stats && (
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
-          >
-            <motion.div variants={fadeUp} className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg" style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}>
-                  <Trophy className="w-6 h-6" style={{ color: primaryColor }} />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Total Tournaments</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total_tournaments}</p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div variants={fadeUp} className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <Calendar className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Active Now</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.active_tournaments}</p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div variants={fadeUp} className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <Users className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Total Registrations</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total_registrations}</p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div variants={fadeUp} className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-yellow-100 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Total Revenue</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.total_revenue)}</p>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* Tournaments Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3, ease }}
-          className="bg-white rounded-xl shadow-sm"
+    <OrgAdminLayout
+      orgName={organization.name}
+      orgSlug={organization.slug}
+      primaryColor={organization.primary_color}
+      title="Admin Dashboard"
+      subtitle="Organization operations and tournament control"
+      tournaments={tournaments.map((t) => ({ slug: t.slug, name: t.name }))}
+      rightActions={
+        <Link
+          to={`/${organization.slug}/admin/settings`}
+          className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
         >
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Tournaments</h2>
+          <Settings className="h-4 w-4" />
+          Settings
+        </Link>
+      }
+    >
+      {stats && (
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <StatCard
+            label="Total Tournaments"
+            value={stats.total_tournaments}
+            icon={<Trophy className="h-5 w-5 text-cyan-700" />}
+            iconWrap="bg-cyan-100"
+          />
+          <StatCard
+            label="Active Now"
+            value={stats.active_tournaments}
+            icon={<Calendar className="h-5 w-5 text-emerald-700" />}
+            iconWrap="bg-emerald-100"
+          />
+          <StatCard
+            label="Total Registrations"
+            value={stats.total_registrations}
+            icon={<Users className="h-5 w-5 text-violet-700" />}
+            iconWrap="bg-violet-100"
+          />
+          <StatCard
+            label="Total Revenue"
+            value={formatCurrency(stats.total_revenue)}
+            icon={<DollarSign className="h-5 w-5 text-amber-700" />}
+            iconWrap="bg-amber-100"
+          />
+        </div>
+      )}
+
+      <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
+        <div className="flex items-center justify-between border-b border-stone-200 bg-stone-50/80 px-6 py-4">
+          <h2 className="text-lg font-semibold text-stone-900">Tournaments</h2>
+          <button
+            onClick={() => navigate(`/${organization.slug}/admin/tournaments/new`)}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+          >
+            <Plus className="h-4 w-4" />
+            New Tournament
+          </button>
+        </div>
+
+        {tournaments.length === 0 ? (
+          <div className="p-12 text-center">
+            <Trophy className="mx-auto mb-4 h-12 w-12 text-stone-300" />
+            <h3 className="mb-2 text-lg font-medium text-stone-900">No tournaments yet</h3>
+            <p className="mb-6 text-stone-500">Create your first tournament to get started.</p>
             <button
               onClick={() => navigate(`/${organization.slug}/admin/tournaments/new`)}
-              className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition"
-              style={{ backgroundColor: primaryColor }}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
             >
-              <Plus className="w-4 h-4" />
-              <span>New Tournament</span>
+              <Plus className="h-4 w-4" />
+              Create Tournament
             </button>
           </div>
-
-          {tournaments.length === 0 ? (
-            <div className="p-12 text-center">
-              <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No tournaments yet</h3>
-              <p className="text-gray-500 mb-6">Create your first tournament to get started.</p>
-              <button
-                onClick={() => navigate(`/${organization.slug}/admin/tournaments/new`)}
-                className="inline-flex items-center gap-2 px-4 py-2 text-white rounded-lg transition"
-                style={{ backgroundColor: primaryColor }}
+        ) : (
+          <div className="divide-y divide-stone-200">
+            {tournaments.map((tournament) => (
+              <Link
+                key={tournament.id}
+                to={`/${organization.slug}/admin/tournaments/${tournament.slug}`}
+                className="flex flex-wrap items-center justify-between gap-4 p-6 transition-colors hover:bg-stone-50"
               >
-                <Plus className="w-4 h-4" />
-                <span>Create Tournament</span>
-              </button>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-200">
-              {tournaments.map((tournament, index) => (
-                <motion.div
-                  key={tournament.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3, delay: 0.4 + index * 0.05, ease }}
-                >
-                  <Link
-                    to={`/${organization.slug}/admin/tournaments/${tournament.slug}`}
-                    className="flex items-center justify-between p-6 hover:bg-gray-50 transition"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-lg" style={{ backgroundColor: hexToRgba(primaryColor, 0.08) }}>
-                        <Trophy className="w-6 h-6" style={{ color: primaryColor }} />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{tournament.name}</h3>
-                        <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {formatDate(tournament.date)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            {tournament.registration_count}
-                            {tournament.capacity && ` / ${tournament.capacity}`}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-stone-900">{tournament.name}</h3>
+                  <p className="mt-1 flex flex-wrap items-center gap-3 text-sm text-stone-500">
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {formatDate(tournament.date)}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      {tournament.registration_count}
+                      {tournament.capacity && ` / ${tournament.capacity}`}
+                    </span>
+                  </p>
+                </div>
 
-                    <div className="flex items-center gap-4">
-                      {getStatusBadge(tournament.status)}
-                      <span className="font-medium text-gray-900">
-                        {formatCurrency(tournament.revenue)}
-                      </span>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      </main>
-    </div>
-    </PageTransition>
-    </MotionConfig>
+                <div className="flex items-center gap-4">
+                  {getStatusBadge(tournament.status)}
+                  <span className="font-medium text-stone-900">{formatCurrency(tournament.revenue)}</span>
+                  <ChevronRight className="h-5 w-5 text-stone-400" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </OrgAdminLayout>
   );
 };
+
+function StatCard({
+  label,
+  value,
+  icon,
+  iconWrap,
+}: {
+  label: string;
+  value: number | string;
+  icon: React.ReactNode;
+  iconWrap: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
+      <div className="flex items-center gap-3">
+        <div className={`rounded-lg p-2.5 ${iconWrap}`}>{icon}</div>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-stone-500">{label}</p>
+          <p className="mt-1 text-2xl font-bold text-stone-900">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
-import { Trophy, LayoutDashboard, Users, ClipboardCheck, Settings, Home, Menu, X, BarChart3, Calendar, ChevronDown } from 'lucide-react';
+import { Trophy, LayoutDashboard, Users, ClipboardCheck, Settings, Home, Menu, X, BarChart3, Calendar, ChevronDown, Gift, Flag, ListChecks } from 'lucide-react';
 import { useTournament } from '../contexts';
+import { useAdminBasePath } from '../hooks/useAdminBasePath';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -12,19 +13,40 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useUser();
+  const { adminPath, isOrgScopedAdmin, basePath } = useAdminBasePath();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tournamentDropdownOpen, setTournamentDropdownOpen] = useState(false);
   
   const { tournaments, currentTournament, setCurrentTournament, isLoading } = useTournament();
 
   const menuItems = [
-    { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/admin/groups', icon: Users, label: 'Groups' },
-    { path: '/admin/checkin', icon: ClipboardCheck, label: 'Check-In' },
-    { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
-    { path: '/admin/tournaments', icon: Calendar, label: 'Tournaments' },
-    { path: '/admin/settings', icon: Settings, label: 'Settings' },
+    { path: adminPath('dashboard'), icon: LayoutDashboard, label: 'Dashboard' },
+    { path: adminPath('groups'), icon: Users, label: 'Groups' },
+    { path: adminPath('checkin'), icon: ClipboardCheck, label: 'Check-In' },
+    { path: adminPath('reports'), icon: BarChart3, label: 'Reports' },
+    { path: adminPath('tournaments'), icon: Calendar, label: 'Tournaments' },
+    { path: adminPath('settings'), icon: Settings, label: 'Settings' },
   ];
+
+  const moduleItems = isOrgScopedAdmin && currentTournament
+    ? [
+        {
+          path: adminPath(`tournaments/${currentTournament.slug}/scorecard`),
+          icon: ListChecks,
+          label: 'Live Scoring',
+        },
+        {
+          path: adminPath(`tournaments/${currentTournament.slug}/raffle`),
+          icon: Gift,
+          label: 'Raffle',
+        },
+        {
+          path: adminPath(`tournaments/${currentTournament.slug}/sponsors`),
+          icon: Flag,
+          label: 'Sponsors',
+        },
+      ]
+    : [];
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -34,6 +56,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const handleTournamentSelect = (tournament: typeof currentTournament) => {
     if (tournament) {
       setCurrentTournament(tournament);
+
+      // Keep slug-routed admin module pages in sync with selected tournament.
+      const marker = '/admin/tournaments/';
+      if (location.pathname.includes(marker)) {
+        const [prefix, suffix] = location.pathname.split(marker);
+        const suffixParts = suffix.split('/').filter(Boolean);
+        if (suffixParts.length > 0) {
+          const trailingPath = suffixParts.slice(1).join('/');
+          const nextPath = trailingPath.length > 0
+            ? `${prefix}${marker}${tournament.slug}/${trailingPath}`
+            : `${prefix}${marker}${tournament.slug}`;
+          navigate(nextPath);
+        }
+      }
     }
     setTournamentDropdownOpen(false);
   };
@@ -61,7 +97,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </button>
             
             {/* Tournament Selector (Desktop) */}
-            <div className="hidden lg:block relative">
+            <div className="hidden lg:flex items-center gap-3">
+              {currentTournament && (
+                <div className="rounded-full border border-brand-600 bg-brand-700/50 px-3 py-1 text-xs text-brand-100">
+                  Viewing: <span className="font-semibold text-white">{currentTournament.short_name}</span>
+                </div>
+              )}
+              <div className="relative">
               <button
                 onClick={() => setTournamentDropdownOpen(!tournamentDropdownOpen)}
                 className="flex items-center gap-2 px-3 py-1.5 bg-brand-700 hover:bg-brand-700 rounded-lg text-sm transition-colors"
@@ -129,7 +171,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                           <button
                             onClick={() => {
                               setTournamentDropdownOpen(false);
-                              navigate('/admin/tournaments');
+                              navigate(adminPath('tournaments'));
                             }}
                             className="w-full text-left px-3 py-2 text-xs text-brand-600 hover:text-brand-800"
                           >
@@ -143,7 +185,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                       <button
                         onClick={() => {
                           setTournamentDropdownOpen(false);
-                          navigate('/admin/tournaments');
+                          navigate(adminPath('tournaments'));
                         }}
                         className="w-full text-left px-3 py-2 text-sm text-brand-600 hover:text-brand-800 font-medium"
                       >
@@ -153,6 +195,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   </div>
                 </>
               )}
+              </div>
             </div>
             
             <div className="flex items-center gap-2 lg:gap-4">
@@ -213,7 +256,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               
               {menuItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isDashboardRoot = item.label === 'Dashboard' && location.pathname === basePath;
+                const isActive = location.pathname === item.path || isDashboardRoot;
                 return (
                   <button
                     key={item.path}
@@ -229,6 +273,30 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   </button>
                 );
               })}
+              {moduleItems.length > 0 && (
+                <div className="mt-2 border-t border-brand-600 pt-2">
+                  <p className="px-4 py-1 text-xs uppercase tracking-wide text-brand-300">Modules</p>
+                  {moduleItems.map((item) => {
+                    const Icon = item.icon;
+                    const isDashboardRoot = item.label === 'Dashboard' && location.pathname === basePath;
+                    const isActive = location.pathname === item.path || isDashboardRoot;
+                    return (
+                      <button
+                        key={item.path}
+                        onClick={() => handleNavigate(item.path)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                          isActive
+                            ? 'bg-brand-800 text-white'
+                            : 'text-brand-100 hover:bg-brand-700'
+                        }`}
+                      >
+                        <Icon size={20} />
+                        <span className="font-medium">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               <button
                 onClick={() => handleNavigate('/')}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-brand-100 hover:bg-brand-700 transition-colors"
@@ -248,7 +316,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <div className="bg-white rounded-lg shadow-md p-4 space-y-2 sticky top-24">
               {menuItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isDashboardRoot = item.label === 'Dashboard' && location.pathname === basePath;
+                const isActive = location.pathname === item.path || isDashboardRoot;
                 return (
                   <button
                     key={item.path}
@@ -264,6 +333,29 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   </button>
                 );
               })}
+              {moduleItems.length > 0 && (
+                <>
+                  <p className="px-4 pt-3 text-xs uppercase tracking-wide text-gray-400">Modules</p>
+                  {moduleItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <button
+                        key={item.path}
+                        onClick={() => navigate(item.path)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                          isActive
+                            ? 'bg-brand-800 text-white'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <Icon size={20} />
+                        <span className="font-medium">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </>
+              )}
             </div>
           </aside>
 

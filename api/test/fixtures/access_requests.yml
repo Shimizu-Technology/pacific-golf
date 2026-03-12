@@ -1,0 +1,8 @@
+one:
+  organization_name: "Test Rotary"
+  contact_name: "Alex Torres"
+  email: "alex@example.com"
+  phone: "671-555-0101"
+  notes: "Interested in launching in Q2."
+  status: "new"
+  source: "homepage"

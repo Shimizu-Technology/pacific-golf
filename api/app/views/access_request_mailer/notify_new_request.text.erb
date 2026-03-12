@@ -1,0 +1,11 @@
+New Access Request
+
+Organization: <%= @access_request.organization_name %>
+Contact Name: <%= @access_request.contact_name %>
+Email: <%= @access_request.email %>
+Phone: <%= @access_request.phone.presence || "Not provided" %>
+Source: <%= @access_request.source %>
+Submitted At: <%= @access_request.created_at.in_time_zone("Guam").strftime("%b %-d, %Y %l:%M %p") %>
+
+Notes:
+<%= @access_request.notes.presence || "No notes provided." %>

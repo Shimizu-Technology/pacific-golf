@@ -14,9 +14,11 @@ const TournamentContext = createContext<TournamentContextType | undefined>(undef
 
 interface TournamentProviderProps {
   children: ReactNode;
+  orgSlug?: string;
+  initialTournamentSlug?: string;
 }
 
-export function TournamentProvider({ children }: TournamentProviderProps) {
+export function TournamentProvider({ children, orgSlug, initialTournamentSlug }: TournamentProviderProps) {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [currentTournament, setCurrentTournamentState] = useState<Tournament | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,19 +29,44 @@ export function TournamentProvider({ children }: TournamentProviderProps) {
       setIsLoading(true);
       setError(null);
       const data = await api.getTournaments();
-      setTournaments(data);
+      const scopedData = orgSlug
+        ? data.filter((t) => t.organization_slug === orgSlug)
+        : data;
+      setTournaments(scopedData);
       
-      // If no current tournament is set, try to find the open one
+      // Deep-link tournament slug must win over previously selected tournament.
+      const preferredTournament = initialTournamentSlug
+        ? scopedData.find((t) => t.slug === initialTournamentSlug)
+        : null;
+      if (preferredTournament) {
+        setCurrentTournamentState(preferredTournament);
+        api.setCurrentTournament(preferredTournament.id);
+        return;
+      }
+
+      // If current tournament no longer exists in scope, clear it.
+      if (currentTournament && !scopedData.some((t) => t.id === currentTournament.id)) {
+        setCurrentTournamentState(null);
+        api.setCurrentTournament(null);
+      }
+
+      // If no current tournament is set, try open then most recent.
       if (!currentTournament) {
-        const openTournament = data.find(t => t.status === 'open');
+        const openTournament = scopedData.find(t => t.status === 'open');
         if (openTournament) {
           setCurrentTournamentState(openTournament);
           api.setCurrentTournament(openTournament.id);
-        } else if (data.length > 0) {
+        } else if (scopedData.length > 0) {
           // Fall back to the most recent tournament
-          const mostRecent = data.sort((a, b) => b.year - a.year || b.id - a.id)[0];
+          const mostRecent = [...scopedData].sort((a, b) => b.year - a.year || b.id - a.id)[0];
           setCurrentTournamentState(mostRecent);
           api.setCurrentTournament(mostRecent.id);
+        } else {
+          // Critical: clear shared API context so stale tournament IDs don't leak across orgs.
+          setCurrentTournamentState(null);
+          api.setCurrentTournament(null);
+          const scopedKey = orgSlug ? `currentTournamentId:${orgSlug}` : 'currentTournamentId';
+          localStorage.removeItem(scopedKey);
         }
       }
     } catch (err) {
@@ -54,10 +81,11 @@ export function TournamentProvider({ children }: TournamentProviderProps) {
     api.setCurrentTournament(tournament?.id || null);
     
     // Save to localStorage for persistence
+    const scopedKey = orgSlug ? `currentTournamentId:${orgSlug}` : 'currentTournamentId';
     if (tournament) {
-      localStorage.setItem('currentTournamentId', tournament.id.toString());
+      localStorage.setItem(scopedKey, tournament.id.toString());
     } else {
-      localStorage.removeItem('currentTournamentId');
+      localStorage.removeItem(scopedKey);
     }
   };
 
@@ -68,29 +96,48 @@ export function TournamentProvider({ children }: TournamentProviderProps) {
         setIsLoading(true);
         setError(null);
         const data = await api.getTournaments();
-        setTournaments(data);
+        const scopedData = orgSlug
+          ? data.filter((t) => t.organization_slug === orgSlug)
+          : data;
+        setTournaments(scopedData);
         
-        // Try to restore from localStorage first
-        const savedId = localStorage.getItem('currentTournamentId');
+        // Deep-link tournament slug must win over localStorage for deterministic context.
+        if (initialTournamentSlug) {
+          const initialTournament = scopedData.find((t) => t.slug === initialTournamentSlug);
+          if (initialTournament) {
+            setCurrentTournamentState(initialTournament);
+            api.setCurrentTournament(initialTournament.id);
+            return;
+          }
+        }
+
+        // Try to restore from localStorage next (scoped by org when available)
+        const scopedKey = orgSlug ? `currentTournamentId:${orgSlug}` : 'currentTournamentId';
+        const savedId = localStorage.getItem(scopedKey);
         if (savedId) {
-          const savedTournament = data.find(t => t.id === parseInt(savedId));
+          const savedTournament = scopedData.find(t => t.id === parseInt(savedId));
           if (savedTournament) {
             setCurrentTournamentState(savedTournament);
             api.setCurrentTournament(savedTournament.id);
             return;
           }
         }
-        
+
         // Otherwise, find the open tournament
-        const openTournament = data.find(t => t.status === 'open');
+        const openTournament = scopedData.find(t => t.status === 'open');
         if (openTournament) {
           setCurrentTournamentState(openTournament);
           api.setCurrentTournament(openTournament.id);
-        } else if (data.length > 0) {
+        } else if (scopedData.length > 0) {
           // Fall back to the most recent tournament
-          const mostRecent = data.sort((a, b) => b.year - a.year || b.id - a.id)[0];
+          const mostRecent = [...scopedData].sort((a, b) => b.year - a.year || b.id - a.id)[0];
           setCurrentTournamentState(mostRecent);
           api.setCurrentTournament(mostRecent.id);
+        } else {
+          // Critical: clear shared API context so stale tournament IDs don't leak across orgs.
+          setCurrentTournamentState(null);
+          api.setCurrentTournament(null);
+          localStorage.removeItem(scopedKey);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load tournaments');
@@ -100,7 +147,7 @@ export function TournamentProvider({ children }: TournamentProviderProps) {
     };
 
     loadTournaments();
-  }, []);
+  }, [orgSlug, initialTournamentSlug]);
 
   return (
     <TournamentContext.Provider

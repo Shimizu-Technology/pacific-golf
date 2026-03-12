@@ -27,17 +27,25 @@ org2 = Organization.find_or_create_by!(slug: 'chamber-of-commerce') do |o|
 end
 puts "  Created organization: #{org2.name} (#{org2.slug})"
 
-# Create default admin user
-admin = User.find_or_create_by!(email: 'jerry.shimizutechnology@gmail.com') do |u|
-  u.name = 'Jerry'
-  u.role = 'super_admin'
-end
-puts "  Created super admin: #{admin.email}"
+# Optional bootstrap super admin from environment
+bootstrap_admin_email = ENV["BOOTSTRAP_SUPER_ADMIN_EMAIL"]&.strip&.downcase
+bootstrap_admin_name = ENV["BOOTSTRAP_SUPER_ADMIN_NAME"]&.strip
+admin = nil
 
-# Add admin to both organizations
-org.add_admin(admin)
-org2.add_admin(admin)
-puts "  Added #{admin.email} to both organizations"
+if bootstrap_admin_email.present?
+  admin = User.find_or_initialize_by(email: bootstrap_admin_email)
+  admin.name = bootstrap_admin_name if bootstrap_admin_name.present?
+  admin.role = "super_admin"
+  admin.save!
+  puts "  Bootstrapped super admin: #{admin.email}"
+
+  # Optional for local convenience: add bootstrap admin to seeded orgs
+  org.add_admin(admin)
+  org2.add_admin(admin)
+  puts "  Added #{admin.email} to seeded organizations"
+else
+  puts "  Skipped super admin bootstrap (set BOOTSTRAP_SUPER_ADMIN_EMAIL to enable)"
+end
 
 # Create settings (singleton)
 Setting.find_or_create_by!(id: 1) do |s|
@@ -94,5 +102,9 @@ puts "\nSeeding complete!"
 puts "\nOrganizations:"
 puts "  - #{org.name} (#{org.slug}) - #{org.tournaments.count} tournament(s)"
 puts "  - #{org2.name} (#{org2.slug}) - #{org2.tournaments.count} tournament(s)"
-puts "\nAdmin user: #{admin.email} (#{admin.role})"
+if admin
+  puts "\nAdmin user: #{admin.email} (#{admin.role})"
+else
+  puts "\nAdmin user: not bootstrapped from seeds"
+end
 puts "\nOpen tournament: #{tournament.name} - #{tournament.full_url}"

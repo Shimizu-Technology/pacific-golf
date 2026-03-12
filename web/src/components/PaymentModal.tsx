@@ -23,6 +23,7 @@ interface PaymentModalProps {
   entryFee: number; // in dollars
   stripePublicKey: string;
   tournamentId?: string | number;
+  employeeNumber?: string;
 }
 
 export function PaymentModal({
@@ -33,6 +34,7 @@ export function PaymentModal({
   entryFee,
   stripePublicKey,
   tournamentId,
+  employeeNumber,
 }: PaymentModalProps) {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function PaymentModal({
     
     try {
       console.log('[PaymentModal] Creating embedded checkout session...');
-      const response = await api.createEmbeddedCheckout(golferData, undefined, tournamentId);
+      const response = await api.createEmbeddedCheckout(golferData, employeeNumber, tournamentId);
       
       if (response.error) {
         console.error('[PaymentModal] Error from API:', response.error);
@@ -72,7 +74,7 @@ export function PaymentModal({
       setIsLoading(false);
       return '';
     }
-  }, [golferData, tournamentId]);
+  }, [employeeNumber, golferData, tournamentId]);
 
   // Handle checkout completion - navigate to success page
   const handleComplete = useCallback(() => {

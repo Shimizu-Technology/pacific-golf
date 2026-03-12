@@ -103,6 +103,31 @@ class Api::V1::GolfersControllerTest < ActionDispatch::IntegrationTest
     assert json.key?("errors")
   end
 
+  test "create applies employee discount when valid employee number is provided" do
+    tournament = tournaments(:tournament_one)
+    tournament.update!(employee_discount_enabled: true, employee_entry_fee: 4500)
+    employee_number = tournament.employee_numbers.create!(employee_number: "EMP-1001", employee_name: "Airport Staff")
+    unique_email = "employee-#{SecureRandom.hex(4)}@test.com"
+
+    post api_v1_golfers_url, params: {
+      tournament_id: tournament.id,
+      golfer: {
+        name: "Employee Golfer",
+        email: unique_email,
+        phone: "671-555-4444",
+        payment_type: "pay_on_day"
+      },
+      waiver_accepted: true,
+      employee_number: employee_number.employee_number
+    }
+
+    assert_response :created
+    golfer = Golfer.find_by!(email: unique_email)
+    assert_equal true, golfer.is_employee
+    assert_equal "EMP-1001", golfer.employee_number
+    assert_equal true, employee_number.reload.used
+  end
+
   # ==================
   # PATCH /api/v1/golfers/:id
   # ==================
@@ -283,6 +308,14 @@ class Api::V1::GolfersControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "toggle_employee marks unpaid golfer as employee" do
+    golfer = golfers(:confirmed_unpaid)
+    post toggle_employee_api_v1_golfer_url(golfer), headers: auth_headers
+
+    assert_response :success
+    assert_equal true, golfer.reload.is_employee
+  end
+
   # ==================
   # GET /api/v1/golfers/registration_status (public)
   # ==================
@@ -369,9 +402,11 @@ class Api::V1::GolfersControllerTest < ActionDispatch::IntegrationTest
     assert_equal tournament.entry_fee, golfer.payment_amount_cents
   end
 
-  test "payment_details preserves entry fee regardless of golfer type flags" do
+  test "payment_details uses employee entry fee for employees" do
     golfer = golfers(:confirmed_unpaid)
     tournament = golfer.tournament
+    tournament.update!(employee_discount_enabled: true, employee_entry_fee: 5000)
+    golfer.update!(is_employee: true)
 
     post payment_details_api_v1_golfer_url(golfer), params: {
       payment_method: "cash"
@@ -379,7 +414,7 @@ class Api::V1::GolfersControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     golfer.reload
-    assert_equal tournament.entry_fee, golfer.payment_amount_cents
+    assert_equal tournament.employee_entry_fee, golfer.payment_amount_cents
   end
 end
 

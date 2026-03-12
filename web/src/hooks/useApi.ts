@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { api } from '../services/api';
+import { getAdminAuthToken } from '../utils/clerkToken';
 
 /**
  * Hook to initialize the API client with Clerk's auth token.
@@ -14,7 +15,7 @@ export function useApiAuth() {
     // Use the giaa-tournament JWT template which includes the email claim
     api.setAuthTokenGetter(async () => {
       try {
-        return await getToken({ template: 'giaa-tournament' });
+        return await getAdminAuthToken(getToken);
       } catch (error) {
         console.error('Failed to get auth token:', error);
         return null;

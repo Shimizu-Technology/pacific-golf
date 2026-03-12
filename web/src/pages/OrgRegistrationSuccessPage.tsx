@@ -1,19 +1,26 @@
 import { useEffect } from 'react';
 import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import { useOrganization } from '../components/OrganizationProvider';
-import { CheckCircle, Calendar, MapPin, Mail, CreditCard, ArrowLeft, Share2, Check } from 'lucide-react';
+import { CheckCircle, Calendar, MapPin, Mail, CreditCard, ArrowLeft, Share2, Check, LayoutDashboard, LogIn } from 'lucide-react';
 import { Button, Card } from '../components/ui';
 import confetti from 'canvas-confetti';
+import { SignedInAdminBar } from '../components/SignedInAdminBar';
+import { adjustColor } from '../utils/colors';
+import { resolveTournamentBranding } from '../utils/tournamentBranding';
 
 export function OrgRegistrationSuccessPage() {
   const { orgSlug, tournamentSlug } = useParams<{ orgSlug: string; tournamentSlug: string }>();
+  const { isLoaded, isSignedIn } = useAuth();
   const { organization } = useOrganization();
   const location = useLocation();
   const navigate = useNavigate();
   
   const { golfer, tournament, paymentPending, paymentComplete } = location.state || {};
   
-  const primaryColor = organization?.primary_color || '#1e40af';
+  const branding = resolveTournamentBranding(organization, tournament);
+  const primaryColor = branding.primaryColor;
+  const primaryDark = adjustColor(primaryColor, -0.15);
 
   // Confetti on mount
   useEffect(() => {
@@ -53,16 +60,50 @@ export function OrgRegistrationSuccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-stone-50">
+      <SignedInAdminBar dashboardPath={`/${orgSlug}/admin`} />
       {/* Header */}
-      <header 
-        className="text-white py-8 px-4"
-        style={{ backgroundColor: primaryColor }}
+      <header
+        className="relative overflow-hidden px-4 py-10 text-white"
       >
-        <div className="max-w-2xl mx-auto text-center">
+        {branding.bannerUrl ? (
+          <div className="absolute inset-0">
+            <img src={branding.bannerUrl} alt="" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
+          </div>
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(145deg, ${primaryDark} 0%, ${primaryColor} 40%, ${adjustColor(primaryColor, 0.08)} 100%)`,
+            }}
+          />
+        )}
+        <div className="max-w-2xl mx-auto text-center relative z-10">
+          <div className="mb-4 flex justify-end gap-2">
+            {isLoaded && isSignedIn ? (
+              <button
+                type="button"
+                onClick={() => navigate(`/${orgSlug}/admin`)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                Staff Dashboard
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => navigate('/admin/login')}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Staff Login
+              </button>
+            )}
+          </div>
           <CheckCircle className="h-16 w-16 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold mb-2">Registration Complete!</h1>
-          <p className="text-lg opacity-90">
+          <h1 className="text-3xl font-display font-bold tracking-tight mb-2">Registration Complete!</h1>
+          <p className="text-lg text-white/90">
             You're registered for {tournament.display_name}
           </p>
         </div>
@@ -70,45 +111,45 @@ export function OrgRegistrationSuccessPage() {
 
       {/* Main Content */}
       <main className="max-w-2xl mx-auto px-4 py-8 -mt-4">
-        <Card className="p-6 mb-6">
-          <h2 className="font-bold text-lg mb-4">Registration Details</h2>
+        <Card className="mb-6 rounded-2xl border border-stone-200 p-6 shadow-soft">
+          <h2 className="mb-4 text-lg font-bold text-stone-900">Registration Details</h2>
           
           {golfer && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <p className="font-medium text-lg">{golfer.name}</p>
+            <div className="mb-6 rounded-xl border border-stone-200 bg-stone-50 p-4">
+              <p className="text-lg font-semibold text-stone-900">{golfer.name}</p>
               {golfer.email && (
-                <p className="text-gray-600 flex items-center gap-2 mt-1">
+                <p className="mt-1 flex items-center gap-2 text-stone-600">
                   <Mail size={16} />
                   {golfer.email}
                 </p>
               )}
               {golfer.company && (
-                <p className="text-gray-500 text-sm mt-1">{golfer.company}</p>
+                <p className="mt-1 text-sm text-stone-500">{golfer.company}</p>
               )}
             </div>
           )}
 
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <Calendar className="text-gray-400 mt-1" size={20} />
+              <Calendar className="mt-1 text-stone-400" size={20} />
               <div>
-                <p className="font-medium">{tournament.event_date || 'Date TBA'}</p>
+                <p className="font-medium text-stone-900">{tournament.event_date || 'Date TBA'}</p>
                 {tournament.registration_time && (
-                  <p className="text-gray-500 text-sm">Registration: {tournament.registration_time}</p>
+                  <p className="text-sm text-stone-500">Registration: {tournament.registration_time}</p>
                 )}
                 {tournament.start_time && (
-                  <p className="text-gray-500 text-sm">Start: {tournament.start_time}</p>
+                  <p className="text-sm text-stone-500">Start: {tournament.start_time}</p>
                 )}
               </div>
             </div>
 
             {tournament.location_name && (
               <div className="flex items-start gap-3">
-                <MapPin className="text-gray-400 mt-1" size={20} />
+                <MapPin className="mt-1 text-stone-400" size={20} />
                 <div>
-                  <p className="font-medium">{tournament.location_name}</p>
+                  <p className="font-medium text-stone-900">{tournament.location_name}</p>
                   {tournament.location_address && (
-                    <p className="text-gray-500 text-sm">{tournament.location_address}</p>
+                    <p className="text-sm text-stone-500">{tournament.location_address}</p>
                   )}
                 </div>
               </div>
@@ -117,11 +158,11 @@ export function OrgRegistrationSuccessPage() {
         </Card>
 
         {/* Payment Status Card */}
-        <Card className="p-6 mb-6">
+        <Card className="mb-6 rounded-2xl border border-stone-200 p-6 shadow-soft">
           <div className="flex items-start gap-3">
-            <CreditCard className="text-gray-400 mt-1" size={20} />
+            <CreditCard className="mt-1 text-stone-400" size={20} />
             <div className="flex-1">
-              <h3 className="font-bold mb-2">Payment Status</h3>
+              <h3 className="mb-2 font-bold text-stone-900">Payment Status</h3>
               
               {paymentComplete ? (
                 <div className="bg-green-50 text-green-800 p-3 rounded-lg">
@@ -146,7 +187,7 @@ export function OrgRegistrationSuccessPage() {
                   )}
                 </div>
               ) : (
-                <div className="bg-gray-50 text-gray-700 p-3 rounded-lg">
+                <div className="rounded-lg bg-stone-100 p-3 text-stone-700">
                   <p className="text-sm">Payment status will be confirmed via email.</p>
                 </div>
               )}
@@ -155,9 +196,9 @@ export function OrgRegistrationSuccessPage() {
         </Card>
 
         {/* What's Next Card */}
-        <Card className="p-6 mb-6">
-          <h3 className="font-bold mb-4">What's Next?</h3>
-          <ul className="space-y-3 text-gray-600">
+        <Card className="mb-6 rounded-2xl border border-stone-200 p-6 shadow-soft">
+          <h3 className="mb-4 font-bold text-stone-900">What's Next?</h3>
+          <ul className="space-y-3 text-stone-600">
             <li className="flex items-start gap-3">
               <span className="bg-brand-100 text-brand-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium flex-shrink-0">1</span>
               <span>Check your email for a confirmation message</span>
@@ -208,9 +249,9 @@ export function OrgRegistrationSuccessPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-6 px-4 mt-12">
+      <footer className="mt-12 border-t border-stone-200 bg-stone-900 py-6 px-4 text-white">
         <div className="max-w-2xl mx-auto text-center">
-          <p className="text-gray-400">
+          <p className="text-stone-400">
             Powered by <span className="text-white font-semibold">Pacific Golf</span>
           </p>
         </div>

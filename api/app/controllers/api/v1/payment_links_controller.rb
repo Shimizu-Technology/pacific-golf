@@ -28,7 +28,7 @@ module Api
         end
 
         tournament = golfer.tournament
-        entry_fee = tournament&.entry_fee || 12500
+        entry_fee = golfer.effective_entry_fee_cents
 
         render json: {
           golfer: {
@@ -37,6 +37,7 @@ module Api
             email: golfer.email,
             phone: golfer.phone,
             company: golfer.company,
+            is_employee: golfer.is_employee?,
             registration_status: golfer.registration_status
           },
           tournament: {
@@ -83,7 +84,7 @@ module Api
 
         Stripe.api_key = setting.stripe_secret_key
         frontend_url = ENV.fetch("FRONTEND_URL", "http://localhost:5173")
-        entry_fee = tournament&.entry_fee || 12500
+        entry_fee = golfer.effective_entry_fee_cents
 
         begin
           session = Stripe::Checkout::Session.create({
@@ -125,7 +126,7 @@ module Api
       private
 
       def handle_test_mode(golfer, tournament)
-        entry_fee = tournament&.entry_fee || 12500
+        entry_fee = golfer.effective_entry_fee_cents
         test_session_id = "test_paylink_#{SecureRandom.hex(16)}"
         test_payment_intent_id = "test_pi_paylink_#{SecureRandom.hex(8)}"
         emails_sent = false

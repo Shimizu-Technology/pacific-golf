@@ -43,7 +43,7 @@ class Api::V1::AdminsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "create returns error for duplicate email" do
-    existing = admins(:admin_two)
+    existing = admins(:admin_one)
     
     post api_v1_admins_url, params: {
       admin: { email: existing.email }

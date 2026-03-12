@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useOrganization } from '../components/OrganizationProvider';
 import { useAuthToken } from '../hooks/useAuthToken';
+import { OrgAdminLayout } from '../components/OrgAdminLayout';
 import { ImageUpload } from '../components/ImageUpload';
+import { isValidWebsiteUrl, normalizeWebsiteUrl } from '../utils/url';
 import {
   ArrowLeft,
   Building2,
@@ -28,6 +30,7 @@ interface OrgMember {
   name: string;
   email: string;
   role: string;
+  signed_in: boolean;
   created_at: string;
 }
 
@@ -64,6 +67,8 @@ export const OrgSettingsPage: React.FC = () => {
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [addingMember, setAddingMember] = useState(false);
+  const [resendingMemberId, setResendingMemberId] = useState<string | null>(null);
+  const inviteDeliveryHint = 'Invite sent. If they do not see it, ask them to check spam/promotions.';
 
   useEffect(() => {
     if (organization) {
@@ -124,6 +129,7 @@ export const OrgSettingsPage: React.FC = () => {
         setMembers(prev => [...prev, data.member]);
         setNewMemberEmail('');
         toast.success('Admin added successfully');
+        toast.success(inviteDeliveryHint, { duration: 5000 });
       } else {
         toast.error(data.error || 'Failed to add admin');
       }
@@ -155,6 +161,30 @@ export const OrgSettingsPage: React.FC = () => {
     }
   };
 
+  const handleResendInvite = async (memberId: string) => {
+    if (!organization?.slug) return;
+    setResendingMemberId(memberId);
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/members/${memberId}/resend_invite`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to resend invite');
+      }
+      if (data.member) {
+        setMembers(prev => prev.map((member) => (member.id === memberId ? data.member : member)));
+      }
+      toast.success('Invite resent. Ask them to check spam/promotions if needed.', { duration: 5000 });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to resend invite');
+    } finally {
+      setResendingMemberId(null);
+    }
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -172,6 +202,12 @@ export const OrgSettingsPage: React.FC = () => {
     }
   };
 
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name } = e.target;
+    if (name !== 'website_url') return;
+    setFormData(prev => (prev ? { ...prev, website_url: normalizeWebsiteUrl(prev.website_url) } : prev));
+  };
+
   const validate = (): boolean => {
     if (!formData) return false;
     const newErrors: Partial<Record<keyof FormData, string>> = {};
@@ -182,8 +218,8 @@ export const OrgSettingsPage: React.FC = () => {
       newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
     if (formData.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_email))
       newErrors.contact_email = 'Invalid email format';
-    if (formData.website_url && !formData.website_url.startsWith('http'))
-      newErrors.website_url = 'Website URL must start with http:// or https://';
+    if (formData.website_url && !isValidWebsiteUrl(formData.website_url))
+      newErrors.website_url = 'Please enter a valid website URL';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -197,6 +233,11 @@ export const OrgSettingsPage: React.FC = () => {
     }
 
     setSaving(true);
+    const normalizedFormData = {
+      ...formData,
+      website_url: normalizeWebsiteUrl(formData.website_url),
+    };
+    setFormData(normalizedFormData);
     try {
       const token = await getToken();
       const response = await fetch(
@@ -207,7 +248,7 @@ export const OrgSettingsPage: React.FC = () => {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ organization: formData }),
+          body: JSON.stringify({ organization: normalizedFormData }),
         }
       );
 
@@ -226,53 +267,31 @@ export const OrgSettingsPage: React.FC = () => {
 
   if (!organization || !formData) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <OrgAdminLayout
+      orgName={organization.name}
+      orgSlug={organization.slug}
+      primaryColor={organization.primary_color}
+      title="Organization Settings"
+      subtitle="Branding, contact information, and admin access"
+      rightActions={
+        <Link
+          to={`/${orgSlug}/admin`}
+          className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Link>
+      }
+    >
       <Toaster position="top-right" />
-
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <Link
-            to={`/${orgSlug}/admin`}
-            className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Link>
-          <div className="flex items-center gap-4">
-            {organization.logo_url ? (
-              <img
-                src={organization.logo_url}
-                alt={organization.name}
-                className="w-14 h-14 rounded-xl object-contain bg-gray-100"
-              />
-            ) : (
-              <div
-                className="w-14 h-14 rounded-xl flex items-center justify-center text-white text-xl font-bold"
-                style={{ backgroundColor: organization.primary_color || '#16a34a' }}
-              >
-                {organization.name?.charAt(0) || 'O'}
-              </div>
-            )}
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Settings className="w-6 h-6 text-gray-400" />
-                Organization Settings
-              </h1>
-              <p className="text-gray-500">{organization.name}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-5xl">
         <form onSubmit={handleSubmit}>
           {/* Basic Info */}
           <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -425,14 +444,19 @@ export const OrgSettingsPage: React.FC = () => {
                   <Globe className="w-4 h-4 inline mr-1" /> Website
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   name="website_url"
                   value={formData.website_url}
                   onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="example.org"
                   className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.website_url ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
+                {!errors.website_url && (
+                  <p className="mt-1 text-sm text-gray-500">We'll automatically add https:// if omitted</p>
+                )}
                 {errors.website_url && <p className="mt-1 text-sm text-red-600">{errors.website_url}</p>}
               </div>
             </div>
@@ -501,6 +525,9 @@ export const OrgSettingsPage: React.FC = () => {
               Add Admin
             </button>
           </div>
+          <p className="mb-6 text-xs text-gray-500">
+            Invited admins receive an email with sign-up instructions. If they do not receive it, check spam/promotions.
+          </p>
 
           {/* Member list */}
           <div className="space-y-3">
@@ -527,6 +554,21 @@ export const OrgSettingsPage: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                      member.signed_in
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {member.signed_in ? 'Signed in' : 'Pending'}
+                    </span>
+                    <button
+                      onClick={() => handleResendInvite(member.id)}
+                      disabled={resendingMemberId === member.id || member.signed_in}
+                      className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      title={member.signed_in ? 'User already signed in' : 'Resend invitation email'}
+                    >
+                      {resendingMemberId === member.id ? 'Sending...' : 'Resend Invite'}
+                    </button>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
                       member.role === 'admin'
                         ? 'bg-amber-100 text-amber-700'
                         : 'bg-gray-200 text-gray-600'
@@ -549,7 +591,7 @@ export const OrgSettingsPage: React.FC = () => {
           </div>
         </div>
       </main>
-    </div>
+    </OrgAdminLayout>
   );
 };
 

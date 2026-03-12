@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuthToken } from '../hooks/useAuthToken';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { ImageUpload } from '../components/ImageUpload';
+import { isValidWebsiteUrl, normalizeWebsiteUrl } from '../utils/url';
 import {
   ArrowLeft,
   Building2,
@@ -16,7 +17,11 @@ import {
   ExternalLink,
   Trophy,
   Users,
+  UserPlus,
   Trash2,
+  Crown,
+  Shield,
+  RefreshCw,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -37,6 +42,16 @@ interface Organization extends FormData {
   subscription_status: string;
   tournament_count: number;
   admin_count: number;
+  created_at: string;
+}
+
+interface OrgMember {
+  id: string;
+  user_id: number;
+  name: string;
+  email: string;
+  role: string;
+  signed_in: boolean;
   created_at: string;
 }
 
@@ -61,6 +76,14 @@ export const EditOrganizationPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [members, setMembers] = useState<OrgMember[]>([]);
+  const [membersLoaded, setMembersLoaded] = useState(false);
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [addingMember, setAddingMember] = useState(false);
+  const [updatingMemberId, setUpdatingMemberId] = useState<string | null>(null);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [resendingInviteId, setResendingInviteId] = useState<string | null>(null);
+  const inviteDeliveryHint = 'Invite sent. If they do not see it, ask them to check spam/promotions.';
 
   useEffect(() => {
     if (!userLoading && !isSuperAdmin) {
@@ -119,6 +142,179 @@ export const EditOrganizationPage: React.FC = () => {
     fetchOrganization();
   }, [isSuperAdmin, id, getToken, navigate]);
 
+  const syncAdminCountFromMembers = (nextMembers: OrgMember[]) => {
+    setOrganization((prev) => {
+      if (!prev) return prev;
+      const adminCount = nextMembers.filter((member) => member.role === 'admin').length;
+      return { ...prev, admin_count: adminCount };
+    });
+  };
+
+  const fetchMembers = async (orgSlug: string) => {
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${orgSlug}/members`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error('Failed to load organization admins');
+      }
+      const data = await response.json();
+      const nextMembers = (data.members || []) as OrgMember[];
+      setMembers(nextMembers);
+      syncAdminCountFromMembers(nextMembers);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load organization admins');
+    } finally {
+      setMembersLoaded(true);
+    }
+  };
+
+  useEffect(() => {
+    if (organization?.slug) {
+      fetchMembers(organization.slug);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organization?.slug]);
+
+  const handleAddMember = async () => {
+    if (!organization?.slug) return;
+    const email = newMemberEmail.trim().toLowerCase();
+    if (!email) return;
+
+    setAddingMember(true);
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/members`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, role: 'admin' }),
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add organization admin');
+      }
+
+      const nextMembers = [...members, data.member];
+      setMembers(nextMembers);
+      syncAdminCountFromMembers(nextMembers);
+      setNewMemberEmail('');
+      toast.success('Organization admin invited successfully');
+      toast.success(inviteDeliveryHint, { duration: 5000 });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add organization admin');
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
+  const handleUpdateMemberRole = async (memberId: string, role: 'admin' | 'member') => {
+    if (!organization?.slug) return;
+    setUpdatingMemberId(memberId);
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/members/${memberId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ role }),
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update role');
+      }
+
+      const nextMembers = members.map((member) =>
+        member.id === memberId ? data.member : member
+      );
+      setMembers(nextMembers);
+      syncAdminCountFromMembers(nextMembers);
+      toast.success('Member role updated');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update role');
+    } finally {
+      setUpdatingMemberId(null);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!organization?.slug) return;
+    setRemovingMemberId(memberId);
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/members/${memberId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to remove member');
+      }
+
+      const nextMembers = members.filter((member) => member.id !== memberId);
+      setMembers(nextMembers);
+      syncAdminCountFromMembers(nextMembers);
+      toast.success('Organization admin removed');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove member');
+    } finally {
+      setRemovingMemberId(null);
+    }
+  };
+
+  const handleResendInvite = async (memberId: string) => {
+    if (!organization?.slug) return;
+    setResendingInviteId(memberId);
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/members/${memberId}/resend_invite`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to resend invite');
+      }
+
+      if (data.member) {
+        setMembers((prev) => prev.map((member) => (member.id === memberId ? data.member : member)));
+      }
+      toast.success('Invite resent. Ask them to check spam/promotions if needed.', { duration: 5000 });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to resend invite');
+    } finally {
+      setResendingInviteId(null);
+    }
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -155,8 +351,8 @@ export const EditOrganizationPage: React.FC = () => {
       newErrors.contact_email = 'Invalid email format';
     }
 
-    if (formData.website_url && !formData.website_url.startsWith('http')) {
-      newErrors.website_url = 'Website URL must start with http:// or https://';
+    if (formData.website_url && !isValidWebsiteUrl(formData.website_url)) {
+      newErrors.website_url = 'Please enter a valid website URL';
     }
 
     setErrors(newErrors);
@@ -172,6 +368,11 @@ export const EditOrganizationPage: React.FC = () => {
     }
 
     setSaving(true);
+    const normalizedFormData = {
+      ...formData,
+      website_url: normalizeWebsiteUrl(formData.website_url),
+    };
+    setFormData(normalizedFormData);
 
     try {
       const token = await getToken();
@@ -183,7 +384,7 @@ export const EditOrganizationPage: React.FC = () => {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ organization: formData }),
+          body: JSON.stringify({ organization: normalizedFormData }),
         }
       );
 
@@ -204,8 +405,8 @@ export const EditOrganizationPage: React.FC = () => {
 
   if (userLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
       </div>
     );
   }
@@ -215,15 +416,15 @@ export const EditOrganizationPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-stone-50">
       <Toaster position="top-right" />
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <header className="border-b border-stone-800 bg-gradient-to-r from-stone-900 via-slate-900 to-stone-800 text-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
           <Link
             to="/super-admin"
-            className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+            className="mb-4 inline-flex items-center gap-2 text-sm text-stone-300 transition-colors hover:text-white"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
@@ -234,7 +435,7 @@ export const EditOrganizationPage: React.FC = () => {
                 <img
                   src={organization.logo_url}
                   alt={organization.name}
-                  className="w-14 h-14 rounded-xl object-contain bg-gray-100"
+                  className="h-14 w-14 rounded-xl bg-white/10 object-contain ring-1 ring-white/15"
                 />
               ) : (
                 <div
@@ -245,13 +446,13 @@ export const EditOrganizationPage: React.FC = () => {
                 </div>
               )}
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{organization.name}</h1>
-                <p className="text-gray-500">/{organization.slug}</p>
+                <h1 className="text-2xl font-display font-bold tracking-tight">{organization.name}</h1>
+                <p className="text-sm text-stone-300">/{organization.slug}</p>
               </div>
             </div>
             <Link
               to={`/${organization.slug}/admin`}
-              className="flex items-center gap-2 px-4 py-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+              className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-emerald-200 transition-colors hover:bg-emerald-500/20"
             >
               <ExternalLink className="w-4 h-4" />
               Go to Org Admin
@@ -260,32 +461,34 @@ export const EditOrganizationPage: React.FC = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Trophy className="w-5 h-5 text-green-600" />
+              <div className="rounded-lg bg-emerald-100 p-2">
+                <Trophy className="w-5 h-5 text-emerald-700" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{organization.tournament_count}</p>
-                <p className="text-sm text-gray-500">Tournaments</p>
+                <p className="text-2xl font-bold text-stone-900">{organization.tournament_count}</p>
+                <p className="text-sm text-stone-500">Tournaments</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Users className="w-5 h-5 text-purple-600" />
+              <div className="rounded-lg bg-violet-100 p-2">
+                <Users className="w-5 h-5 text-violet-700" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{organization.admin_count}</p>
-                <p className="text-sm text-gray-500">Admins</p>
+                <p className="text-2xl font-bold text-stone-900">
+                  {membersLoaded ? members.filter((member) => member.role === 'admin').length : organization.admin_count}
+                </p>
+                <p className="text-sm text-stone-500">Admins</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-lg ${
                 organization.subscription_status === 'active' ? 'bg-green-100' : 'bg-amber-100'
@@ -295,8 +498,8 @@ export const EditOrganizationPage: React.FC = () => {
                 }`} />
               </div>
               <div>
-                <p className="text-lg font-bold text-gray-900 capitalize">{organization.subscription_status}</p>
-                <p className="text-sm text-gray-500">Status</p>
+                <p className="text-lg font-bold capitalize text-stone-900">{organization.subscription_status}</p>
+                <p className="text-sm text-stone-500">Status</p>
               </div>
             </div>
           </div>
@@ -304,12 +507,12 @@ export const EditOrganizationPage: React.FC = () => {
 
         <form onSubmit={handleSubmit}>
           {/* Basic Info */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Basic Information</h2>
+          <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
+            <h2 className="mb-6 text-lg font-semibold text-stone-900">Basic Information</h2>
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   Organization Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -317,8 +520,8 @@ export const EditOrganizationPage: React.FC = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.name ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full rounded-xl border bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    errors.name ? 'border-red-500' : 'border-stone-300'
                   }`}
                 />
                 {errors.name && (
@@ -327,20 +530,20 @@ export const EditOrganizationPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   URL Slug <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center">
-                  <span className="px-4 py-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-xl text-gray-500">
-                    pacificgolf.io/
+                  <span className="rounded-l-xl border border-r-0 border-stone-300 bg-stone-100 px-4 py-3 text-stone-500">
+                    pacific-golf.com/
                   </span>
                   <input
                     type="text"
                     name="slug"
                     value={formData.slug}
                     onChange={handleChange}
-                    className={`flex-1 px-4 py-3 border rounded-r-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                      errors.slug ? 'border-red-500' : 'border-gray-300'
+                    className={`flex-1 rounded-r-xl border bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                      errors.slug ? 'border-red-500' : 'border-stone-300'
                     }`}
                   />
                 </div>
@@ -350,7 +553,7 @@ export const EditOrganizationPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   <FileText className="w-4 h-4 inline mr-1" />
                   Description
                 </label>
@@ -359,22 +562,22 @@ export const EditOrganizationPage: React.FC = () => {
                   value={formData.description}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             </div>
           </div>
 
           {/* Branding */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">
+          <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
+            <h2 className="mb-6 text-lg font-semibold text-stone-900">
               <Palette className="w-5 h-5 inline mr-2" />
               Branding
             </h2>
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   Brand Color
                 </label>
                 <div className="flex items-center gap-4 flex-wrap">
@@ -383,9 +586,9 @@ export const EditOrganizationPage: React.FC = () => {
                       key={color.value}
                       type="button"
                       onClick={() => setFormData(prev => prev ? { ...prev, primary_color: color.value } : null)}
-                      className={`w-10 h-10 rounded-xl border-2 transition-all ${
+                      className={`h-10 w-10 rounded-xl border-2 transition-all ${
                         formData.primary_color === color.value
-                          ? 'border-gray-900 scale-110'
+                          ? 'scale-110 border-stone-900'
                           : 'border-transparent hover:scale-105'
                       }`}
                       style={{ backgroundColor: color.value }}
@@ -397,9 +600,9 @@ export const EditOrganizationPage: React.FC = () => {
                       type="color"
                       value={formData.primary_color}
                       onChange={(e) => setFormData(prev => prev ? { ...prev, primary_color: e.target.value } : null)}
-                      className="w-10 h-10 rounded-xl cursor-pointer"
+                      className="h-10 w-10 cursor-pointer rounded-xl"
                     />
-                    <span className="text-sm text-gray-500">{formData.primary_color}</span>
+                    <span className="text-sm text-stone-500">{formData.primary_color}</span>
                   </div>
                 </div>
               </div>
@@ -425,12 +628,12 @@ export const EditOrganizationPage: React.FC = () => {
           </div>
 
           {/* Contact Info */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Contact Information</h2>
+          <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
+            <h2 className="mb-6 text-lg font-semibold text-stone-900">Contact Information</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   <Mail className="w-4 h-4 inline mr-1" />
                   Contact Email
                 </label>
@@ -439,8 +642,8 @@ export const EditOrganizationPage: React.FC = () => {
                   name="contact_email"
                   value={formData.contact_email}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.contact_email ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full rounded-xl border bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    errors.contact_email ? 'border-red-500' : 'border-stone-300'
                   }`}
                 />
                 {errors.contact_email && (
@@ -449,7 +652,7 @@ export const EditOrganizationPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   <Phone className="w-4 h-4 inline mr-1" />
                   Contact Phone
                 </label>
@@ -458,24 +661,33 @@ export const EditOrganizationPage: React.FC = () => {
                   name="contact_phone"
                   value={formData.contact_phone}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-stone-700">
                   <Globe className="w-4 h-4 inline mr-1" />
                   Website
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   name="website_url"
                   value={formData.website_url}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.website_url ? 'border-red-500' : 'border-gray-300'
+                  onBlur={() =>
+                    setFormData(prev =>
+                      prev ? { ...prev, website_url: normalizeWebsiteUrl(prev.website_url) } : prev
+                    )
+                  }
+                  placeholder="example.org"
+                  className={`w-full rounded-xl border bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    errors.website_url ? 'border-red-500' : 'border-stone-300'
                   }`}
                 />
+                {!errors.website_url && (
+                  <p className="mt-1 text-sm text-stone-500">We'll automatically add https:// if omitted</p>
+                )}
                 {errors.website_url && (
                   <p className="mt-1 text-sm text-red-600">{errors.website_url}</p>
                 )}
@@ -483,18 +695,139 @@ export const EditOrganizationPage: React.FC = () => {
             </div>
           </div>
 
+          <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-stone-900">Organization Admin Access</h2>
+                <p className="mt-1 text-sm text-stone-500">
+                  View and manage all admins for this organization directly from super admin.
+                </p>
+              </div>
+              {membersLoaded ? (
+                <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700">
+                  {members.length} member{members.length === 1 ? '' : 's'}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row">
+              <input
+                type="email"
+                value={newMemberEmail}
+                onChange={(e) => setNewMemberEmail(e.target.value)}
+                placeholder="admin@example.org"
+                className="flex-1 rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddMember();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleAddMember}
+                disabled={addingMember || !newMemberEmail.trim()}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {addingMember ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                Add Admin
+              </button>
+            </div>
+            <p className="mb-5 text-xs text-stone-500">
+              Invited admins receive an email with sign-up instructions. If they do not receive it, check spam/promotions.
+            </p>
+
+            {!membersLoaded ? (
+              <div className="flex items-center justify-center rounded-xl border border-stone-200 bg-stone-50 py-8 text-sm text-stone-500">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading organization admins...
+              </div>
+            ) : members.length === 0 ? (
+              <p className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-6 text-center text-sm text-stone-500">
+                No organization members found.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {members.map((member) => {
+                  const adminCount = members.filter((item) => item.role === 'admin').length;
+                  const isLastAdmin = member.role === 'admin' && adminCount <= 1;
+                  const isBusy = updatingMemberId === member.id || removingMemberId === member.id || resendingInviteId === member.id;
+
+                  return (
+                    <div
+                      key={member.id}
+                      className="flex flex-col gap-3 rounded-xl border border-stone-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="rounded-full bg-stone-100 p-2">
+                          {member.role === 'admin' ? (
+                            <Crown className="h-4 w-4 text-amber-500" />
+                          ) : (
+                            <Shield className="h-4 w-4 text-stone-500" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-stone-900">{member.name}</p>
+                          <p className="truncate text-xs text-stone-500">{member.email}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                            member.signed_in ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                          }`}
+                        >
+                          {member.signed_in ? 'Signed in' : 'Pending invite'}
+                        </span>
+                        <select
+                          value={member.role}
+                          disabled={isBusy}
+                          onChange={(e) => handleUpdateMemberRole(member.id, e.target.value as 'admin' | 'member')}
+                          className="rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
+                        >
+                          <option value="admin">admin</option>
+                          <option value="member">member</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => handleResendInvite(member.id)}
+                          disabled={isBusy || member.signed_in}
+                          title={member.signed_in ? 'User already signed in' : 'Resend invitation email'}
+                          className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-xs font-semibold text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {resendingInviteId === member.id ? 'Sending...' : 'Resend Invite'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMember(member.id)}
+                          disabled={isBusy || isLastAdmin}
+                          title={isLastAdmin ? 'Cannot remove the last admin' : 'Remove member'}
+                          className="rounded-lg p-2 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isBusy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Submit */}
           <div className="flex items-center justify-between">
             <Link
               to="/super-admin"
-              className="px-6 py-3 text-gray-700 hover:text-gray-900"
+              className="px-6 py-3 text-stone-700 transition-colors hover:text-stone-900"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-xl font-semibold transition-colors shadow-lg shadow-green-600/25"
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 font-semibold text-white shadow-brand transition-colors hover:bg-emerald-700 disabled:bg-stone-300"
             >
               {saving ? (
                 <>

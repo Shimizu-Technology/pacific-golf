@@ -34,33 +34,43 @@ module Api
           return
         end
 
-        # Check if user already exists
-        if User.exists?(['LOWER(email) = ?', email])
-          render json: { errors: ['A user with this email already exists'] }, status: :unprocessable_entity
+        org = current_user.accessible_organizations.first
+        unless org
+          return render json: { errors: ["No organization found for current admin"] }, status: :unprocessable_entity
+        end
+
+        user = User.find_or_initialize_by(email: email)
+        if user.new_record?
+          user.assign_attributes(
+            name: params.dig(:admin, :name),
+            role: 'org_admin'
+          )
+          unless user.save
+            return render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+          end
+        end
+
+        if org.organization_memberships.exists?(user: user)
+          render json: { errors: ['This user is already a member of your organization'] }, status: :unprocessable_entity
           return
         end
 
-        user = User.new(
-          email: email,
-          name: params.dig(:admin, :name),
-          role: 'org_admin'
+        org.add_admin(user)
+
+        AdminInvitationMailer.organization_admin_invite(
+          user: user,
+          organization: org,
+          invited_by: current_user
+        ).deliver_later
+
+        ActivityLog.log(
+          admin: current_user,
+          action: 'admin_created',
+          target: user,
+          details: "Added new user: #{user.email}"
         )
 
-        if user.save
-          # Add to first organization
-          org = current_user.accessible_organizations.first
-          org&.add_admin(user)
-
-          ActivityLog.log(
-            admin: current_user,
-            action: 'admin_created',
-            target: user,
-            details: "Added new user: #{user.email}"
-          )
-          render json: user, serializer: AdminSerializer, status: :created
-        else
-          render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
-        end
+        render json: user, serializer: AdminSerializer, status: :created
       end
 
       # PATCH /api/v1/admins/:id
@@ -72,6 +82,33 @@ module Api
         else
           render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
         end
+      end
+
+      # POST /api/v1/admins/:id/resend_invite
+      def resend_invite
+        user = User.find(params[:id])
+        org = current_user.accessible_organizations.first
+
+        unless org
+          return render json: { error: "No organization found for current admin" }, status: :unprocessable_entity
+        end
+
+        membership = org.organization_memberships.find_by(user: user)
+        unless membership
+          return render json: { error: "This user is not a member of your organization" }, status: :not_found
+        end
+
+        AdminInvitationMailer.organization_admin_invite(
+          user: user,
+          organization: org,
+          invited_by: current_user
+        ).deliver_later
+
+        render json: {
+          success: true,
+          invitation_sent: true,
+          signed_in: user.clerk_id.present?
+        }
       end
 
       # DELETE /api/v1/admins/:id

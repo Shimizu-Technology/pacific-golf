@@ -8,6 +8,9 @@ interface ImageUploadProps {
   getToken: () => Promise<string | null>;
   placeholder?: string;
   helpText?: string;
+  usageNote?: string;
+  recommendedSize?: string;
+  previewClassName?: string;
   accept?: string;
   maxSizeMB?: number;
 }
@@ -19,6 +22,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   getToken,
   placeholder = 'Upload an image or paste a URL',
   helpText,
+  usageNote,
+  recommendedSize,
+  previewClassName = 'h-20 w-auto object-contain',
   accept = 'image/jpeg,image/png,image/gif,image/svg+xml,image/webp',
   maxSizeMB = 5,
 }) => {
@@ -110,7 +116,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           <img
             src={value}
             alt={label}
-            className="h-20 w-auto rounded-lg border border-gray-200 object-contain bg-gray-50"
+            className={`rounded-lg border border-gray-200 bg-gray-50 ${previewClassName}`}
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
             }}
@@ -176,6 +182,16 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       {/* Help text */}
       {helpText && (
         <p className="mt-1 text-xs text-gray-500">{helpText}</p>
+      )}
+      {recommendedSize && (
+        <p className="mt-1 text-xs text-gray-500">
+          Recommended size: <span className="font-medium text-gray-600">{recommendedSize}</span>
+        </p>
+      )}
+      {usageNote && (
+        <p className="mt-1 text-xs text-gray-500">
+          Used for: <span className="font-medium text-gray-600">{usageNote}</span>
+        </p>
       )}
 
       {/* Error */}

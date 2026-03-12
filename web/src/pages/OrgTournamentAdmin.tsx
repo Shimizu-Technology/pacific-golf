@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuthToken } from '../hooks/useAuthToken';
 import { useOrganization } from '../components/OrganizationProvider';
+import { OrgAdminLayout } from '../components/OrgAdminLayout';
 import { 
   Users, 
   DollarSign, 
@@ -52,6 +53,11 @@ interface Tournament {
   max_golfers: number | null;
 }
 
+interface TournamentNavOption {
+  slug: string;
+  name: string;
+}
+
 interface Stats {
   total_registrations: number;
   confirmed: number;
@@ -71,6 +77,7 @@ export const OrgTournamentAdmin: React.FC = () => {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [golfers, setGolfers] = useState<Golfer[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [tournamentOptions, setTournamentOptions] = useState<TournamentNavOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -132,7 +139,35 @@ export const OrgTournamentAdmin: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    fetchTournamentOptions();
   }, [organization, tournamentSlug, getToken]);
+
+  const fetchTournamentOptions = async () => {
+    if (!organization) return;
+
+    try {
+      const token = await getToken();
+      if (!token) return;
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/admin/organizations/${organization.slug}/tournaments`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) return;
+      const data = await response.json();
+      const options: TournamentNavOption[] = (data.tournaments || []).map((t: { slug: string; name: string }) => ({
+        slug: t.slug,
+        name: t.name,
+      }));
+      setTournamentOptions(options);
+    } catch {
+      // Non-fatal for this page; keep current tournament view available.
+    }
+  };
 
   // Filtered and sorted golfers
   const filteredGolfers = useMemo(() => {
@@ -354,101 +389,90 @@ export const OrgTournamentAdmin: React.FC = () => {
 
   if (orgLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
       </div>
     );
   }
 
   if (error || !organization || !tournament) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error</h2>
-          <p className="text-gray-600">{error || 'Tournament not found'}</p>
+          <h2 className="text-xl font-semibold text-stone-900 mb-2">Error</h2>
+          <p className="text-stone-600">{error || 'Tournament not found'}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header 
-        className="text-white py-6 px-4"
-        style={{ backgroundColor: organization.primary_color || '#1e40af' }}
-      >
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <Link
-                to={`/${organization.slug}/admin`}
-                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Dashboard</span>
-              </Link>
-              <h1 className="text-2xl font-bold">{tournament.name}</h1>
-              <p className="text-white/80 mt-1">Tournament Management</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowAddGolferModal(true)}
-                className="flex items-center gap-2 px-4 py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 font-medium"
-              >
-                <UserPlus className="w-5 h-5" />
-                <span>Add Golfer</span>
-              </button>
-              <Link
-                to={`/${organization.slug}/admin/tournaments/${tournamentSlug}/checkin`}
-                className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 font-semibold"
-              >
-                <UserCheck className="w-5 h-5" />
-                <span>Check-In Mode</span>
-              </Link>
-            </div>
-          </div>
+    <>
+      <OrgAdminLayout
+      orgName={organization.name}
+      orgSlug={organization.slug}
+      primaryColor={organization.primary_color}
+      title={tournament.name}
+      subtitle="Tournament management"
+      tournaments={tournamentOptions}
+      currentTournamentSlug={tournamentSlug}
+      rightActions={
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowAddGolferModal(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
+          >
+            <UserPlus className="h-4 w-4" />
+            Add Golfer
+          </button>
+          <Link
+            to={`/${organization.slug}/admin/tournaments/${tournamentSlug}/checkin`}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
+          >
+            <UserCheck className="h-4 w-4" />
+            Check-In Mode
+          </Link>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      }
+    >
+      <div className="space-y-6">
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
               <div className="flex items-center gap-3">
-                <Users className="w-8 h-8 text-brand-500" />
+                <Users className="h-7 w-7 text-emerald-700" />
                 <div>
-                  <p className="text-sm text-gray-500">Registered</p>
-                  <p className="text-xl font-bold">{stats.confirmed}</p>
+                  <p className="text-xs uppercase tracking-wide text-stone-500">Registered</p>
+                  <p className="text-2xl font-bold text-stone-900">{stats.confirmed}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
               <div className="flex items-center gap-3">
-                <CreditCard className="w-8 h-8 text-green-500" />
+                <CreditCard className="h-7 w-7 text-cyan-700" />
                 <div>
-                  <p className="text-sm text-gray-500">Paid</p>
-                  <p className="text-xl font-bold">{stats.paid}</p>
+                  <p className="text-xs uppercase tracking-wide text-stone-500">Paid</p>
+                  <p className="text-2xl font-bold text-stone-900">{stats.paid}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
               <div className="flex items-center gap-3">
-                <UserCheck className="w-8 h-8 text-purple-500" />
+                <UserCheck className="h-7 w-7 text-violet-700" />
                 <div>
-                  <p className="text-sm text-gray-500">Checked In</p>
-                  <p className="text-xl font-bold">{stats.checked_in}</p>
+                  <p className="text-xs uppercase tracking-wide text-stone-500">Checked In</p>
+                  <p className="text-2xl font-bold text-stone-900">{stats.checked_in}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
               <div className="flex items-center gap-3">
-                <DollarSign className="w-8 h-8 text-yellow-500" />
+                <DollarSign className="h-7 w-7 text-amber-700" />
                 <div>
-                  <p className="text-sm text-gray-500">Revenue</p>
-                  <p className="text-xl font-bold">{formatCurrency(stats.revenue)}</p>
+                  <p className="text-xs uppercase tracking-wide text-stone-500">Revenue</p>
+                  <p className="text-2xl font-bold text-stone-900">{formatCurrency(stats.revenue)}</p>
                 </div>
               </div>
             </div>
@@ -456,18 +480,18 @@ export const OrgTournamentAdmin: React.FC = () => {
         )}
 
         {/* Filters & Actions */}
-        <div className="bg-white rounded-xl shadow-sm mb-6">
-          <div className="p-4 border-b border-gray-200">
+        <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
+          <div className="border-b border-stone-200 p-4">
             <div className="flex flex-col md:flex-row gap-4">
               {/* Search */}
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
                 <input
                   type="text"
                   placeholder="Search by name, email, phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  className="w-full rounded-xl border border-stone-300 bg-white py-2 pl-10 pr-4 text-stone-900 placeholder:text-stone-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -476,7 +500,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
+                  className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="all">All Status</option>
                   <option value="confirmed">Confirmed</option>
@@ -487,7 +511,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                 <select
                   value={paymentFilter}
                   onChange={(e) => setPaymentFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
+                  className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="all">All Payment</option>
                   <option value="paid">Paid</option>
@@ -497,7 +521,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                 <select
                   value={checkinFilter}
                   onChange={(e) => setCheckinFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
+                  className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="all">All Check-in</option>
                   <option value="checked_in">Checked In</option>
@@ -509,14 +533,14 @@ export const OrgTournamentAdmin: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   onClick={fetchData}
-                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                  className="rounded-lg p-2 text-stone-600 transition-colors hover:bg-stone-100"
                   title="Refresh"
                 >
                   <RefreshCw className="w-5 h-5" />
                 </button>
                 <button
                   onClick={exportCSV}
-                  className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700"
+                  className="flex items-center gap-2 rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-stone-800"
                 >
                   <Download className="w-4 h-4" />
                   <span>Export</span>
@@ -526,19 +550,19 @@ export const OrgTournamentAdmin: React.FC = () => {
           </div>
 
           {/* Results count */}
-          <div className="px-4 py-2 bg-gray-50 text-sm text-gray-600">
+          <div className="bg-stone-50 px-4 py-2 text-sm text-stone-600">
             Showing {filteredGolfers.length} of {golfers.length} registrations
           </div>
         </div>
 
         {/* Golfers Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="border-b border-stone-200 bg-stone-50">
                 <tr>
                   <th 
-                    className="px-4 py-3 text-left text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
+                    className="cursor-pointer px-4 py-3 text-left text-sm font-medium text-stone-600 hover:bg-stone-100"
                     onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center gap-1">
@@ -548,12 +572,12 @@ export const OrgTournamentAdmin: React.FC = () => {
                       )}
                     </div>
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Contact</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Payment</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Check-in</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-stone-600">Contact</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-stone-600">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-stone-600">Payment</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-stone-600">Check-in</th>
                   <th 
-                    className="px-4 py-3 text-left text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-100"
+                    className="cursor-pointer px-4 py-3 text-left text-sm font-medium text-stone-600 hover:bg-stone-100"
                     onClick={() => handleSort('created_at')}
                   >
                     <div className="flex items-center gap-1">
@@ -563,13 +587,13 @@ export const OrgTournamentAdmin: React.FC = () => {
                       )}
                     </div>
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Actions</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-stone-600">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-stone-200">
                 {filteredGolfers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                    <td colSpan={7} className="px-4 py-12 text-center text-stone-500">
                       {golfers.length === 0 ? 'No registrations yet' : 'No results match your filters'}
                     </td>
                   </tr>
@@ -577,21 +601,21 @@ export const OrgTournamentAdmin: React.FC = () => {
                   filteredGolfers.map((golfer) => (
                     <tr 
                       key={golfer.id} 
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="cursor-pointer hover:bg-stone-50"
                       onClick={() => setSelectedGolfer(golfer)}
                     >
                       <td className="px-4 py-3">
                         <div>
-                          <p className="font-medium text-gray-900">{golfer.name}</p>
+                          <p className="font-medium text-stone-900">{golfer.name}</p>
                           {golfer.company && (
-                            <p className="text-sm text-gray-500">{golfer.company}</p>
+                            <p className="text-sm text-stone-500">{golfer.company}</p>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm">
-                          <p className="text-gray-900">{golfer.email}</p>
-                          <p className="text-gray-500">{golfer.phone}</p>
+                          <p className="text-stone-900">{golfer.email}</p>
+                          <p className="text-stone-500">{golfer.phone}</p>
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -604,10 +628,10 @@ export const OrgTournamentAdmin: React.FC = () => {
                         {golfer.checked_in_at ? (
                           <CheckCircle className="w-5 h-5 text-green-500" />
                         ) : (
-                          <XCircle className="w-5 h-5 text-gray-300" />
+                          <XCircle className="w-5 h-5 text-stone-300" />
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
+                      <td className="px-4 py-3 text-sm text-stone-500">
                         {formatDate(golfer.created_at)}
                       </td>
                       <td className="px-4 py-3">
@@ -617,7 +641,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                               e.stopPropagation();
                               handleCheckIn(golfer);
                             }}
-                            className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                            className="rounded bg-emerald-600 px-3 py-1 text-sm text-white transition-colors hover:bg-emerald-700"
                           >
                             Check In
                           </button>
@@ -638,11 +662,11 @@ export const OrgTournamentAdmin: React.FC = () => {
             onClick={() => setSelectedGolfer(null)}
           >
             <div 
-              className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-xl font-semibold text-gray-900">{selectedGolfer.name}</h3>
+              <div className="border-b border-stone-200 p-6">
+                <h3 className="text-xl font-semibold text-stone-900">{selectedGolfer.name}</h3>
                 <div className="flex gap-2 mt-2">
                   {getStatusBadge(selectedGolfer.registration_status)}
                   {getPaymentBadge(selectedGolfer.payment_status)}
@@ -651,21 +675,21 @@ export const OrgTournamentAdmin: React.FC = () => {
 
               <div className="p-6 space-y-4">
                 <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-gray-400" />
+                  <Mail className="w-5 h-5 text-stone-400" />
                   <span>{selectedGolfer.email}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Phone className="w-5 h-5 text-gray-400" />
+                  <Phone className="w-5 h-5 text-stone-400" />
                   <span>{selectedGolfer.phone}</span>
                 </div>
                 {selectedGolfer.company && (
                   <div className="flex items-center gap-3">
-                    <Building2 className="w-5 h-5 text-gray-400" />
+                    <Building2 className="w-5 h-5 text-stone-400" />
                     <span>{selectedGolfer.company}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-gray-400" />
+                  <Clock className="w-5 h-5 text-stone-400" />
                   <span>Registered: {formatDate(selectedGolfer.created_at)}</span>
                 </div>
                 {selectedGolfer.checked_in_at && (
@@ -676,12 +700,12 @@ export const OrgTournamentAdmin: React.FC = () => {
                 )}
               </div>
 
-              <div className="p-6 border-t border-gray-200 space-y-3">
+              <div className="space-y-3 border-t border-stone-200 p-6">
                 {/* Primary Actions */}
                 <div className="flex gap-3">
                   <button
                     onClick={() => setSelectedGolfer(null)}
-                    className="flex-1 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                    className="flex-1 rounded-lg px-4 py-2 text-stone-600 transition-colors hover:bg-stone-100"
                   >
                     Close
                   </button>
@@ -690,7 +714,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                       setEditingGolfer(selectedGolfer);
                       setSelectedGolfer(null);
                     }}
-                    className="flex-1 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700"
+                    className="flex-1 rounded-lg bg-stone-900 px-4 py-2 text-white transition-colors hover:bg-stone-800"
                   >
                     Edit
                   </button>
@@ -700,7 +724,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                         handleCheckIn(selectedGolfer);
                         setSelectedGolfer(null);
                       }}
-                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-white transition-colors hover:bg-emerald-700"
                     >
                       Check In
                     </button>
@@ -709,12 +733,12 @@ export const OrgTournamentAdmin: React.FC = () => {
 
                 {/* Danger Actions */}
                 {selectedGolfer.registration_status !== 'cancelled' && (
-                  <div className="flex gap-3 pt-3 border-t border-gray-200">
+                  <div className="flex gap-3 border-t border-stone-200 pt-3">
                     {selectedGolfer.payment_status === 'paid' && (
                       <button
                         onClick={() => handleRefund(selectedGolfer)}
                         disabled={actionLoading === `refund-${selectedGolfer.id}`}
-                        className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50"
+                        className="flex-1 rounded-lg bg-amber-600 px-4 py-2 text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
                       >
                         {actionLoading === `refund-${selectedGolfer.id}` ? 'Processing...' : 'Refund'}
                       </button>
@@ -722,7 +746,7 @@ export const OrgTournamentAdmin: React.FC = () => {
                     <button
                       onClick={() => handleCancelRegistration(selectedGolfer)}
                       disabled={actionLoading === `cancel-${selectedGolfer.id}`}
-                      className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                      className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700 disabled:opacity-50"
                     >
                       {actionLoading === `cancel-${selectedGolfer.id}` ? 'Cancelling...' : 'Cancel Registration'}
                     </button>
@@ -732,7 +756,8 @@ export const OrgTournamentAdmin: React.FC = () => {
             </div>
           </div>
         )}
-      </main>
+      </div>
+      </OrgAdminLayout>
 
       {/* Add Golfer Modal */}
       {tournament && (
@@ -759,6 +784,7 @@ export const OrgTournamentAdmin: React.FC = () => {
           entryFee={tournament.entry_fee || 0}
         />
       )}
-    </div>
+    
+    </>
   );
 };

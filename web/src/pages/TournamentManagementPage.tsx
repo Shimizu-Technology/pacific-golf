@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
 import { useTournament } from '../contexts';
 import { api, Tournament, EmployeeNumber } from '../services/api';
 import { Button, Card, Input, Modal } from '../components/ui';
+import { ImageUpload } from '../components/ImageUpload';
+import { useAuthToken } from '../hooks/useAuthToken';
 import { 
   Plus, Calendar, Users, DollarSign, MapPin, Clock, 
   Archive, Copy, Play, Pause, Trash2, Edit, 
@@ -14,6 +17,7 @@ import toast from 'react-hot-toast';
 type TabType = 'active' | 'archived';
 
 export const TournamentManagementPage = () => {
+  const { orgSlug } = useParams<{ orgSlug?: string }>();
   const { tournaments, currentTournament, setCurrentTournament, refreshTournaments } = useTournament();
   const [activeTab, setActiveTab] = useState<TabType>('active');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -407,6 +411,7 @@ export const TournamentManagementPage = () => {
       {/* Create/Edit Modal */}
       <TournamentFormModal
         isOpen={isCreateModalOpen || isEditModalOpen}
+        orgSlug={orgSlug}
         onClose={() => {
           setIsCreateModalOpen(false);
           setIsEditModalOpen(false);
@@ -438,14 +443,16 @@ export const TournamentManagementPage = () => {
 // Tournament Form Modal Component
 interface TournamentFormModalProps {
   isOpen: boolean;
+  orgSlug?: string;
   onClose: () => void;
   tournament: Tournament | null;
   onSuccess: () => void;
 }
 
-const TournamentFormModal = ({ isOpen, onClose, tournament, onSuccess }: TournamentFormModalProps) => {
+const TournamentFormModal = ({ isOpen, orgSlug, onClose, tournament, onSuccess }: TournamentFormModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<Tournament>>({});
+  const { getToken } = useAuthToken();
 
   // Update form when tournament changes or modal opens
   React.useEffect(() => {
@@ -464,12 +471,20 @@ const TournamentFormModal = ({ isOpen, onClose, tournament, onSuccess }: Tournam
           max_capacity: tournament.max_capacity,
           reserved_slots: tournament.reserved_slots || 0,
           entry_fee: tournament.entry_fee,
-          employee_entry_fee: tournament.employee_entry_fee || 5000,
+                  employee_discount_enabled: tournament.employee_discount_enabled ?? false,
+                  employee_entry_fee: tournament.employee_entry_fee || 5000,
           format_name: tournament.format_name || '',
           fee_includes: tournament.fee_includes || '',
           checks_payable_to: tournament.checks_payable_to || '',
           contact_name: tournament.contact_name || '',
           contact_phone: tournament.contact_phone || '',
+          use_org_branding: tournament.use_org_branding ?? true,
+          theme_preset: tournament.theme_preset || 'classic',
+          primary_color_override: tournament.primary_color_override || '',
+          accent_color_override: tournament.accent_color_override || '',
+          logo_url_override: tournament.logo_url_override || '',
+          banner_url_override: tournament.banner_url_override || '',
+          signature_image_url_override: tournament.signature_image_url_override || '',
         });
       } else {
         // Creating new tournament - use defaults
@@ -485,12 +500,20 @@ const TournamentFormModal = ({ isOpen, onClose, tournament, onSuccess }: Tournam
           max_capacity: 160,
           reserved_slots: 0,
           entry_fee: 12500,
-          employee_entry_fee: 5000,
+                  employee_discount_enabled: false,
+                  employee_entry_fee: 5000,
           format_name: 'Individual Callaway',
           fee_includes: 'Green Fee, Ditty Bag, Drinks & Food',
           checks_payable_to: 'GIAAEO',
           contact_name: '',
           contact_phone: '',
+          use_org_branding: true,
+          theme_preset: 'classic',
+          primary_color_override: '',
+          accent_color_override: '',
+          logo_url_override: '',
+          banner_url_override: '',
+          signature_image_url_override: '',
         });
       }
     }
@@ -505,7 +528,11 @@ const TournamentFormModal = ({ isOpen, onClose, tournament, onSuccess }: Tournam
         await api.updateTournament(tournament.id, formData);
         toast.success('Tournament updated successfully');
       } else {
-        await api.createTournament(formData);
+        if (orgSlug) {
+          await api.createOrganizationTournament(orgSlug, formData);
+        } else {
+          await api.createTournament(formData);
+        }
         toast.success('Tournament created successfully');
       }
       onSuccess();
@@ -516,7 +543,7 @@ const TournamentFormModal = ({ isOpen, onClose, tournament, onSuccess }: Tournam
     }
   };
 
-  const handleChange = (field: keyof Tournament, value: string | number) => {
+  const handleChange = (field: keyof Tournament, value: string | number | boolean | null | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -619,28 +646,44 @@ const TournamentFormModal = ({ isOpen, onClose, tournament, onSuccess }: Tournam
               />
             </div>
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Employee Fee ($)
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+
+          <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-800">
               <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={((formData.employee_entry_fee || 5000) / 100).toFixed(2)}
-                onChange={(e) => {
-                  const dollars = parseFloat(e.target.value) || 0;
-                  const cents = Math.round(dollars * 100);
-                  handleChange('employee_entry_fee', cents);
-                }}
-                className="w-full pl-7 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-800 focus:border-transparent"
-                placeholder="50.00"
+                type="checkbox"
+                checked={formData.employee_discount_enabled ?? false}
+                onChange={(e) => handleChange('employee_discount_enabled', e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-green-700 focus:ring-green-600"
               />
-            </div>
-            <p className="mt-1 text-xs text-gray-500">Discounted rate for GIAA employees</p>
+              Enable Employee Discount
+            </label>
+            <p className="mt-1 text-xs text-gray-500">
+              When enabled, golfers with valid employee numbers can register at the discounted rate.
+            </p>
+
+            {formData.employee_discount_enabled && (
+              <div className="mt-3 max-w-xs">
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Employee Entry Fee ($)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={((formData.employee_entry_fee || 0) / 100).toFixed(2)}
+                    onChange={(e) => {
+                      const dollars = parseFloat(e.target.value) || 0;
+                      const cents = Math.round(dollars * 100);
+                      handleChange('employee_entry_fee', cents);
+                    }}
+                    className="w-full pl-7 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-800 focus:border-transparent"
+                    placeholder="50.00"
+                  />
+                </div>
+              </div>
+            )}
           </div>
           
           <Input
@@ -692,6 +735,91 @@ const TournamentFormModal = ({ isOpen, onClose, tournament, onSuccess }: Tournam
             value={formData.contact_phone || ''}
             onChange={(e) => handleChange('contact_phone', e.target.value)}
           />
+
+          <div className="sm:col-span-2 rounded-lg border border-gray-200 p-4">
+            <h3 className="text-sm font-semibold text-gray-900">Tournament Branding</h3>
+            <p className="mt-1 text-xs text-gray-500">
+              Use organization defaults or override branding for this specific tournament.
+            </p>
+
+            <label className="mt-4 inline-flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={formData.use_org_branding ?? true}
+                onChange={(e) => handleChange('use_org_branding', e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-green-700 focus:ring-green-600"
+              />
+              Use organization branding
+            </label>
+
+            <div className="mt-4">
+              <label className="mb-1 block text-sm font-medium text-gray-700">Theme Preset</label>
+              <select
+                value={formData.theme_preset || 'classic'}
+                onChange={(e) => handleChange('theme_preset', e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-800"
+              >
+                <option value="classic">Classic</option>
+                <option value="premium">Premium</option>
+                <option value="minimal">Minimal</option>
+                <option value="event">Event</option>
+              </select>
+            </div>
+
+            {!(formData.use_org_branding ?? true) && (
+              <div className="mt-4 space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">Primary Color</label>
+                    <input
+                      type="text"
+                      value={formData.primary_color_override || ''}
+                      onChange={(e) => handleChange('primary_color_override', e.target.value)}
+                      placeholder="#16a34a"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">Accent Color</label>
+                    <input
+                      type="text"
+                      value={formData.accent_color_override || ''}
+                      onChange={(e) => handleChange('accent_color_override', e.target.value)}
+                      placeholder="#1e3a8a"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-800"
+                    />
+                  </div>
+                </div>
+
+                <ImageUpload
+                  label="Tournament Logo Override"
+                  value={formData.logo_url_override || ''}
+                  onChange={(url) => handleChange('logo_url_override', url)}
+                  getToken={getToken}
+                  placeholder="Upload tournament-specific logo"
+                  helpText="Leave empty to fall back to organization logo."
+                />
+
+                <ImageUpload
+                  label="Tournament Banner Override"
+                  value={formData.banner_url_override || ''}
+                  onChange={(url) => handleChange('banner_url_override', url)}
+                  getToken={getToken}
+                  placeholder="Upload tournament-specific banner"
+                  helpText="Leave empty to fall back to organization banner."
+                />
+
+                <ImageUpload
+                  label="Signature Image (Optional)"
+                  value={formData.signature_image_url_override || ''}
+                  onChange={(url) => handleChange('signature_image_url_override', url)}
+                  getToken={getToken}
+                  placeholder="Upload commemorative/silhouette image"
+                  helpText="Optional decorative brand element for this tournament."
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t">
@@ -745,13 +873,17 @@ const EmployeeNumbersModal = ({ isOpen, onClose, tournament }: EmployeeNumbersMo
   };
 
   const handleAddSingle = async () => {
+    if (!tournament) return;
     if (!newNumber.trim()) {
       toast.error('Employee number is required');
       return;
     }
 
     try {
-      await api.createEmployeeNumber({ employee_number: newNumber.trim(), employee_name: newName.trim() || undefined });
+      await api.createEmployeeNumber(
+        { employee_number: newNumber.trim(), employee_name: newName.trim() || undefined },
+        tournament.id
+      );
       toast.success('Employee number added');
       setNewNumber('');
       setNewName('');
@@ -762,6 +894,7 @@ const EmployeeNumbersModal = ({ isOpen, onClose, tournament }: EmployeeNumbersMo
   };
 
   const handleBulkAdd = async () => {
+    if (!tournament) return;
     const lines = bulkInput.split('\n').filter(line => line.trim());
     if (lines.length === 0) {
       toast.error('Enter at least one employee number');
@@ -777,7 +910,7 @@ const EmployeeNumbersModal = ({ isOpen, onClose, tournament }: EmployeeNumbersMo
     });
 
     try {
-      const result = await api.bulkCreateEmployeeNumbers(numbers);
+      const result = await api.bulkCreateEmployeeNumbers(numbers, tournament.id);
       if (result.created > 0) {
         toast.success(`Added ${result.created} employee number(s)`);
       }

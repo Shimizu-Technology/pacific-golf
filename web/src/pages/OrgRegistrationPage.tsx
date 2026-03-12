@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { Button, Input, Card, PageTransition } from '../components/ui';
 import { LiabilityWaiver } from '../components/LiabilityWaiver';
 import { PaymentModal } from '../components/PaymentModal';
-import { ChevronLeft, ChevronRight, Trophy, AlertCircle, CheckCircle, Loader2, Check, MapPin, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trophy, AlertCircle, CheckCircle, Loader2, Check, MapPin, Calendar, LogIn, LayoutDashboard } from 'lucide-react';
 import { api, Tournament } from '../services/api';
 import { useOrganization } from '../components/OrganizationProvider';
+import { SignedInAdminBar } from '../components/SignedInAdminBar';
 import { hexToRgba, adjustColor } from '../utils/colors';
+import { resolveTournamentBranding } from '../utils/tournamentBranding';
 
 // ---------------------------------------------------------------------------
 // Animation helpers
@@ -53,6 +56,7 @@ interface FormData {
   mailingAddress: string;
   phone: string;
   email: string;
+  employeeNumber: string;
   paymentOption: 'pay-now' | 'pay-on-day' | '';
   waiverAccepted: boolean;
   handicap?: string;
@@ -64,6 +68,7 @@ interface FormData {
 
 export const OrgRegistrationPage: React.FC = () => {
   const navigate = useNavigate();
+  const { isLoaded, isSignedIn } = useAuth();
   const { orgSlug, tournamentSlug } = useParams<{ orgSlug: string; tournamentSlug: string }>();
   const { organization } = useOrganization();
   
@@ -81,9 +86,21 @@ export const OrgRegistrationPage: React.FC = () => {
     mailingAddress: '',
     phone: '',
     email: '',
+    employeeNumber: '',
     paymentOption: '',
     waiverAccepted: false,
     handicap: '',
+  });
+  const [employeeValidation, setEmployeeValidation] = useState<{
+    checking: boolean;
+    valid: boolean;
+    message: string | null;
+    discountedFee: number | null;
+  }>({
+    checking: false,
+    valid: false,
+    message: null,
+    discountedFee: null,
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
@@ -108,8 +125,12 @@ export const OrgRegistrationPage: React.FC = () => {
     fetchTournament();
   }, [orgSlug, tournamentSlug]);
 
-  const entryFee = tournament?.current_fee_dollars ?? tournament?.entry_fee_dollars ?? 0;
-  const primaryColor = organization?.primary_color || '#1e3a2f';
+  const baseEntryFee = tournament?.current_fee_dollars ?? tournament?.entry_fee_dollars ?? 0;
+  const entryFee = employeeValidation.valid && employeeValidation.discountedFee !== null
+    ? employeeValidation.discountedFee
+    : baseEntryFee;
+  const branding = resolveTournamentBranding(organization, tournament);
+  const primaryColor = branding.primaryColor;
   const primaryDark = adjustColor(primaryColor, -0.15);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,6 +141,45 @@ export const OrgRegistrationPage: React.FC = () => {
     }));
     if (errors[name as keyof FormData]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+    if (name === 'employeeNumber') {
+      setEmployeeValidation({ checking: false, valid: false, message: null, discountedFee: null });
+    }
+  };
+
+  const validateEmployeeCode = async () => {
+    if (!tournament?.employee_discount_enabled) return;
+    const employeeNumber = formData.employeeNumber.trim();
+    if (!employeeNumber) {
+      setEmployeeValidation({ checking: false, valid: false, message: null, discountedFee: null });
+      return;
+    }
+
+    setEmployeeValidation((prev) => ({ ...prev, checking: true }));
+    try {
+      const result = await api.validateEmployeeNumber(employeeNumber, tournament.id);
+      if (result.valid) {
+        setEmployeeValidation({
+          checking: false,
+          valid: true,
+          message: result.message || 'Employee discount applied',
+          discountedFee: result.employee_fee_dollars ?? null,
+        });
+      } else {
+        setEmployeeValidation({
+          checking: false,
+          valid: false,
+          message: result.error || 'Invalid employee number',
+          discountedFee: null,
+        });
+      }
+    } catch (error) {
+      setEmployeeValidation({
+        checking: false,
+        valid: false,
+        message: error instanceof Error ? error.message : 'Unable to validate employee number',
+        discountedFee: null,
+      });
     }
   };
 
@@ -192,6 +252,7 @@ export const OrgRegistrationPage: React.FC = () => {
           notes: formData.handicap ? `Handicap: ${formData.handicap}` : undefined,
         },
         waiver_accepted: formData.waiverAccepted,
+        employee_number: employeeValidation.valid ? formData.employeeNumber.trim() : undefined,
         tournament_id: tournament.id,
       });
       navigate(`/${orgSlug}/tournaments/${tournamentSlug}/success`, {
@@ -275,19 +336,49 @@ export const OrgRegistrationPage: React.FC = () => {
     <MotionConfig reducedMotion="user">
     <PageTransition>
     <div className="min-h-screen bg-stone-50">
+      <SignedInAdminBar dashboardPath={`/${orgSlug}/admin`} />
       {/* ================================================================= */}
       {/* HERO HEADER                                                        */}
       {/* ================================================================= */}
       <header className="relative overflow-hidden">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(145deg, ${primaryDark} 0%, ${primaryColor} 40%, ${adjustColor(primaryColor, 0.08)} 100%)`,
-          }}
-        />
+        {branding.bannerUrl ? (
+          <div className="absolute inset-0">
+            <img src={branding.bannerUrl} alt="" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
+          </div>
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(145deg, ${primaryDark} 0%, ${primaryColor} 40%, ${adjustColor(primaryColor, 0.08)} 100%)`,
+            }}
+          />
+        )}
         <NoiseOverlay />
 
         <div className="relative z-10 max-w-3xl mx-auto px-6 py-12 sm:py-16 text-center text-white">
+          <div className="mb-5 flex justify-end gap-2">
+            {isLoaded && isSignedIn ? (
+              <button
+                type="button"
+                onClick={() => navigate(`/${orgSlug}/admin`)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                Staff Dashboard
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => navigate('/admin/login')}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Staff Login
+              </button>
+            )}
+          </div>
+
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -548,6 +639,40 @@ export const OrgRegistrationPage: React.FC = () => {
                   )}
                 </div>
 
+                {tournament.employee_discount_enabled && (
+                  <div className="mb-6 rounded-xl border border-stone-200 bg-white p-4">
+                    <label className="mb-2 block text-sm font-medium text-stone-900">
+                      Employee Number (optional)
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        name="employeeNumber"
+                        value={formData.employeeNumber}
+                        onChange={handleInputChange}
+                        placeholder="Enter employee number"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={validateEmployeeCode}
+                        disabled={employeeValidation.checking || !formData.employeeNumber.trim()}
+                      >
+                        {employeeValidation.checking ? 'Checking...' : 'Apply'}
+                      </Button>
+                    </div>
+                    {employeeValidation.message && (
+                      <p className={`mt-2 text-sm ${employeeValidation.valid ? 'text-green-700' : 'text-red-600'}`}>
+                        {employeeValidation.message}
+                      </p>
+                    )}
+                    {!employeeValidation.valid && tournament.employee_entry_fee_dollars !== undefined && (
+                      <p className="mt-2 text-xs text-stone-500">
+                        Valid employee numbers receive the discounted rate of ${tournament.employee_entry_fee_dollars.toFixed(2)}.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Payment Options */}
                 <div className="space-y-3">
                   {tournament.allow_card && (
@@ -658,6 +783,7 @@ export const OrgRegistrationPage: React.FC = () => {
         entryFee={entryFee}
         stripePublicKey={import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY}
         tournamentId={tournament?.id}
+        employeeNumber={employeeValidation.valid ? formData.employeeNumber.trim() : undefined}
       />
 
       {/* Footer */}
